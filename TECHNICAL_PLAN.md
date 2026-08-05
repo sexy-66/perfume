@@ -621,5 +621,5 @@ adb install -r <apk>
 - `D:\Xiang\app`已创建，Android最低版本为API 29；
 - Material 3三项导航、Drift首版schema、制作类型纵切、本机身份、操作日志和MediaStore已实现；
 - M2已完成：资料库表结构、v1到v2前向迁移，以及制作类型管理、香料分类、香料、SKU 图片、三层推荐区间、推荐配置编排、香牌目录、顾客资料、资产清点、用户排序和 30 天最近删除恢复已实现；
-- 格式检查、静态分析、28项单元/Widget测试、Android Lint、Debug APK构建和API 36空库/图片集成验收已通过；
+- 格式检查、静态分析、37项单元/Widget测试、Android Lint、Debug APK构建和API 36空库/图片集成验收已通过；
 - M1代码基线已建立，尚待连接真实Android手机验证安装。
