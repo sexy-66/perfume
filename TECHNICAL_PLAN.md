@@ -1,7 +1,7 @@
 # 香方簿技术实现规划
 
-- 文档状态：技术方案候选
-- 版本：0.3
+- 文档状态：已确认，M1进行中
+- 版本：0.4
 - 日期：2026-08-05
 - 产品依据：`M0_PRODUCT_SPEC.md` 1.0 冻结版
 - 本文作用：说明实现语言、架构、数据、同步、备份、依赖和验证方式，不修改M0产品范围
@@ -25,23 +25,16 @@
 
 ## 2. 本机工具链现状
 
-2026-08-05实查：
+2026-08-05已完成项目内隔离安装：
 
-- Flutter：未安装；
-- Dart：未安装；
-- Android Debug Bridge：未安装；
-- Java：已安装Java 21.0.5；
-- Android SDK：尚未确认可用。
+- Flutter 3.44.8稳定版，含Dart 3.12.2；
+- Eclipse Temurin JDK 17.0.20+8；
+- Android SDK Platform 36、Build Tools 36.1.0和Platform Tools 37.0.1；
+- Android Emulator 37.1.11和Android 16（API 36）Google APIs x86_64系统镜像；
+- `Xiang_API_36`模拟器已完成冷启动验证；
+- `flutter doctor -v`无问题。
 
-M1开始前需要：
-
-1. 将Flutter稳定版解压到项目内，Dart使用Flutter自带版本；
-2. 将Android命令行SDK安装到项目内，不安装全局Android Studio；
-3. 将Android SDK Platform、Build Tools、Platform Tools和模拟器下载到项目内SDK；
-4. 将官方兼容JDK解压到项目内，不依赖当前Oracle Java路径；
-5. 运行`flutter doctor -v`并消除Android相关阻塞；
-6. 创建Android 10及以上模拟器；
-7. 连接至少一台真实Android手机验证安装。
+尚待应用工程创建后连接至少一台真实Android手机验证安装。
 
 具体SDK和依赖版本在M1开始当天选择当前稳定版并写入锁文件，不在规划阶段写死容易过期的版本号。
 
@@ -621,10 +614,10 @@ adb install -r <apk>
 
 ## 14. 当前状态
 
-本文是技术方案候选，不代表M1已经开始。
+技术方案已确认，M1已经开始。
 
-- 当前只有冻结的M0产品基线和本技术规划；
-- Flutter、Dart和ADB尚未安装；
-- `D:\Xiang\app`尚未创建；
-- Git仓库尚未初始化；
-- 用户确认技术规划后，再在新的独立M1开发任务中安装工具链和创建工程。
+- 项目内隔离工具链和`Xiang_API_36`模拟器已安装并验证；
+- `dev.ps1`只修改当前PowerShell进程，未修改全局环境；
+- 精确版本记录在`toolchain.lock`；
+- `D:\Xiang\app`尚未创建，下一步进入M1工程和本地数据基础；
+- 真机安装验证需在应用工程创建后进行。
