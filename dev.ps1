@@ -24,6 +24,16 @@ $env:GRADLE_USER_HOME = Join-Path $root '.cache\gradle'
 $env:TEMP = Join-Path $root '.tmp'
 $env:TMP = $env:TEMP
 
+if ($env:XIANG_GRADLE_PROXY_OPTS) {
+    $env:GRADLE_OPTS = $env:GRADLE_OPTS.Replace($env:XIANG_GRADLE_PROXY_OPTS, '').Trim()
+}
+$proxyUrl = if ($env:HTTPS_PROXY) { $env:HTTPS_PROXY } else { $env:HTTP_PROXY }
+if ($proxyUrl) {
+    $proxy = [Uri]$proxyUrl
+    $env:XIANG_GRADLE_PROXY_OPTS = "-Dhttp.proxyHost=$($proxy.Host) -Dhttp.proxyPort=$($proxy.Port) -Dhttps.proxyHost=$($proxy.Host) -Dhttps.proxyPort=$($proxy.Port)"
+    $env:GRADLE_OPTS = "$env:XIANG_GRADLE_PROXY_OPTS $env:GRADLE_OPTS".Trim()
+}
+
 $toolPaths = @(
     (Join-Path $root '.toolchain\flutter\bin')
     (Join-Path $env:ANDROID_HOME 'cmdline-tools\latest\bin')

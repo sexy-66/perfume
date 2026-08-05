@@ -619,5 +619,7 @@ adb install -r <apk>
 - 项目内隔离工具链和`Xiang_API_36`模拟器已安装并验证；
 - `dev.ps1`只修改当前PowerShell进程，未修改全局环境；
 - 精确版本记录在`toolchain.lock`；
-- `D:\Xiang\app`尚未创建，下一步进入M1工程和本地数据基础；
-- 真机安装验证需在应用工程创建后进行。
+- `D:\Xiang\app`已创建，Android最低版本为API 29；
+- Material 3三项导航、Drift首版schema、制作类型纵切、本机身份、操作日志和MediaStore已实现；
+- 静态分析、单元/Widget测试、Debug APK构建和API 36模拟器安装已通过；
+- M1代码基线已建立，尚待连接真实Android手机验证安装。
