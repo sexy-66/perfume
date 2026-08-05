@@ -32,6 +32,11 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    lint {
+        // Flutter rewrites the ignored local.properties with valid Windows paths.
+        disable += "PropertyEscape"
+    }
 }
 
 kotlin {

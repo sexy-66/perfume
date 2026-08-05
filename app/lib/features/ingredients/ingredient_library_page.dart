@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 
 import '../../data/app_database.dart';
+import '../../data/media_store.dart';
+import 'ingredient_detail_page.dart';
+import 'ratio_ranges_page.dart';
 
 class IngredientLibraryPage extends StatefulWidget {
-  const IngredientLibraryPage({super.key, required this.database});
+  const IngredientLibraryPage({
+    super.key,
+    required this.database,
+    required this.mediaStore,
+  });
 
   final AppDatabase database;
+  final MediaStore mediaStore;
 
   @override
   State<IngredientLibraryPage> createState() => _IngredientLibraryPageState();
@@ -138,6 +146,9 @@ class _IngredientLibraryPageState extends State<IngredientLibraryPage> {
                 }
                 final items = snapshot.data ?? const [];
                 if (items.isEmpty) {
+                  if (_search.text.trim().isNotEmpty || _categoryId != null) {
+                    return const Center(child: Text('没有匹配的香料'));
+                  }
                   return Center(
                     child: FilledButton.icon(
                       onPressed: _addIngredient,
@@ -160,6 +171,7 @@ class _IngredientLibraryPageState extends State<IngredientLibraryPage> {
                       title: Text(ingredient.name),
                       subtitle: Text(details),
                       trailing: PopupMenuButton<String>(
+                        tooltip: '${ingredient.name}的更多操作',
                         onSelected: (action) => _ingredientAction(item, action),
                         itemBuilder: (_) => [
                           const PopupMenuItem(value: 'edit', child: Text('编辑')),
@@ -173,7 +185,16 @@ class _IngredientLibraryPageState extends State<IngredientLibraryPage> {
                           ),
                         ],
                       ),
-                      onTap: () => _editIngredient(item),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => IngredientDetailPage(
+                            database: widget.database,
+                            mediaStore: widget.mediaStore,
+                            ingredient: ingredient,
+                            categoryName: item.categoryName,
+                          ),
+                        ),
+                      ),
                     );
                   },
                 );
@@ -204,7 +225,9 @@ class _IngredientLibraryPageState extends State<IngredientLibraryPage> {
       _showIngredientForm(item: item);
 
   Future<void> _showIngredientForm({IngredientSummary? item}) async {
-    final categories = await widget.database.getActiveIngredientCategories();
+    final categories = await widget.database.getActiveIngredientCategories(
+      includeId: item?.ingredient.categoryId,
+    );
     if (!mounted) return;
     if (categories.isEmpty) {
       _message('请先在“管理分类”中添加香料分类');
@@ -218,34 +241,40 @@ class _IngredientLibraryPageState extends State<IngredientLibraryPage> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text(item == null ? '添加香料' : '编辑香料'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                initialValue: name,
-                autofocus: true,
-                decoration: const InputDecoration(labelText: '名称 *'),
-                onChanged: (value) => name = value,
-              ),
-              TextFormField(
-                initialValue: alias,
-                decoration: const InputDecoration(labelText: '别名'),
-                onChanged: (value) => alias = value,
-              ),
-              DropdownButtonFormField<String>(
-                initialValue: categoryId,
-                decoration: const InputDecoration(labelText: '分类 *'),
-                items: [
-                  for (final category in categories)
-                    DropdownMenuItem(
-                      value: category.id,
-                      child: Text(category.name),
-                    ),
-                ],
-                onChanged: (value) =>
-                    setDialogState(() => categoryId = value ?? categoryId),
-              ),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  initialValue: name,
+                  autofocus: true,
+                  decoration: const InputDecoration(labelText: '名称 *'),
+                  onChanged: (value) => name = value,
+                ),
+                TextFormField(
+                  initialValue: alias,
+                  decoration: const InputDecoration(labelText: '别名'),
+                  onChanged: (value) => alias = value,
+                ),
+                DropdownButtonFormField<String>(
+                  initialValue: categoryId,
+                  decoration: const InputDecoration(labelText: '分类 *'),
+                  items: [
+                    for (final category in categories)
+                      DropdownMenuItem(
+                        value: category.id,
+                        child: Text(
+                          category.isInactive
+                              ? '${category.name}（已停用）'
+                              : category.name,
+                        ),
+                      ),
+                  ],
+                  onChanged: (value) =>
+                      setDialogState(() => categoryId = value ?? categoryId),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -371,9 +400,15 @@ class IngredientCategoriesPage extends StatelessWidget {
                 subtitle: item.isInactive ? const Text('已停用') : null,
                 onTap: () => _edit(context, item),
                 trailing: PopupMenuButton<String>(
+                  tooltip: '${item.name}的更多操作',
                   onSelected: (action) => _action(context, item, action),
                   itemBuilder: (_) => [
                     const PopupMenuItem(value: 'edit', child: Text('编辑')),
+                    if (index > 0)
+                      const PopupMenuItem(value: 'up', child: Text('上移')),
+                    if (index < items.length - 1)
+                      const PopupMenuItem(value: 'down', child: Text('下移')),
+                    const PopupMenuItem(value: 'ratio', child: Text('推荐区间')),
                     PopupMenuItem(
                       value: 'inactive',
                       child: Text(item.isInactive ? '启用' : '停用'),
@@ -456,8 +491,26 @@ class IngredientCategoriesPage extends StatelessWidget {
     String action,
   ) async {
     if (action == 'edit') return _edit(context, category);
+    if (action == 'ratio') {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => RatioRangesPage(
+            database: database,
+            target: RatioRangeTarget.category,
+            targetId: category.id,
+            title: '${category.name}推荐区间',
+          ),
+        ),
+      );
+      return;
+    }
     try {
-      if (action == 'inactive') {
+      if (action == 'up' || action == 'down') {
+        await database.moveIngredientCategory(
+          category.id,
+          action == 'up' ? -1 : 1,
+        );
+      } else if (action == 'inactive') {
         await database.updateIngredientCategory(
           category.id,
           isInactive: !category.isInactive,

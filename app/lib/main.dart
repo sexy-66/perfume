@@ -7,7 +7,8 @@ import 'data/media_store.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final database = AppDatabase.defaults();
+  final mediaStore = await MediaStore.defaults();
   await database.initialize();
-  await (await MediaStore.defaults()).initialize();
-  runApp(XiangApp(database: database));
+  await mediaStore.initialize();
+  runApp(XiangApp(database: database, mediaStore: mediaStore));
 }

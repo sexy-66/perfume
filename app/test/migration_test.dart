@@ -63,5 +63,14 @@ void main() {
     );
     expect(await database.select(database.ingredientCategories).get(), isEmpty);
     expect(await database.select(database.assets).get(), isEmpty);
+    expect(
+      (await database.customSelect('PRAGMA integrity_check').getSingle())
+          .read<String>('integrity_check'),
+      'ok',
+    );
+    expect(
+      await database.customSelect('PRAGMA foreign_key_check').get(),
+      isEmpty,
+    );
   });
 }

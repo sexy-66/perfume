@@ -3,4 +3,5 @@
 .android/
 .home/
 .tmp/
+.qa/
 .secrets/

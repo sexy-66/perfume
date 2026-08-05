@@ -1939,17 +1939,6 @@ class $IngredientSkusTable extends IngredientSkus
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _purchaseUrlMeta = const VerificationMeta(
-    'purchaseUrl',
-  );
-  @override
-  late final GeneratedColumn<String> purchaseUrl = GeneratedColumn<String>(
-    'purchase_url',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
   static const VerificationMeta _notesMeta = const VerificationMeta('notes');
   @override
   late final GeneratedColumn<String> notes = GeneratedColumn<String>(
@@ -1987,7 +1976,6 @@ class $IngredientSkusTable extends IngredientSkus
     imageHash,
     supplier,
     origin,
-    purchaseUrl,
     notes,
     isInactive,
   ];
@@ -2088,15 +2076,6 @@ class $IngredientSkusTable extends IngredientSkus
         origin.isAcceptableOrUnknown(data['origin']!, _originMeta),
       );
     }
-    if (data.containsKey('purchase_url')) {
-      context.handle(
-        _purchaseUrlMeta,
-        purchaseUrl.isAcceptableOrUnknown(
-          data['purchase_url']!,
-          _purchaseUrlMeta,
-        ),
-      );
-    }
     if (data.containsKey('notes')) {
       context.handle(
         _notesMeta,
@@ -2162,10 +2141,6 @@ class $IngredientSkusTable extends IngredientSkus
         DriftSqlType.string,
         data['${effectivePrefix}origin'],
       ),
-      purchaseUrl: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}purchase_url'],
-      ),
       notes: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
@@ -2196,7 +2171,6 @@ class IngredientSkusData extends DataClass
   final String? imageHash;
   final String? supplier;
   final String? origin;
-  final String? purchaseUrl;
   final String? notes;
   final bool isInactive;
   const IngredientSkusData({
@@ -2211,7 +2185,6 @@ class IngredientSkusData extends DataClass
     this.imageHash,
     this.supplier,
     this.origin,
-    this.purchaseUrl,
     this.notes,
     required this.isInactive,
   });
@@ -2238,9 +2211,6 @@ class IngredientSkusData extends DataClass
     }
     if (!nullToAbsent || origin != null) {
       map['origin'] = Variable<String>(origin);
-    }
-    if (!nullToAbsent || purchaseUrl != null) {
-      map['purchase_url'] = Variable<String>(purchaseUrl);
     }
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
@@ -2272,9 +2242,6 @@ class IngredientSkusData extends DataClass
       origin: origin == null && nullToAbsent
           ? const Value.absent()
           : Value(origin),
-      purchaseUrl: purchaseUrl == null && nullToAbsent
-          ? const Value.absent()
-          : Value(purchaseUrl),
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
@@ -2299,7 +2266,6 @@ class IngredientSkusData extends DataClass
       imageHash: serializer.fromJson<String?>(json['imageHash']),
       supplier: serializer.fromJson<String?>(json['supplier']),
       origin: serializer.fromJson<String?>(json['origin']),
-      purchaseUrl: serializer.fromJson<String?>(json['purchaseUrl']),
       notes: serializer.fromJson<String?>(json['notes']),
       isInactive: serializer.fromJson<bool>(json['isInactive']),
     );
@@ -2319,7 +2285,6 @@ class IngredientSkusData extends DataClass
       'imageHash': serializer.toJson<String?>(imageHash),
       'supplier': serializer.toJson<String?>(supplier),
       'origin': serializer.toJson<String?>(origin),
-      'purchaseUrl': serializer.toJson<String?>(purchaseUrl),
       'notes': serializer.toJson<String?>(notes),
       'isInactive': serializer.toJson<bool>(isInactive),
     };
@@ -2337,7 +2302,6 @@ class IngredientSkusData extends DataClass
     Value<String?> imageHash = const Value.absent(),
     Value<String?> supplier = const Value.absent(),
     Value<String?> origin = const Value.absent(),
-    Value<String?> purchaseUrl = const Value.absent(),
     Value<String?> notes = const Value.absent(),
     bool? isInactive,
   }) => IngredientSkusData(
@@ -2352,7 +2316,6 @@ class IngredientSkusData extends DataClass
     imageHash: imageHash.present ? imageHash.value : this.imageHash,
     supplier: supplier.present ? supplier.value : this.supplier,
     origin: origin.present ? origin.value : this.origin,
-    purchaseUrl: purchaseUrl.present ? purchaseUrl.value : this.purchaseUrl,
     notes: notes.present ? notes.value : this.notes,
     isInactive: isInactive ?? this.isInactive,
   );
@@ -2379,9 +2342,6 @@ class IngredientSkusData extends DataClass
       imageHash: data.imageHash.present ? data.imageHash.value : this.imageHash,
       supplier: data.supplier.present ? data.supplier.value : this.supplier,
       origin: data.origin.present ? data.origin.value : this.origin,
-      purchaseUrl: data.purchaseUrl.present
-          ? data.purchaseUrl.value
-          : this.purchaseUrl,
       notes: data.notes.present ? data.notes.value : this.notes,
       isInactive: data.isInactive.present
           ? data.isInactive.value
@@ -2403,7 +2363,6 @@ class IngredientSkusData extends DataClass
           ..write('imageHash: $imageHash, ')
           ..write('supplier: $supplier, ')
           ..write('origin: $origin, ')
-          ..write('purchaseUrl: $purchaseUrl, ')
           ..write('notes: $notes, ')
           ..write('isInactive: $isInactive')
           ..write(')'))
@@ -2423,7 +2382,6 @@ class IngredientSkusData extends DataClass
     imageHash,
     supplier,
     origin,
-    purchaseUrl,
     notes,
     isInactive,
   );
@@ -2442,7 +2400,6 @@ class IngredientSkusData extends DataClass
           other.imageHash == this.imageHash &&
           other.supplier == this.supplier &&
           other.origin == this.origin &&
-          other.purchaseUrl == this.purchaseUrl &&
           other.notes == this.notes &&
           other.isInactive == this.isInactive);
 }
@@ -2459,7 +2416,6 @@ class IngredientSkusCompanion extends UpdateCompanion<IngredientSkusData> {
   final Value<String?> imageHash;
   final Value<String?> supplier;
   final Value<String?> origin;
-  final Value<String?> purchaseUrl;
   final Value<String?> notes;
   final Value<bool> isInactive;
   final Value<int> rowid;
@@ -2475,7 +2431,6 @@ class IngredientSkusCompanion extends UpdateCompanion<IngredientSkusData> {
     this.imageHash = const Value.absent(),
     this.supplier = const Value.absent(),
     this.origin = const Value.absent(),
-    this.purchaseUrl = const Value.absent(),
     this.notes = const Value.absent(),
     this.isInactive = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2492,7 +2447,6 @@ class IngredientSkusCompanion extends UpdateCompanion<IngredientSkusData> {
     this.imageHash = const Value.absent(),
     this.supplier = const Value.absent(),
     this.origin = const Value.absent(),
-    this.purchaseUrl = const Value.absent(),
     this.notes = const Value.absent(),
     this.isInactive = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2513,7 +2467,6 @@ class IngredientSkusCompanion extends UpdateCompanion<IngredientSkusData> {
     Expression<String>? imageHash,
     Expression<String>? supplier,
     Expression<String>? origin,
-    Expression<String>? purchaseUrl,
     Expression<String>? notes,
     Expression<bool>? isInactive,
     Expression<int>? rowid,
@@ -2530,7 +2483,6 @@ class IngredientSkusCompanion extends UpdateCompanion<IngredientSkusData> {
       if (imageHash != null) 'image_hash': imageHash,
       if (supplier != null) 'supplier': supplier,
       if (origin != null) 'origin': origin,
-      if (purchaseUrl != null) 'purchase_url': purchaseUrl,
       if (notes != null) 'notes': notes,
       if (isInactive != null) 'is_inactive': isInactive,
       if (rowid != null) 'rowid': rowid,
@@ -2549,7 +2501,6 @@ class IngredientSkusCompanion extends UpdateCompanion<IngredientSkusData> {
     Value<String?>? imageHash,
     Value<String?>? supplier,
     Value<String?>? origin,
-    Value<String?>? purchaseUrl,
     Value<String?>? notes,
     Value<bool>? isInactive,
     Value<int>? rowid,
@@ -2566,7 +2517,6 @@ class IngredientSkusCompanion extends UpdateCompanion<IngredientSkusData> {
       imageHash: imageHash ?? this.imageHash,
       supplier: supplier ?? this.supplier,
       origin: origin ?? this.origin,
-      purchaseUrl: purchaseUrl ?? this.purchaseUrl,
       notes: notes ?? this.notes,
       isInactive: isInactive ?? this.isInactive,
       rowid: rowid ?? this.rowid,
@@ -2609,9 +2559,6 @@ class IngredientSkusCompanion extends UpdateCompanion<IngredientSkusData> {
     if (origin.present) {
       map['origin'] = Variable<String>(origin.value);
     }
-    if (purchaseUrl.present) {
-      map['purchase_url'] = Variable<String>(purchaseUrl.value);
-    }
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
@@ -2638,7 +2585,6 @@ class IngredientSkusCompanion extends UpdateCompanion<IngredientSkusData> {
           ..write('imageHash: $imageHash, ')
           ..write('supplier: $supplier, ')
           ..write('origin: $origin, ')
-          ..write('purchaseUrl: $purchaseUrl, ')
           ..write('notes: $notes, ')
           ..write('isInactive: $isInactive, ')
           ..write('rowid: $rowid')
@@ -9125,17 +9071,6 @@ class $AssetsTable extends Assets with TableInfo<$AssetsTable, Asset> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _purchaseUrlMeta = const VerificationMeta(
-    'purchaseUrl',
-  );
-  @override
-  late final GeneratedColumn<String> purchaseUrl = GeneratedColumn<String>(
-    'purchase_url',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
   static const VerificationMeta _notesMeta = const VerificationMeta('notes');
   @override
   late final GeneratedColumn<String> notes = GeneratedColumn<String>(
@@ -9186,7 +9121,6 @@ class $AssetsTable extends Assets with TableInfo<$AssetsTable, Asset> {
     imageHash,
     quantity,
     location,
-    purchaseUrl,
     notes,
     lastCountedAtUtc,
     isInactive,
@@ -9295,15 +9229,6 @@ class $AssetsTable extends Assets with TableInfo<$AssetsTable, Asset> {
         location.isAcceptableOrUnknown(data['location']!, _locationMeta),
       );
     }
-    if (data.containsKey('purchase_url')) {
-      context.handle(
-        _purchaseUrlMeta,
-        purchaseUrl.isAcceptableOrUnknown(
-          data['purchase_url']!,
-          _purchaseUrlMeta,
-        ),
-      );
-    }
     if (data.containsKey('notes')) {
       context.handle(
         _notesMeta,
@@ -9382,10 +9307,6 @@ class $AssetsTable extends Assets with TableInfo<$AssetsTable, Asset> {
         DriftSqlType.string,
         data['${effectivePrefix}location'],
       ),
-      purchaseUrl: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}purchase_url'],
-      ),
       notes: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
@@ -9420,7 +9341,6 @@ class Asset extends DataClass implements Insertable<Asset> {
   final String? imageHash;
   final int quantity;
   final String? location;
-  final String? purchaseUrl;
   final String? notes;
   final DateTime? lastCountedAtUtc;
   final bool isInactive;
@@ -9437,7 +9357,6 @@ class Asset extends DataClass implements Insertable<Asset> {
     this.imageHash,
     required this.quantity,
     this.location,
-    this.purchaseUrl,
     this.notes,
     this.lastCountedAtUtc,
     required this.isInactive,
@@ -9464,9 +9383,6 @@ class Asset extends DataClass implements Insertable<Asset> {
     map['quantity'] = Variable<int>(quantity);
     if (!nullToAbsent || location != null) {
       map['location'] = Variable<String>(location);
-    }
-    if (!nullToAbsent || purchaseUrl != null) {
-      map['purchase_url'] = Variable<String>(purchaseUrl);
     }
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
@@ -9500,9 +9416,6 @@ class Asset extends DataClass implements Insertable<Asset> {
       location: location == null && nullToAbsent
           ? const Value.absent()
           : Value(location),
-      purchaseUrl: purchaseUrl == null && nullToAbsent
-          ? const Value.absent()
-          : Value(purchaseUrl),
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
@@ -9531,7 +9444,6 @@ class Asset extends DataClass implements Insertable<Asset> {
       imageHash: serializer.fromJson<String?>(json['imageHash']),
       quantity: serializer.fromJson<int>(json['quantity']),
       location: serializer.fromJson<String?>(json['location']),
-      purchaseUrl: serializer.fromJson<String?>(json['purchaseUrl']),
       notes: serializer.fromJson<String?>(json['notes']),
       lastCountedAtUtc: serializer.fromJson<DateTime?>(
         json['lastCountedAtUtc'],
@@ -9555,7 +9467,6 @@ class Asset extends DataClass implements Insertable<Asset> {
       'imageHash': serializer.toJson<String?>(imageHash),
       'quantity': serializer.toJson<int>(quantity),
       'location': serializer.toJson<String?>(location),
-      'purchaseUrl': serializer.toJson<String?>(purchaseUrl),
       'notes': serializer.toJson<String?>(notes),
       'lastCountedAtUtc': serializer.toJson<DateTime?>(lastCountedAtUtc),
       'isInactive': serializer.toJson<bool>(isInactive),
@@ -9575,7 +9486,6 @@ class Asset extends DataClass implements Insertable<Asset> {
     Value<String?> imageHash = const Value.absent(),
     int? quantity,
     Value<String?> location = const Value.absent(),
-    Value<String?> purchaseUrl = const Value.absent(),
     Value<String?> notes = const Value.absent(),
     Value<DateTime?> lastCountedAtUtc = const Value.absent(),
     bool? isInactive,
@@ -9592,7 +9502,6 @@ class Asset extends DataClass implements Insertable<Asset> {
     imageHash: imageHash.present ? imageHash.value : this.imageHash,
     quantity: quantity ?? this.quantity,
     location: location.present ? location.value : this.location,
-    purchaseUrl: purchaseUrl.present ? purchaseUrl.value : this.purchaseUrl,
     notes: notes.present ? notes.value : this.notes,
     lastCountedAtUtc: lastCountedAtUtc.present
         ? lastCountedAtUtc.value
@@ -9623,9 +9532,6 @@ class Asset extends DataClass implements Insertable<Asset> {
       imageHash: data.imageHash.present ? data.imageHash.value : this.imageHash,
       quantity: data.quantity.present ? data.quantity.value : this.quantity,
       location: data.location.present ? data.location.value : this.location,
-      purchaseUrl: data.purchaseUrl.present
-          ? data.purchaseUrl.value
-          : this.purchaseUrl,
       notes: data.notes.present ? data.notes.value : this.notes,
       lastCountedAtUtc: data.lastCountedAtUtc.present
           ? data.lastCountedAtUtc.value
@@ -9651,7 +9557,6 @@ class Asset extends DataClass implements Insertable<Asset> {
           ..write('imageHash: $imageHash, ')
           ..write('quantity: $quantity, ')
           ..write('location: $location, ')
-          ..write('purchaseUrl: $purchaseUrl, ')
           ..write('notes: $notes, ')
           ..write('lastCountedAtUtc: $lastCountedAtUtc, ')
           ..write('isInactive: $isInactive')
@@ -9673,7 +9578,6 @@ class Asset extends DataClass implements Insertable<Asset> {
     imageHash,
     quantity,
     location,
-    purchaseUrl,
     notes,
     lastCountedAtUtc,
     isInactive,
@@ -9694,7 +9598,6 @@ class Asset extends DataClass implements Insertable<Asset> {
           other.imageHash == this.imageHash &&
           other.quantity == this.quantity &&
           other.location == this.location &&
-          other.purchaseUrl == this.purchaseUrl &&
           other.notes == this.notes &&
           other.lastCountedAtUtc == this.lastCountedAtUtc &&
           other.isInactive == this.isInactive);
@@ -9713,7 +9616,6 @@ class AssetsCompanion extends UpdateCompanion<Asset> {
   final Value<String?> imageHash;
   final Value<int> quantity;
   final Value<String?> location;
-  final Value<String?> purchaseUrl;
   final Value<String?> notes;
   final Value<DateTime?> lastCountedAtUtc;
   final Value<bool> isInactive;
@@ -9731,7 +9633,6 @@ class AssetsCompanion extends UpdateCompanion<Asset> {
     this.imageHash = const Value.absent(),
     this.quantity = const Value.absent(),
     this.location = const Value.absent(),
-    this.purchaseUrl = const Value.absent(),
     this.notes = const Value.absent(),
     this.lastCountedAtUtc = const Value.absent(),
     this.isInactive = const Value.absent(),
@@ -9750,7 +9651,6 @@ class AssetsCompanion extends UpdateCompanion<Asset> {
     this.imageHash = const Value.absent(),
     required int quantity,
     this.location = const Value.absent(),
-    this.purchaseUrl = const Value.absent(),
     this.notes = const Value.absent(),
     this.lastCountedAtUtc = const Value.absent(),
     this.isInactive = const Value.absent(),
@@ -9775,7 +9675,6 @@ class AssetsCompanion extends UpdateCompanion<Asset> {
     Expression<String>? imageHash,
     Expression<int>? quantity,
     Expression<String>? location,
-    Expression<String>? purchaseUrl,
     Expression<String>? notes,
     Expression<DateTime>? lastCountedAtUtc,
     Expression<bool>? isInactive,
@@ -9794,7 +9693,6 @@ class AssetsCompanion extends UpdateCompanion<Asset> {
       if (imageHash != null) 'image_hash': imageHash,
       if (quantity != null) 'quantity': quantity,
       if (location != null) 'location': location,
-      if (purchaseUrl != null) 'purchase_url': purchaseUrl,
       if (notes != null) 'notes': notes,
       if (lastCountedAtUtc != null) 'last_counted_at_utc': lastCountedAtUtc,
       if (isInactive != null) 'is_inactive': isInactive,
@@ -9815,7 +9713,6 @@ class AssetsCompanion extends UpdateCompanion<Asset> {
     Value<String?>? imageHash,
     Value<int>? quantity,
     Value<String?>? location,
-    Value<String?>? purchaseUrl,
     Value<String?>? notes,
     Value<DateTime?>? lastCountedAtUtc,
     Value<bool>? isInactive,
@@ -9834,7 +9731,6 @@ class AssetsCompanion extends UpdateCompanion<Asset> {
       imageHash: imageHash ?? this.imageHash,
       quantity: quantity ?? this.quantity,
       location: location ?? this.location,
-      purchaseUrl: purchaseUrl ?? this.purchaseUrl,
       notes: notes ?? this.notes,
       lastCountedAtUtc: lastCountedAtUtc ?? this.lastCountedAtUtc,
       isInactive: isInactive ?? this.isInactive,
@@ -9881,9 +9777,6 @@ class AssetsCompanion extends UpdateCompanion<Asset> {
     if (location.present) {
       map['location'] = Variable<String>(location.value);
     }
-    if (purchaseUrl.present) {
-      map['purchase_url'] = Variable<String>(purchaseUrl.value);
-    }
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
@@ -9914,7 +9807,6 @@ class AssetsCompanion extends UpdateCompanion<Asset> {
           ..write('imageHash: $imageHash, ')
           ..write('quantity: $quantity, ')
           ..write('location: $location, ')
-          ..write('purchaseUrl: $purchaseUrl, ')
           ..write('notes: $notes, ')
           ..write('lastCountedAtUtc: $lastCountedAtUtc, ')
           ..write('isInactive: $isInactive, ')
@@ -12892,7 +12784,6 @@ typedef $$IngredientSkusTableCreateCompanionBuilder =
       Value<String?> imageHash,
       Value<String?> supplier,
       Value<String?> origin,
-      Value<String?> purchaseUrl,
       Value<String?> notes,
       Value<bool> isInactive,
       Value<int> rowid,
@@ -12910,7 +12801,6 @@ typedef $$IngredientSkusTableUpdateCompanionBuilder =
       Value<String?> imageHash,
       Value<String?> supplier,
       Value<String?> origin,
-      Value<String?> purchaseUrl,
       Value<String?> notes,
       Value<bool> isInactive,
       Value<int> rowid,
@@ -13049,11 +12939,6 @@ class $$IngredientSkusTableFilterComposer
 
   ColumnFilters<String> get origin => $composableBuilder(
     column: $table.origin,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get purchaseUrl => $composableBuilder(
-    column: $table.purchaseUrl,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -13200,11 +13085,6 @@ class $$IngredientSkusTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get purchaseUrl => $composableBuilder(
-    column: $table.purchaseUrl,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get notes => $composableBuilder(
     column: $table.notes,
     builder: (column) => ColumnOrderings(column),
@@ -13285,11 +13165,6 @@ class $$IngredientSkusTableAnnotationComposer
 
   GeneratedColumn<String> get origin =>
       $composableBuilder(column: $table.origin, builder: (column) => column);
-
-  GeneratedColumn<String> get purchaseUrl => $composableBuilder(
-    column: $table.purchaseUrl,
-    builder: (column) => column,
-  );
 
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
@@ -13420,7 +13295,6 @@ class $$IngredientSkusTableTableManager
                 Value<String?> imageHash = const Value.absent(),
                 Value<String?> supplier = const Value.absent(),
                 Value<String?> origin = const Value.absent(),
-                Value<String?> purchaseUrl = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<bool> isInactive = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -13436,7 +13310,6 @@ class $$IngredientSkusTableTableManager
                 imageHash: imageHash,
                 supplier: supplier,
                 origin: origin,
-                purchaseUrl: purchaseUrl,
                 notes: notes,
                 isInactive: isInactive,
                 rowid: rowid,
@@ -13454,7 +13327,6 @@ class $$IngredientSkusTableTableManager
                 Value<String?> imageHash = const Value.absent(),
                 Value<String?> supplier = const Value.absent(),
                 Value<String?> origin = const Value.absent(),
-                Value<String?> purchaseUrl = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<bool> isInactive = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -13470,7 +13342,6 @@ class $$IngredientSkusTableTableManager
                 imageHash: imageHash,
                 supplier: supplier,
                 origin: origin,
-                purchaseUrl: purchaseUrl,
                 notes: notes,
                 isInactive: isInactive,
                 rowid: rowid,
@@ -18352,7 +18223,6 @@ typedef $$AssetsTableCreateCompanionBuilder =
       Value<String?> imageHash,
       required int quantity,
       Value<String?> location,
-      Value<String?> purchaseUrl,
       Value<String?> notes,
       Value<DateTime?> lastCountedAtUtc,
       Value<bool> isInactive,
@@ -18372,7 +18242,6 @@ typedef $$AssetsTableUpdateCompanionBuilder =
       Value<String?> imageHash,
       Value<int> quantity,
       Value<String?> location,
-      Value<String?> purchaseUrl,
       Value<String?> notes,
       Value<DateTime?> lastCountedAtUtc,
       Value<bool> isInactive,
@@ -18475,11 +18344,6 @@ class $$AssetsTableFilterComposer
 
   ColumnFilters<String> get location => $composableBuilder(
     column: $table.location,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get purchaseUrl => $composableBuilder(
-    column: $table.purchaseUrl,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -18604,11 +18468,6 @@ class $$AssetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get purchaseUrl => $composableBuilder(
-    column: $table.purchaseUrl,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get notes => $composableBuilder(
     column: $table.notes,
     builder: (column) => ColumnOrderings(column),
@@ -18718,11 +18577,6 @@ class $$AssetsTableAnnotationComposer
   GeneratedColumn<String> get location =>
       $composableBuilder(column: $table.location, builder: (column) => column);
 
-  GeneratedColumn<String> get purchaseUrl => $composableBuilder(
-    column: $table.purchaseUrl,
-    builder: (column) => column,
-  );
-
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
 
@@ -18823,7 +18677,6 @@ class $$AssetsTableTableManager
                 Value<String?> imageHash = const Value.absent(),
                 Value<int> quantity = const Value.absent(),
                 Value<String?> location = const Value.absent(),
-                Value<String?> purchaseUrl = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime?> lastCountedAtUtc = const Value.absent(),
                 Value<bool> isInactive = const Value.absent(),
@@ -18841,7 +18694,6 @@ class $$AssetsTableTableManager
                 imageHash: imageHash,
                 quantity: quantity,
                 location: location,
-                purchaseUrl: purchaseUrl,
                 notes: notes,
                 lastCountedAtUtc: lastCountedAtUtc,
                 isInactive: isInactive,
@@ -18861,7 +18713,6 @@ class $$AssetsTableTableManager
                 Value<String?> imageHash = const Value.absent(),
                 required int quantity,
                 Value<String?> location = const Value.absent(),
-                Value<String?> purchaseUrl = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime?> lastCountedAtUtc = const Value.absent(),
                 Value<bool> isInactive = const Value.absent(),
@@ -18879,7 +18730,6 @@ class $$AssetsTableTableManager
                 imageHash: imageHash,
                 quantity: quantity,
                 location: location,
-                purchaseUrl: purchaseUrl,
                 notes: notes,
                 lastCountedAtUtc: lastCountedAtUtc,
                 isInactive: isInactive,
