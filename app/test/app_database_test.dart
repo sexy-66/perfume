@@ -42,4 +42,114 @@ void main() {
     expect(() => database.createProductionType('  '), throwsArgumentError);
     expect(await database.select(database.productionTypes).get(), hasLength(4));
   });
+
+  test('ingredient category changes are logged and reversible', () async {
+    final category = await database.createIngredientCategory('  木类  ');
+    await database.updateIngredientCategory(
+      category.id,
+      name: '木本',
+      isInactive: true,
+    );
+    await database.deleteIngredientCategory(category.id);
+
+    expect(await database.watchIngredientCategories().first, isEmpty);
+    var deleted = await (database.select(
+      database.ingredientCategories,
+    )..where((row) => row.id.equals(category.id))).getSingle();
+    expect(
+      (deleted.name, deleted.isInactive, deleted.isDeleted),
+      ('木本', true, true),
+    );
+
+    await database.restoreIngredientCategory(category.id);
+    deleted = await (database.select(
+      database.ingredientCategories,
+    )..where((row) => row.id.equals(category.id))).getSingle();
+    expect(deleted.isDeleted, false);
+    expect(
+      (await database.select(database.syncOperations).get()).map(
+        (operation) => operation.operationKind,
+      ),
+      ['create', 'update', 'delete', 'restore'],
+    );
+    expect((await database.localDevice()).deviceSeq, 4);
+  });
+
+  test('rejects invalid M2 records at the database boundary', () async {
+    expect(
+      () => database
+          .into(database.customers)
+          .insert(
+            CustomersCompanion.insert(
+              id: 'customer',
+              revisionId: 'revision',
+              updatedByDevice: 'device',
+              updatedAtUtc: DateTime.utc(2026),
+              createdAtUtc: DateTime.utc(2026),
+            ),
+          ),
+      throwsA(anything),
+    );
+    expect(
+      () => database
+          .into(database.assets)
+          .insert(
+            AssetsCompanion.insert(
+              id: 'asset',
+              revisionId: 'revision',
+              updatedByDevice: 'device',
+              updatedAtUtc: DateTime.utc(2026),
+              categoryId: 'missing-category',
+              name: '压香器',
+              quantity: -1,
+            ),
+          ),
+      throwsA(anything),
+    );
+  });
+
+  test('ingredient library searches, filters and logs changes', () async {
+    final wood = await database.createIngredientCategory('木类');
+    final flower = await database.createIngredientCategory('花类');
+    final ingredient = await database.createIngredient(
+      name: '沉香',
+      alias: '莞香',
+      categoryId: wood.id,
+    );
+
+    expect(
+      (await database.watchIngredients(search: '莞').first).single.categoryName,
+      '木类',
+    );
+    expect(
+      await database.watchIngredients(categoryId: flower.id).first,
+      isEmpty,
+    );
+
+    await database.updateIngredient(
+      ingredient.id,
+      name: '沉香木',
+      categoryId: flower.id,
+      isInactive: true,
+    );
+    expect(await database.watchIngredients().first, isEmpty);
+    expect(
+      (await database.watchIngredients(includeInactive: true).first)
+          .single
+          .categoryName,
+      '花类',
+    );
+
+    await database.deleteIngredient(ingredient.id);
+    expect(
+      await database.watchIngredients(includeInactive: true).first,
+      isEmpty,
+    );
+    expect(
+      (await database.select(database.syncOperations).get()).map(
+        (operation) => operation.operationKind,
+      ),
+      ['create', 'create', 'create', 'update', 'delete'],
+    );
+  });
 }

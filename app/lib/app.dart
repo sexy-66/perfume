@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'data/app_database.dart';
+import 'features/ingredients/ingredient_library_page.dart';
 
 class XiangApp extends StatelessWidget {
   const XiangApp({super.key, required this.database});
@@ -16,13 +17,15 @@ class XiangApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff6b4f3a)),
         useMaterial3: true,
       ),
-      home: const _Shell(),
+      home: _Shell(database: database),
     );
   }
 }
 
 class _Shell extends StatefulWidget {
-  const _Shell();
+  const _Shell({required this.database});
+
+  final AppDatabase database;
 
   @override
   State<_Shell> createState() => _ShellState();
@@ -31,16 +34,15 @@ class _Shell extends StatefulWidget {
 class _ShellState extends State<_Shell> {
   var _index = 0;
 
-  static const _pages = <Widget>[
-    _Page(title: '主页', icon: Icons.home_outlined),
-    _Page(title: '香方', icon: Icons.menu_book_outlined),
-    _MorePage(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final pages = <Widget>[
+      const _Page(title: '主页', icon: Icons.home_outlined),
+      const _Page(title: '香方', icon: Icons.menu_book_outlined),
+      _MorePage(database: widget.database),
+    ];
     return Scaffold(
-      body: IndexedStack(index: _index, children: _pages),
+      body: IndexedStack(index: _index, children: pages),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (index) => setState(() => _index = index),
@@ -79,7 +81,9 @@ class _Page extends StatelessWidget {
 }
 
 class _MorePage extends StatelessWidget {
-  const _MorePage();
+  const _MorePage({required this.database});
+
+  final AppDatabase database;
 
   static const _items = <String>[
     '香料库',
@@ -105,6 +109,15 @@ class _MorePage extends StatelessWidget {
             ListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(item),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: item == '香料库'
+                  ? () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) =>
+                            IngredientLibraryPage(database: database),
+                      ),
+                    )
+                  : null,
             ),
         ],
       ),

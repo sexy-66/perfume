@@ -621,5 +621,6 @@ adb install -r <apk>
 - 精确版本记录在`toolchain.lock`；
 - `D:\Xiang\app`已创建，Android最低版本为API 29；
 - Material 3三项导航、Drift首版schema、制作类型纵切、本机身份、操作日志和MediaStore已实现；
+- M2已开始：资料库表结构、v1到v2前向迁移，以及香料分类和香料库首个可用纵切已实现；
 - 静态分析、单元/Widget测试、Debug APK构建和API 36模拟器安装已通过；
 - M1代码基线已建立，尚待连接真实Android手机验证安装。
