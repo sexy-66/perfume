@@ -1,0 +1,6 @@
+.toolchain/
+.cache/
+.android/
+.home/
+.tmp/
+.secrets/
