@@ -291,6 +291,7 @@ class _AssetInventoryPageState extends State<AssetInventoryPage> {
                   decoration: const InputDecoration(labelText: '名称 *'),
                   onChanged: (value) => name = value,
                 ),
+                const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: categoryId,
                   decoration: const InputDecoration(labelText: '分类 *'),
@@ -305,6 +306,7 @@ class _AssetInventoryPageState extends State<AssetInventoryPage> {
                   ],
                   onChanged: (value) => setState(() => categoryId = value!),
                 ),
+                const SizedBox(height: 12),
                 DropdownButtonFormField<String?>(
                   initialValue: statusId,
                   decoration: const InputDecoration(labelText: '状态'),
@@ -320,21 +322,27 @@ class _AssetInventoryPageState extends State<AssetInventoryPage> {
                   ],
                   onChanged: (value) => setState(() => statusId = value),
                 ),
+                const SizedBox(height: 12),
                 TextFormField(
                   initialValue: quantity,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(labelText: '当前数量 *'),
                   onChanged: (value) => quantity = value,
                 ),
+                const SizedBox(height: 12),
                 TextFormField(
                   initialValue: location,
                   decoration: const InputDecoration(labelText: '存放位置'),
                   onChanged: (value) => location = value,
                 ),
+                const SizedBox(height: 12),
                 TextFormField(
                   initialValue: notes,
                   maxLines: 3,
-                  decoration: const InputDecoration(labelText: '备注'),
+                  decoration: const InputDecoration(
+                    labelText: '备注',
+                    alignLabelWithHint: true,
+                  ),
                   onChanged: (value) => notes = value,
                 ),
               ],
@@ -524,6 +532,9 @@ class _AssetInventoryPageState extends State<AssetInventoryPage> {
                 const Text('删除后可在最近删除中恢复。'),
                 const SizedBox(height: 20),
                 FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xffff3b30),
+                  ),
                   onPressed: () => Navigator.pop(context, true),
                   child: const Text('确认删除'),
                 ),
@@ -756,6 +767,9 @@ Future<bool> _confirmOptionDelete(BuildContext context, String title) async =>
               const Text('删除后可在最近删除中恢复。'),
               const SizedBox(height: 20),
               FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xffff3b30),
+                ),
                 onPressed: () => Navigator.pop(context, true),
                 child: const Text('确认删除'),
               ),

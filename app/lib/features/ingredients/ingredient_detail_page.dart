@@ -58,16 +58,46 @@ class _IngredientDetailPageState extends State<IngredientDetailPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: Text(
-              <String?>[
-                widget.categoryName,
-                widget.ingredient.alias,
-              ].whereType<String>().join(' · '),
-              style: Theme.of(context).textTheme.bodyLarge,
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Material(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(13),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.ingredient.name,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      <String?>[
+                        widget.categoryName,
+                        widget.ingredient.alias,
+                      ].whereType<String>().join(' · '),
+                      style: const TextStyle(color: Color(0xff636366)),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Text('SKU', style: Theme.of(context).textTheme.titleMedium),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: () => _editSku(),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('添加 SKU'),
+                ),
+              ],
+            ),
+          ),
           Expanded(
             child: StreamBuilder<List<IngredientSkusData>>(
               stream: _skus,
@@ -77,16 +107,42 @@ class _IngredientDetailPageState extends State<IngredientDetailPage> {
                 }
                 final items = snapshot.data ?? const [];
                 if (items.isEmpty) {
-                  return Center(
-                    child: FilledButton.icon(
-                      onPressed: () => _editSku(),
-                      icon: const Icon(Icons.add),
-                      label: const Text('添加第一个 SKU'),
+                  return Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Material(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(13),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.inventory_2_outlined,
+                              size: 36,
+                              color: Color(0xff636366),
+                            ),
+                            const SizedBox(height: 10),
+                            const Text('还没有 SKU'),
+                            const SizedBox(height: 4),
+                            const Text(
+                              '添加品牌、产地和实物图片',
+                              style: TextStyle(color: Color(0xff636366)),
+                            ),
+                            const SizedBox(height: 12),
+                            FilledButton(
+                              onPressed: () => _editSku(),
+                              child: const Text('添加第一个 SKU'),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   );
                 }
-                return ListView.builder(
+                return ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 112),
                   itemCount: items.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
                   itemBuilder: (context, index) {
                     final sku = items[index];
                     final details = <String?>[
@@ -94,56 +150,78 @@ class _IngredientDetailPageState extends State<IngredientDetailPage> {
                       sku.origin,
                       if (sku.isInactive) '已停用',
                     ].whereType<String>().join(' · ');
-                    return ListTile(
-                      leading: sku.imageHash == null
-                          ? const SizedBox.square(
-                              dimension: 56,
-                              child: Icon(Icons.inventory_2_outlined),
-                            )
-                          : ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.file(
-                                widget.mediaStore.fileFor(sku.imageHash!),
-                                width: 56,
-                                height: 56,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) =>
-                                    const SizedBox.square(
-                                      dimension: 56,
-                                      child: Icon(Icons.broken_image_outlined),
+                    return Material(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(13),
+                      clipBehavior: Clip.antiAlias,
+                      child: ListTile(
+                        minTileHeight: 96,
+                        leading: sku.imageHash == null
+                            ? const SizedBox.square(
+                                dimension: 72,
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    color: Color(0xfff2f2f7),
+                                    borderRadius: BorderRadius.all(
+                                      Radius.circular(9),
                                     ),
+                                  ),
+                                  child: Icon(Icons.inventory_2_outlined),
+                                ),
+                              )
+                            : ClipRRect(
+                                borderRadius: BorderRadius.circular(9),
+                                child: ColoredBox(
+                                  color: const Color(0xfff2f2f7),
+                                  child: Image.file(
+                                    widget.mediaStore.fileFor(sku.imageHash!),
+                                    width: 72,
+                                    height: 72,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, _, _) =>
+                                        const SizedBox.square(
+                                          dimension: 72,
+                                          child: Icon(
+                                            Icons.broken_image_outlined,
+                                          ),
+                                        ),
+                                  ),
+                                ),
                               ),
-                            ),
-                      title: Text(sku.skuCode ?? '未编号 SKU'),
-                      subtitle: details.isEmpty ? null : Text(details),
-                      onTap: () => _editSku(sku),
-                      trailing: PopupMenuButton<String>(
-                        tooltip: '${sku.skuCode ?? '未编号 SKU'}的更多操作',
-                        onSelected: (action) => _skuAction(sku, action),
-                        itemBuilder: (_) => [
-                          const PopupMenuItem(value: 'edit', child: Text('编辑')),
-                          const PopupMenuItem(
-                            value: 'image',
-                            child: Text('选择图片'),
-                          ),
-                          if (sku.imageHash != null)
+                        title: Text(sku.skuCode ?? '未编号 SKU'),
+                        subtitle: details.isEmpty ? null : Text(details),
+                        onTap: () => _editSku(sku),
+                        trailing: PopupMenuButton<String>(
+                          tooltip: '${sku.skuCode ?? '未编号 SKU'}的更多操作',
+                          onSelected: (action) => _skuAction(sku, action),
+                          itemBuilder: (_) => [
                             const PopupMenuItem(
-                              value: 'removeImage',
-                              child: Text('移除图片'),
+                              value: 'edit',
+                              child: Text('编辑'),
                             ),
-                          const PopupMenuItem(
-                            value: 'ratio',
-                            child: Text('推荐覆盖区间'),
-                          ),
-                          PopupMenuItem(
-                            value: 'inactive',
-                            child: Text(sku.isInactive ? '启用' : '停用'),
-                          ),
-                          const PopupMenuItem(
-                            value: 'delete',
-                            child: Text('删除'),
-                          ),
-                        ],
+                            const PopupMenuItem(
+                              value: 'image',
+                              child: Text('选择图片'),
+                            ),
+                            if (sku.imageHash != null)
+                              const PopupMenuItem(
+                                value: 'removeImage',
+                                child: Text('移除图片'),
+                              ),
+                            const PopupMenuItem(
+                              value: 'ratio',
+                              child: Text('推荐覆盖区间'),
+                            ),
+                            PopupMenuItem(
+                              value: 'inactive',
+                              child: Text(sku.isInactive ? '启用' : '停用'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Text('删除'),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -180,20 +258,26 @@ class _IngredientDetailPageState extends State<IngredientDetailPage> {
                 decoration: const InputDecoration(labelText: 'SKU 编号'),
                 onChanged: (value) => skuCode = value,
               ),
+              const SizedBox(height: 12),
               TextFormField(
                 initialValue: supplier,
                 decoration: const InputDecoration(labelText: '品牌或供应商'),
                 onChanged: (value) => supplier = value,
               ),
+              const SizedBox(height: 12),
               TextFormField(
                 initialValue: origin,
                 decoration: const InputDecoration(labelText: '产地'),
                 onChanged: (value) => origin = value,
               ),
+              const SizedBox(height: 12),
               TextFormField(
                 initialValue: notes,
                 maxLines: 3,
-                decoration: const InputDecoration(labelText: '备注'),
+                decoration: const InputDecoration(
+                  labelText: '备注',
+                  alignLabelWithHint: true,
+                ),
                 onChanged: (value) => notes = value,
               ),
             ],
@@ -363,6 +447,9 @@ class _IngredientDetailPageState extends State<IngredientDetailPage> {
                 const Text('删除后可在最近删除中恢复。'),
                 const SizedBox(height: 20),
                 FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xffff3b30),
+                  ),
                   onPressed: () => Navigator.pop(context, true),
                   child: const Text('确认删除'),
                 ),

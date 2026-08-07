@@ -9,6 +9,43 @@ import 'package:xiangfangbu/data/media_store.dart';
 import 'package:xiangfangbu/features/recommendations/recommendation_preset_detail_page.dart';
 
 void main() {
+  testWidgets('product entry selects plaque before formula', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1080, 2400);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final database = AppDatabase(NativeDatabase.memory());
+    final mediaDirectory = Directory.systemTemp.createTempSync('xiang-ui-');
+    final mediaStore = MediaStore(mediaDirectory);
+    await database.initialize();
+    await database.createPlaqueType(name: '圆牌');
+    await tester.pumpWidget(
+      XiangApp(database: database, mediaStore: mediaStore),
+    );
+
+    await tester.tap(find.text('香牌 / 合香珠'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.text('选择成品'), findsOneWidget);
+    expect(find.text('作为同一种成品统一选择'), findsOneWidget);
+    expect(find.text('圆牌'), findsOneWidget);
+    await tester.tap(find.text('圆牌'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.text('为「圆牌」选择香方'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, '新建香方'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, '新建香方'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.text('新建香方'), findsWidgets);
+    expect(find.text('香牌（可选）'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+    await database.close();
+    mediaDirectory.deleteSync(recursive: true);
+  });
+
   testWidgets('shows the three destinations and ordered more page', (
     tester,
   ) async {
@@ -24,8 +61,8 @@ void main() {
       XiangApp(database: database, mediaStore: mediaStore),
     );
 
-    expect(find.text('主页'), findsWidgets);
-    expect(find.text('香方'), findsOneWidget);
+    expect(find.text('首页'), findsWidgets);
+    expect(find.text('香方'), findsWidgets);
     expect(find.text('更多'), findsOneWidget);
 
     await tester.tap(find.text('更多'));
@@ -95,11 +132,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('添加香料'), findsOneWidget);
     expect(find.byType(TextFormField), findsNWidgets(2));
+    expect(find.text('新建大类'), findsOneWidget);
     await tester.enterText(find.byType(TextFormField).first, '沉香');
     await tester.tap(find.widgetWithText(FilledButton, '保存'));
     await tester.pumpAndSettle();
 
     expect(find.text('沉香'), findsOneWidget);
+    expect(find.byIcon(Icons.spa_outlined), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.tap(find.text('沉香'));
@@ -119,7 +158,16 @@ void main() {
 
     await tester.tap(find.byTooltip('添加 SKU'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField).first, 'AG-01');
+    final skuFields = find.byType(TextFormField);
+    expect(skuFields, findsNWidgets(4));
+    for (var i = 0; i < 3; i++) {
+      expect(
+        tester.getTopLeft(skuFields.at(i + 1)).dy -
+            tester.getBottomLeft(skuFields.at(i)).dy,
+        greaterThanOrEqualTo(12),
+      );
+    }
+    await tester.enterText(skuFields.first, 'AG-01');
     await tester.tap(find.widgetWithText(FilledButton, '保存'));
     await tester.pumpAndSettle();
     expect(find.text('AG-01'), findsOneWidget);
@@ -151,9 +199,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('添加香牌'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField).first, '如意牌');
-    await tester.enterText(find.byType(TextFormField).at(1), '6 × 3 cm');
-    await tester.tap(find.widgetWithText(FilledButton, '保存'));
+    await tester.enterText(find.byType(TextField).first, '如意牌');
+    await tester.enterText(find.byType(TextField).at(1), '6 × 3 cm');
+    await tester.tap(find.widgetWithText(TextButton, '保存'));
     await tester.pumpAndSettle();
 
     expect(find.text('如意牌'), findsOneWidget);
@@ -448,4 +496,174 @@ void main() {
       await database.close();
     },
   );
+
+  testWidgets('unnamed composer draft can be discarded', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1080, 2400);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final database = AppDatabase(NativeDatabase.memory());
+    final mediaDirectory = Directory.systemTemp.createTempSync('xiang-ui-');
+    await database.initialize();
+    final draft = await database.saveComposerDraft(
+      productionTypeId: 'type-zhuanxiang',
+      targetWeightText: '',
+      items: const [],
+      formulaName: '',
+      notes: '',
+    );
+    await tester.pumpWidget(
+      XiangApp(database: database, mediaStore: MediaStore(mediaDirectory)),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.text('配制、计算与记录'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.widgetWithText(ListTile, '未命名草稿'));
+    await tester.pump();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('已保存'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(TextButton, '放弃'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.widgetWithText(FilledButton, '放弃草稿'));
+    await tester.pump();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(
+      (await (database.select(
+        database.formulaDrafts,
+      )..where((row) => row.id.equals(draft.id))).getSingle()).isDeleted,
+      isTrue,
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+    await database.close();
+    mediaDirectory.deleteSync(recursive: true);
+  });
+
+  testWidgets('formula delete can be undone from feedback', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1080, 2400);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final database = AppDatabase(NativeDatabase.memory());
+    final mediaDirectory = Directory.systemTemp.createTempSync('xiang-ui-');
+    await database.initialize();
+    final category = await database.createIngredientCategory('木类');
+    final ingredient = await database.createIngredient(
+      name: '沉香',
+      categoryId: category.id,
+    );
+    final sku = await database.createIngredientSku(ingredientId: ingredient.id);
+    final draft = await database.createFormulaDraft(
+      productionTypeId: 'type-zhuanxiang',
+      targetWeight: 100,
+      formulaName: '可撤销香方',
+      items: [
+        FormulaDraftItemInput(
+          skuId: sku.id,
+          categoryName: '木类',
+          ingredientName: '沉香',
+          ratio: 10000,
+          sortOrder: 0,
+        ),
+      ],
+    );
+    await database.completeDraft(draft.id);
+    final formula = (await database.watchFormulas().first).single.formula;
+
+    await tester.pumpWidget(
+      XiangApp(database: database, mediaStore: MediaStore(mediaDirectory)),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.text('可撤销香方'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.byTooltip('更多操作'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('删除香方'));
+    await tester.pump();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('已移入最近删除'), findsOneWidget);
+    await tester.tap(find.text('撤销'));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
+    expect(
+      (await (database.select(
+        database.formulas,
+      )..where((row) => row.id.equals(formula.id))).getSingle()).isDeleted,
+      isFalse,
+    );
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+    await database.close();
+    mediaDirectory.deleteSync(recursive: true);
+  });
+
+  testWidgets('core destinations fit phone and tablet orientations', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final semantics = tester.ensureSemantics();
+    final database = AppDatabase(NativeDatabase.memory());
+    final mediaDirectory = Directory.systemTemp.createTempSync('xiang-ui-');
+    await database.initialize();
+    final category = await database.createIngredientCategory('木类');
+    await database.createIngredient(name: '沉香', categoryId: category.id);
+    await tester.pumpWidget(
+      XiangApp(database: database, mediaStore: MediaStore(mediaDirectory)),
+    );
+    expect(find.bySemanticsLabel('首页'), findsOneWidget);
+    expect(find.bySemanticsLabel('首页 首页'), findsNothing);
+
+    for (final size in const [
+      Size(360, 640),
+      Size(640, 360),
+      Size(800, 1280),
+      Size(1280, 800),
+    ]) {
+      tester.view.physicalSize = size;
+      await tester.pump();
+      await tester.tap(find.text('首页').last);
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(tester.takeException(), isNull, reason: '首页 $size');
+
+      await tester.tap(find.text('香料').last);
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(find.text('沉香'), findsOneWidget);
+      expect(tester.takeException(), isNull, reason: '香料库 $size');
+
+      await tester.tap(find.text('更多').last);
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(find.text('香料库'), findsOneWidget);
+      expect(tester.takeException(), isNull, reason: '更多 $size');
+    }
+
+    semantics.dispose();
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+    await database.close();
+    mediaDirectory.deleteSync(recursive: true);
+  });
 }

@@ -211,6 +211,7 @@ class _RecommendationPresetsPageState extends State<RecommendationPresetsPage> {
                   decoration: const InputDecoration(labelText: '名称 *'),
                   onChanged: (value) => name = value,
                 ),
+                const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: productionTypeId,
                   decoration: const InputDecoration(labelText: '制作类型 *'),
@@ -227,10 +228,14 @@ class _RecommendationPresetsPageState extends State<RecommendationPresetsPage> {
                     () => productionTypeId = value ?? productionTypeId,
                   ),
                 ),
+                const SizedBox(height: 12),
                 TextFormField(
                   initialValue: notes,
                   maxLines: 3,
-                  decoration: const InputDecoration(labelText: '备注'),
+                  decoration: const InputDecoration(
+                    labelText: '备注',
+                    alignLabelWithHint: true,
+                  ),
                   onChanged: (value) => notes = value,
                 ),
               ],
@@ -320,6 +325,9 @@ class _RecommendationPresetsPageState extends State<RecommendationPresetsPage> {
                 const Text('删除后可在最近删除中恢复。'),
                 const SizedBox(height: 20),
                 FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xffff3b30),
+                  ),
                   onPressed: () => Navigator.pop(context, true),
                   child: const Text('确认删除'),
                 ),

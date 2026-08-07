@@ -9816,6 +9816,5867 @@ class AssetsCompanion extends UpdateCompanion<Asset> {
   }
 }
 
+class $FormulasTable extends Formulas with TableInfo<$FormulasTable, Formula> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FormulasTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _revisionIdMeta = const VerificationMeta(
+    'revisionId',
+  );
+  @override
+  late final GeneratedColumn<String> revisionId = GeneratedColumn<String>(
+    'revision_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedByDeviceMeta = const VerificationMeta(
+    'updatedByDevice',
+  );
+  @override
+  late final GeneratedColumn<String> updatedByDevice = GeneratedColumn<String>(
+    'updated_by_device',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtUtcMeta = const VerificationMeta(
+    'updatedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAtUtc = GeneratedColumn<DateTime>(
+    'updated_at_utc',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _deletedAtUtcMeta = const VerificationMeta(
+    'deletedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAtUtc = GeneratedColumn<DateTime>(
+    'deleted_at_utc',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 100,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _currentVersionIdMeta = const VerificationMeta(
+    'currentVersionId',
+  );
+  @override
+  late final GeneratedColumn<String> currentVersionId = GeneratedColumn<String>(
+    'current_version_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastUsedAtUtcMeta = const VerificationMeta(
+    'lastUsedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastUsedAtUtc =
+      GeneratedColumn<DateTime>(
+        'last_used_at_utc',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    revisionId,
+    updatedByDevice,
+    updatedAtUtc,
+    isDeleted,
+    deletedAtUtc,
+    name,
+    notes,
+    currentVersionId,
+    lastUsedAtUtc,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'formulas';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Formula> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('revision_id')) {
+      context.handle(
+        _revisionIdMeta,
+        revisionId.isAcceptableOrUnknown(data['revision_id']!, _revisionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_revisionIdMeta);
+    }
+    if (data.containsKey('updated_by_device')) {
+      context.handle(
+        _updatedByDeviceMeta,
+        updatedByDevice.isAcceptableOrUnknown(
+          data['updated_by_device']!,
+          _updatedByDeviceMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedByDeviceMeta);
+    }
+    if (data.containsKey('updated_at_utc')) {
+      context.handle(
+        _updatedAtUtcMeta,
+        updatedAtUtc.isAcceptableOrUnknown(
+          data['updated_at_utc']!,
+          _updatedAtUtcMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMeta);
+    }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
+    if (data.containsKey('deleted_at_utc')) {
+      context.handle(
+        _deletedAtUtcMeta,
+        deletedAtUtc.isAcceptableOrUnknown(
+          data['deleted_at_utc']!,
+          _deletedAtUtcMeta,
+        ),
+      );
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('current_version_id')) {
+      context.handle(
+        _currentVersionIdMeta,
+        currentVersionId.isAcceptableOrUnknown(
+          data['current_version_id']!,
+          _currentVersionIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_used_at_utc')) {
+      context.handle(
+        _lastUsedAtUtcMeta,
+        lastUsedAtUtc.isAcceptableOrUnknown(
+          data['last_used_at_utc']!,
+          _lastUsedAtUtcMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Formula map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Formula(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      revisionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}revision_id'],
+      )!,
+      updatedByDevice: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}updated_by_device'],
+      )!,
+      updatedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at_utc'],
+      )!,
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
+      deletedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at_utc'],
+      ),
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      currentVersionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}current_version_id'],
+      ),
+      lastUsedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_used_at_utc'],
+      ),
+    );
+  }
+
+  @override
+  $FormulasTable createAlias(String alias) {
+    return $FormulasTable(attachedDatabase, alias);
+  }
+}
+
+class Formula extends DataClass implements Insertable<Formula> {
+  final String id;
+  final String revisionId;
+  final String updatedByDevice;
+  final DateTime updatedAtUtc;
+  final bool isDeleted;
+  final DateTime? deletedAtUtc;
+  final String name;
+  final String? notes;
+  final String? currentVersionId;
+  final DateTime? lastUsedAtUtc;
+  const Formula({
+    required this.id,
+    required this.revisionId,
+    required this.updatedByDevice,
+    required this.updatedAtUtc,
+    required this.isDeleted,
+    this.deletedAtUtc,
+    required this.name,
+    this.notes,
+    this.currentVersionId,
+    this.lastUsedAtUtc,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['revision_id'] = Variable<String>(revisionId);
+    map['updated_by_device'] = Variable<String>(updatedByDevice);
+    map['updated_at_utc'] = Variable<DateTime>(updatedAtUtc);
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    if (!nullToAbsent || deletedAtUtc != null) {
+      map['deleted_at_utc'] = Variable<DateTime>(deletedAtUtc);
+    }
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    if (!nullToAbsent || currentVersionId != null) {
+      map['current_version_id'] = Variable<String>(currentVersionId);
+    }
+    if (!nullToAbsent || lastUsedAtUtc != null) {
+      map['last_used_at_utc'] = Variable<DateTime>(lastUsedAtUtc);
+    }
+    return map;
+  }
+
+  FormulasCompanion toCompanion(bool nullToAbsent) {
+    return FormulasCompanion(
+      id: Value(id),
+      revisionId: Value(revisionId),
+      updatedByDevice: Value(updatedByDevice),
+      updatedAtUtc: Value(updatedAtUtc),
+      isDeleted: Value(isDeleted),
+      deletedAtUtc: deletedAtUtc == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAtUtc),
+      name: Value(name),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      currentVersionId: currentVersionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(currentVersionId),
+      lastUsedAtUtc: lastUsedAtUtc == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastUsedAtUtc),
+    );
+  }
+
+  factory Formula.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Formula(
+      id: serializer.fromJson<String>(json['id']),
+      revisionId: serializer.fromJson<String>(json['revisionId']),
+      updatedByDevice: serializer.fromJson<String>(json['updatedByDevice']),
+      updatedAtUtc: serializer.fromJson<DateTime>(json['updatedAtUtc']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      deletedAtUtc: serializer.fromJson<DateTime?>(json['deletedAtUtc']),
+      name: serializer.fromJson<String>(json['name']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      currentVersionId: serializer.fromJson<String?>(json['currentVersionId']),
+      lastUsedAtUtc: serializer.fromJson<DateTime?>(json['lastUsedAtUtc']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'revisionId': serializer.toJson<String>(revisionId),
+      'updatedByDevice': serializer.toJson<String>(updatedByDevice),
+      'updatedAtUtc': serializer.toJson<DateTime>(updatedAtUtc),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'deletedAtUtc': serializer.toJson<DateTime?>(deletedAtUtc),
+      'name': serializer.toJson<String>(name),
+      'notes': serializer.toJson<String?>(notes),
+      'currentVersionId': serializer.toJson<String?>(currentVersionId),
+      'lastUsedAtUtc': serializer.toJson<DateTime?>(lastUsedAtUtc),
+    };
+  }
+
+  Formula copyWith({
+    String? id,
+    String? revisionId,
+    String? updatedByDevice,
+    DateTime? updatedAtUtc,
+    bool? isDeleted,
+    Value<DateTime?> deletedAtUtc = const Value.absent(),
+    String? name,
+    Value<String?> notes = const Value.absent(),
+    Value<String?> currentVersionId = const Value.absent(),
+    Value<DateTime?> lastUsedAtUtc = const Value.absent(),
+  }) => Formula(
+    id: id ?? this.id,
+    revisionId: revisionId ?? this.revisionId,
+    updatedByDevice: updatedByDevice ?? this.updatedByDevice,
+    updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
+    isDeleted: isDeleted ?? this.isDeleted,
+    deletedAtUtc: deletedAtUtc.present ? deletedAtUtc.value : this.deletedAtUtc,
+    name: name ?? this.name,
+    notes: notes.present ? notes.value : this.notes,
+    currentVersionId: currentVersionId.present
+        ? currentVersionId.value
+        : this.currentVersionId,
+    lastUsedAtUtc: lastUsedAtUtc.present
+        ? lastUsedAtUtc.value
+        : this.lastUsedAtUtc,
+  );
+  Formula copyWithCompanion(FormulasCompanion data) {
+    return Formula(
+      id: data.id.present ? data.id.value : this.id,
+      revisionId: data.revisionId.present
+          ? data.revisionId.value
+          : this.revisionId,
+      updatedByDevice: data.updatedByDevice.present
+          ? data.updatedByDevice.value
+          : this.updatedByDevice,
+      updatedAtUtc: data.updatedAtUtc.present
+          ? data.updatedAtUtc.value
+          : this.updatedAtUtc,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      deletedAtUtc: data.deletedAtUtc.present
+          ? data.deletedAtUtc.value
+          : this.deletedAtUtc,
+      name: data.name.present ? data.name.value : this.name,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      currentVersionId: data.currentVersionId.present
+          ? data.currentVersionId.value
+          : this.currentVersionId,
+      lastUsedAtUtc: data.lastUsedAtUtc.present
+          ? data.lastUsedAtUtc.value
+          : this.lastUsedAtUtc,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Formula(')
+          ..write('id: $id, ')
+          ..write('revisionId: $revisionId, ')
+          ..write('updatedByDevice: $updatedByDevice, ')
+          ..write('updatedAtUtc: $updatedAtUtc, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('deletedAtUtc: $deletedAtUtc, ')
+          ..write('name: $name, ')
+          ..write('notes: $notes, ')
+          ..write('currentVersionId: $currentVersionId, ')
+          ..write('lastUsedAtUtc: $lastUsedAtUtc')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    revisionId,
+    updatedByDevice,
+    updatedAtUtc,
+    isDeleted,
+    deletedAtUtc,
+    name,
+    notes,
+    currentVersionId,
+    lastUsedAtUtc,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Formula &&
+          other.id == this.id &&
+          other.revisionId == this.revisionId &&
+          other.updatedByDevice == this.updatedByDevice &&
+          other.updatedAtUtc == this.updatedAtUtc &&
+          other.isDeleted == this.isDeleted &&
+          other.deletedAtUtc == this.deletedAtUtc &&
+          other.name == this.name &&
+          other.notes == this.notes &&
+          other.currentVersionId == this.currentVersionId &&
+          other.lastUsedAtUtc == this.lastUsedAtUtc);
+}
+
+class FormulasCompanion extends UpdateCompanion<Formula> {
+  final Value<String> id;
+  final Value<String> revisionId;
+  final Value<String> updatedByDevice;
+  final Value<DateTime> updatedAtUtc;
+  final Value<bool> isDeleted;
+  final Value<DateTime?> deletedAtUtc;
+  final Value<String> name;
+  final Value<String?> notes;
+  final Value<String?> currentVersionId;
+  final Value<DateTime?> lastUsedAtUtc;
+  final Value<int> rowid;
+  const FormulasCompanion({
+    this.id = const Value.absent(),
+    this.revisionId = const Value.absent(),
+    this.updatedByDevice = const Value.absent(),
+    this.updatedAtUtc = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.deletedAtUtc = const Value.absent(),
+    this.name = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.currentVersionId = const Value.absent(),
+    this.lastUsedAtUtc = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  FormulasCompanion.insert({
+    required String id,
+    required String revisionId,
+    required String updatedByDevice,
+    required DateTime updatedAtUtc,
+    this.isDeleted = const Value.absent(),
+    this.deletedAtUtc = const Value.absent(),
+    required String name,
+    this.notes = const Value.absent(),
+    this.currentVersionId = const Value.absent(),
+    this.lastUsedAtUtc = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       revisionId = Value(revisionId),
+       updatedByDevice = Value(updatedByDevice),
+       updatedAtUtc = Value(updatedAtUtc),
+       name = Value(name);
+  static Insertable<Formula> custom({
+    Expression<String>? id,
+    Expression<String>? revisionId,
+    Expression<String>? updatedByDevice,
+    Expression<DateTime>? updatedAtUtc,
+    Expression<bool>? isDeleted,
+    Expression<DateTime>? deletedAtUtc,
+    Expression<String>? name,
+    Expression<String>? notes,
+    Expression<String>? currentVersionId,
+    Expression<DateTime>? lastUsedAtUtc,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (revisionId != null) 'revision_id': revisionId,
+      if (updatedByDevice != null) 'updated_by_device': updatedByDevice,
+      if (updatedAtUtc != null) 'updated_at_utc': updatedAtUtc,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (deletedAtUtc != null) 'deleted_at_utc': deletedAtUtc,
+      if (name != null) 'name': name,
+      if (notes != null) 'notes': notes,
+      if (currentVersionId != null) 'current_version_id': currentVersionId,
+      if (lastUsedAtUtc != null) 'last_used_at_utc': lastUsedAtUtc,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  FormulasCompanion copyWith({
+    Value<String>? id,
+    Value<String>? revisionId,
+    Value<String>? updatedByDevice,
+    Value<DateTime>? updatedAtUtc,
+    Value<bool>? isDeleted,
+    Value<DateTime?>? deletedAtUtc,
+    Value<String>? name,
+    Value<String?>? notes,
+    Value<String?>? currentVersionId,
+    Value<DateTime?>? lastUsedAtUtc,
+    Value<int>? rowid,
+  }) {
+    return FormulasCompanion(
+      id: id ?? this.id,
+      revisionId: revisionId ?? this.revisionId,
+      updatedByDevice: updatedByDevice ?? this.updatedByDevice,
+      updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAtUtc: deletedAtUtc ?? this.deletedAtUtc,
+      name: name ?? this.name,
+      notes: notes ?? this.notes,
+      currentVersionId: currentVersionId ?? this.currentVersionId,
+      lastUsedAtUtc: lastUsedAtUtc ?? this.lastUsedAtUtc,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (revisionId.present) {
+      map['revision_id'] = Variable<String>(revisionId.value);
+    }
+    if (updatedByDevice.present) {
+      map['updated_by_device'] = Variable<String>(updatedByDevice.value);
+    }
+    if (updatedAtUtc.present) {
+      map['updated_at_utc'] = Variable<DateTime>(updatedAtUtc.value);
+    }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (deletedAtUtc.present) {
+      map['deleted_at_utc'] = Variable<DateTime>(deletedAtUtc.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (currentVersionId.present) {
+      map['current_version_id'] = Variable<String>(currentVersionId.value);
+    }
+    if (lastUsedAtUtc.present) {
+      map['last_used_at_utc'] = Variable<DateTime>(lastUsedAtUtc.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FormulasCompanion(')
+          ..write('id: $id, ')
+          ..write('revisionId: $revisionId, ')
+          ..write('updatedByDevice: $updatedByDevice, ')
+          ..write('updatedAtUtc: $updatedAtUtc, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('deletedAtUtc: $deletedAtUtc, ')
+          ..write('name: $name, ')
+          ..write('notes: $notes, ')
+          ..write('currentVersionId: $currentVersionId, ')
+          ..write('lastUsedAtUtc: $lastUsedAtUtc, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $FormulaDraftsTable extends FormulaDrafts
+    with TableInfo<$FormulaDraftsTable, FormulaDraft> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FormulaDraftsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _revisionIdMeta = const VerificationMeta(
+    'revisionId',
+  );
+  @override
+  late final GeneratedColumn<String> revisionId = GeneratedColumn<String>(
+    'revision_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedByDeviceMeta = const VerificationMeta(
+    'updatedByDevice',
+  );
+  @override
+  late final GeneratedColumn<String> updatedByDevice = GeneratedColumn<String>(
+    'updated_by_device',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtUtcMeta = const VerificationMeta(
+    'updatedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAtUtc = GeneratedColumn<DateTime>(
+    'updated_at_utc',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _deletedAtUtcMeta = const VerificationMeta(
+    'deletedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAtUtc = GeneratedColumn<DateTime>(
+    'deleted_at_utc',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _formulaIdMeta = const VerificationMeta(
+    'formulaId',
+  );
+  @override
+  late final GeneratedColumn<String> formulaId = GeneratedColumn<String>(
+    'formula_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES formulas (id)',
+    ),
+  );
+  static const VerificationMeta _sourceVersionIdMeta = const VerificationMeta(
+    'sourceVersionId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceVersionId = GeneratedColumn<String>(
+    'source_version_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _customerIdMeta = const VerificationMeta(
+    'customerId',
+  );
+  @override
+  late final GeneratedColumn<String> customerId = GeneratedColumn<String>(
+    'customer_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES customers (id)',
+    ),
+  );
+  static const VerificationMeta _plaqueTypeIdMeta = const VerificationMeta(
+    'plaqueTypeId',
+  );
+  @override
+  late final GeneratedColumn<String> plaqueTypeId = GeneratedColumn<String>(
+    'plaque_type_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES plaque_types (id)',
+    ),
+  );
+  static const VerificationMeta _formulaNameMeta = const VerificationMeta(
+    'formulaName',
+  );
+  @override
+  late final GeneratedColumn<String> formulaName = GeneratedColumn<String>(
+    'formula_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _productionTypeIdMeta = const VerificationMeta(
+    'productionTypeId',
+  );
+  @override
+  late final GeneratedColumn<String> productionTypeId = GeneratedColumn<String>(
+    'production_type_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES production_types (id)',
+    ),
+  );
+  static const VerificationMeta _targetWeightMeta = const VerificationMeta(
+    'targetWeight',
+  );
+  @override
+  late final GeneratedColumn<int> targetWeight = GeneratedColumn<int>(
+    'target_weight',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _itemsJsonMeta = const VerificationMeta(
+    'itemsJson',
+  );
+  @override
+  late final GeneratedColumn<String> itemsJson = GeneratedColumn<String>(
+    'items_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _actualWeightsJsonMeta = const VerificationMeta(
+    'actualWeightsJson',
+  );
+  @override
+  late final GeneratedColumn<String> actualWeightsJson =
+      GeneratedColumn<String>(
+        'actual_weights_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _confirmedWarningsJsonMeta =
+      const VerificationMeta('confirmedWarningsJson');
+  @override
+  late final GeneratedColumn<String> confirmedWarningsJson =
+      GeneratedColumn<String>(
+        'confirmed_warnings_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      );
+  static const VerificationMeta _createdAtUtcMeta = const VerificationMeta(
+    'createdAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAtUtc = GeneratedColumn<DateTime>(
+    'created_at_utc',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    revisionId,
+    updatedByDevice,
+    updatedAtUtc,
+    isDeleted,
+    deletedAtUtc,
+    kind,
+    formulaId,
+    sourceVersionId,
+    customerId,
+    plaqueTypeId,
+    formulaName,
+    productionTypeId,
+    targetWeight,
+    notes,
+    itemsJson,
+    actualWeightsJson,
+    confirmedWarningsJson,
+    createdAtUtc,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'formula_drafts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FormulaDraft> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('revision_id')) {
+      context.handle(
+        _revisionIdMeta,
+        revisionId.isAcceptableOrUnknown(data['revision_id']!, _revisionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_revisionIdMeta);
+    }
+    if (data.containsKey('updated_by_device')) {
+      context.handle(
+        _updatedByDeviceMeta,
+        updatedByDevice.isAcceptableOrUnknown(
+          data['updated_by_device']!,
+          _updatedByDeviceMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedByDeviceMeta);
+    }
+    if (data.containsKey('updated_at_utc')) {
+      context.handle(
+        _updatedAtUtcMeta,
+        updatedAtUtc.isAcceptableOrUnknown(
+          data['updated_at_utc']!,
+          _updatedAtUtcMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMeta);
+    }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
+    if (data.containsKey('deleted_at_utc')) {
+      context.handle(
+        _deletedAtUtcMeta,
+        deletedAtUtc.isAcceptableOrUnknown(
+          data['deleted_at_utc']!,
+          _deletedAtUtcMeta,
+        ),
+      );
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('formula_id')) {
+      context.handle(
+        _formulaIdMeta,
+        formulaId.isAcceptableOrUnknown(data['formula_id']!, _formulaIdMeta),
+      );
+    }
+    if (data.containsKey('source_version_id')) {
+      context.handle(
+        _sourceVersionIdMeta,
+        sourceVersionId.isAcceptableOrUnknown(
+          data['source_version_id']!,
+          _sourceVersionIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('customer_id')) {
+      context.handle(
+        _customerIdMeta,
+        customerId.isAcceptableOrUnknown(data['customer_id']!, _customerIdMeta),
+      );
+    }
+    if (data.containsKey('plaque_type_id')) {
+      context.handle(
+        _plaqueTypeIdMeta,
+        plaqueTypeId.isAcceptableOrUnknown(
+          data['plaque_type_id']!,
+          _plaqueTypeIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('formula_name')) {
+      context.handle(
+        _formulaNameMeta,
+        formulaName.isAcceptableOrUnknown(
+          data['formula_name']!,
+          _formulaNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('production_type_id')) {
+      context.handle(
+        _productionTypeIdMeta,
+        productionTypeId.isAcceptableOrUnknown(
+          data['production_type_id']!,
+          _productionTypeIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_productionTypeIdMeta);
+    }
+    if (data.containsKey('target_weight')) {
+      context.handle(
+        _targetWeightMeta,
+        targetWeight.isAcceptableOrUnknown(
+          data['target_weight']!,
+          _targetWeightMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_targetWeightMeta);
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('items_json')) {
+      context.handle(
+        _itemsJsonMeta,
+        itemsJson.isAcceptableOrUnknown(data['items_json']!, _itemsJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_itemsJsonMeta);
+    }
+    if (data.containsKey('actual_weights_json')) {
+      context.handle(
+        _actualWeightsJsonMeta,
+        actualWeightsJson.isAcceptableOrUnknown(
+          data['actual_weights_json']!,
+          _actualWeightsJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_actualWeightsJsonMeta);
+    }
+    if (data.containsKey('confirmed_warnings_json')) {
+      context.handle(
+        _confirmedWarningsJsonMeta,
+        confirmedWarningsJson.isAcceptableOrUnknown(
+          data['confirmed_warnings_json']!,
+          _confirmedWarningsJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at_utc')) {
+      context.handle(
+        _createdAtUtcMeta,
+        createdAtUtc.isAcceptableOrUnknown(
+          data['created_at_utc']!,
+          _createdAtUtcMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtUtcMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  FormulaDraft map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FormulaDraft(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      revisionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}revision_id'],
+      )!,
+      updatedByDevice: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}updated_by_device'],
+      )!,
+      updatedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at_utc'],
+      )!,
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
+      deletedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at_utc'],
+      ),
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      formulaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}formula_id'],
+      ),
+      sourceVersionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_version_id'],
+      ),
+      customerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}customer_id'],
+      ),
+      plaqueTypeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plaque_type_id'],
+      ),
+      formulaName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}formula_name'],
+      )!,
+      productionTypeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}production_type_id'],
+      )!,
+      targetWeight: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}target_weight'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      itemsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}items_json'],
+      )!,
+      actualWeightsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}actual_weights_json'],
+      )!,
+      confirmedWarningsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}confirmed_warnings_json'],
+      )!,
+      createdAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at_utc'],
+      )!,
+    );
+  }
+
+  @override
+  $FormulaDraftsTable createAlias(String alias) {
+    return $FormulaDraftsTable(attachedDatabase, alias);
+  }
+}
+
+class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
+  final String id;
+  final String revisionId;
+  final String updatedByDevice;
+  final DateTime updatedAtUtc;
+  final bool isDeleted;
+  final DateTime? deletedAtUtc;
+  final String kind;
+  final String? formulaId;
+  final String? sourceVersionId;
+  final String? customerId;
+  final String? plaqueTypeId;
+  final String formulaName;
+  final String productionTypeId;
+  final int targetWeight;
+  final String? notes;
+  final String itemsJson;
+  final String actualWeightsJson;
+  final String confirmedWarningsJson;
+  final DateTime createdAtUtc;
+  const FormulaDraft({
+    required this.id,
+    required this.revisionId,
+    required this.updatedByDevice,
+    required this.updatedAtUtc,
+    required this.isDeleted,
+    this.deletedAtUtc,
+    required this.kind,
+    this.formulaId,
+    this.sourceVersionId,
+    this.customerId,
+    this.plaqueTypeId,
+    required this.formulaName,
+    required this.productionTypeId,
+    required this.targetWeight,
+    this.notes,
+    required this.itemsJson,
+    required this.actualWeightsJson,
+    required this.confirmedWarningsJson,
+    required this.createdAtUtc,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['revision_id'] = Variable<String>(revisionId);
+    map['updated_by_device'] = Variable<String>(updatedByDevice);
+    map['updated_at_utc'] = Variable<DateTime>(updatedAtUtc);
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    if (!nullToAbsent || deletedAtUtc != null) {
+      map['deleted_at_utc'] = Variable<DateTime>(deletedAtUtc);
+    }
+    map['kind'] = Variable<String>(kind);
+    if (!nullToAbsent || formulaId != null) {
+      map['formula_id'] = Variable<String>(formulaId);
+    }
+    if (!nullToAbsent || sourceVersionId != null) {
+      map['source_version_id'] = Variable<String>(sourceVersionId);
+    }
+    if (!nullToAbsent || customerId != null) {
+      map['customer_id'] = Variable<String>(customerId);
+    }
+    if (!nullToAbsent || plaqueTypeId != null) {
+      map['plaque_type_id'] = Variable<String>(plaqueTypeId);
+    }
+    map['formula_name'] = Variable<String>(formulaName);
+    map['production_type_id'] = Variable<String>(productionTypeId);
+    map['target_weight'] = Variable<int>(targetWeight);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['items_json'] = Variable<String>(itemsJson);
+    map['actual_weights_json'] = Variable<String>(actualWeightsJson);
+    map['confirmed_warnings_json'] = Variable<String>(confirmedWarningsJson);
+    map['created_at_utc'] = Variable<DateTime>(createdAtUtc);
+    return map;
+  }
+
+  FormulaDraftsCompanion toCompanion(bool nullToAbsent) {
+    return FormulaDraftsCompanion(
+      id: Value(id),
+      revisionId: Value(revisionId),
+      updatedByDevice: Value(updatedByDevice),
+      updatedAtUtc: Value(updatedAtUtc),
+      isDeleted: Value(isDeleted),
+      deletedAtUtc: deletedAtUtc == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAtUtc),
+      kind: Value(kind),
+      formulaId: formulaId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(formulaId),
+      sourceVersionId: sourceVersionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceVersionId),
+      customerId: customerId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(customerId),
+      plaqueTypeId: plaqueTypeId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(plaqueTypeId),
+      formulaName: Value(formulaName),
+      productionTypeId: Value(productionTypeId),
+      targetWeight: Value(targetWeight),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      itemsJson: Value(itemsJson),
+      actualWeightsJson: Value(actualWeightsJson),
+      confirmedWarningsJson: Value(confirmedWarningsJson),
+      createdAtUtc: Value(createdAtUtc),
+    );
+  }
+
+  factory FormulaDraft.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FormulaDraft(
+      id: serializer.fromJson<String>(json['id']),
+      revisionId: serializer.fromJson<String>(json['revisionId']),
+      updatedByDevice: serializer.fromJson<String>(json['updatedByDevice']),
+      updatedAtUtc: serializer.fromJson<DateTime>(json['updatedAtUtc']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      deletedAtUtc: serializer.fromJson<DateTime?>(json['deletedAtUtc']),
+      kind: serializer.fromJson<String>(json['kind']),
+      formulaId: serializer.fromJson<String?>(json['formulaId']),
+      sourceVersionId: serializer.fromJson<String?>(json['sourceVersionId']),
+      customerId: serializer.fromJson<String?>(json['customerId']),
+      plaqueTypeId: serializer.fromJson<String?>(json['plaqueTypeId']),
+      formulaName: serializer.fromJson<String>(json['formulaName']),
+      productionTypeId: serializer.fromJson<String>(json['productionTypeId']),
+      targetWeight: serializer.fromJson<int>(json['targetWeight']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      itemsJson: serializer.fromJson<String>(json['itemsJson']),
+      actualWeightsJson: serializer.fromJson<String>(json['actualWeightsJson']),
+      confirmedWarningsJson: serializer.fromJson<String>(
+        json['confirmedWarningsJson'],
+      ),
+      createdAtUtc: serializer.fromJson<DateTime>(json['createdAtUtc']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'revisionId': serializer.toJson<String>(revisionId),
+      'updatedByDevice': serializer.toJson<String>(updatedByDevice),
+      'updatedAtUtc': serializer.toJson<DateTime>(updatedAtUtc),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'deletedAtUtc': serializer.toJson<DateTime?>(deletedAtUtc),
+      'kind': serializer.toJson<String>(kind),
+      'formulaId': serializer.toJson<String?>(formulaId),
+      'sourceVersionId': serializer.toJson<String?>(sourceVersionId),
+      'customerId': serializer.toJson<String?>(customerId),
+      'plaqueTypeId': serializer.toJson<String?>(plaqueTypeId),
+      'formulaName': serializer.toJson<String>(formulaName),
+      'productionTypeId': serializer.toJson<String>(productionTypeId),
+      'targetWeight': serializer.toJson<int>(targetWeight),
+      'notes': serializer.toJson<String?>(notes),
+      'itemsJson': serializer.toJson<String>(itemsJson),
+      'actualWeightsJson': serializer.toJson<String>(actualWeightsJson),
+      'confirmedWarningsJson': serializer.toJson<String>(confirmedWarningsJson),
+      'createdAtUtc': serializer.toJson<DateTime>(createdAtUtc),
+    };
+  }
+
+  FormulaDraft copyWith({
+    String? id,
+    String? revisionId,
+    String? updatedByDevice,
+    DateTime? updatedAtUtc,
+    bool? isDeleted,
+    Value<DateTime?> deletedAtUtc = const Value.absent(),
+    String? kind,
+    Value<String?> formulaId = const Value.absent(),
+    Value<String?> sourceVersionId = const Value.absent(),
+    Value<String?> customerId = const Value.absent(),
+    Value<String?> plaqueTypeId = const Value.absent(),
+    String? formulaName,
+    String? productionTypeId,
+    int? targetWeight,
+    Value<String?> notes = const Value.absent(),
+    String? itemsJson,
+    String? actualWeightsJson,
+    String? confirmedWarningsJson,
+    DateTime? createdAtUtc,
+  }) => FormulaDraft(
+    id: id ?? this.id,
+    revisionId: revisionId ?? this.revisionId,
+    updatedByDevice: updatedByDevice ?? this.updatedByDevice,
+    updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
+    isDeleted: isDeleted ?? this.isDeleted,
+    deletedAtUtc: deletedAtUtc.present ? deletedAtUtc.value : this.deletedAtUtc,
+    kind: kind ?? this.kind,
+    formulaId: formulaId.present ? formulaId.value : this.formulaId,
+    sourceVersionId: sourceVersionId.present
+        ? sourceVersionId.value
+        : this.sourceVersionId,
+    customerId: customerId.present ? customerId.value : this.customerId,
+    plaqueTypeId: plaqueTypeId.present ? plaqueTypeId.value : this.plaqueTypeId,
+    formulaName: formulaName ?? this.formulaName,
+    productionTypeId: productionTypeId ?? this.productionTypeId,
+    targetWeight: targetWeight ?? this.targetWeight,
+    notes: notes.present ? notes.value : this.notes,
+    itemsJson: itemsJson ?? this.itemsJson,
+    actualWeightsJson: actualWeightsJson ?? this.actualWeightsJson,
+    confirmedWarningsJson: confirmedWarningsJson ?? this.confirmedWarningsJson,
+    createdAtUtc: createdAtUtc ?? this.createdAtUtc,
+  );
+  FormulaDraft copyWithCompanion(FormulaDraftsCompanion data) {
+    return FormulaDraft(
+      id: data.id.present ? data.id.value : this.id,
+      revisionId: data.revisionId.present
+          ? data.revisionId.value
+          : this.revisionId,
+      updatedByDevice: data.updatedByDevice.present
+          ? data.updatedByDevice.value
+          : this.updatedByDevice,
+      updatedAtUtc: data.updatedAtUtc.present
+          ? data.updatedAtUtc.value
+          : this.updatedAtUtc,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      deletedAtUtc: data.deletedAtUtc.present
+          ? data.deletedAtUtc.value
+          : this.deletedAtUtc,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      formulaId: data.formulaId.present ? data.formulaId.value : this.formulaId,
+      sourceVersionId: data.sourceVersionId.present
+          ? data.sourceVersionId.value
+          : this.sourceVersionId,
+      customerId: data.customerId.present
+          ? data.customerId.value
+          : this.customerId,
+      plaqueTypeId: data.plaqueTypeId.present
+          ? data.plaqueTypeId.value
+          : this.plaqueTypeId,
+      formulaName: data.formulaName.present
+          ? data.formulaName.value
+          : this.formulaName,
+      productionTypeId: data.productionTypeId.present
+          ? data.productionTypeId.value
+          : this.productionTypeId,
+      targetWeight: data.targetWeight.present
+          ? data.targetWeight.value
+          : this.targetWeight,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      itemsJson: data.itemsJson.present ? data.itemsJson.value : this.itemsJson,
+      actualWeightsJson: data.actualWeightsJson.present
+          ? data.actualWeightsJson.value
+          : this.actualWeightsJson,
+      confirmedWarningsJson: data.confirmedWarningsJson.present
+          ? data.confirmedWarningsJson.value
+          : this.confirmedWarningsJson,
+      createdAtUtc: data.createdAtUtc.present
+          ? data.createdAtUtc.value
+          : this.createdAtUtc,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FormulaDraft(')
+          ..write('id: $id, ')
+          ..write('revisionId: $revisionId, ')
+          ..write('updatedByDevice: $updatedByDevice, ')
+          ..write('updatedAtUtc: $updatedAtUtc, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('deletedAtUtc: $deletedAtUtc, ')
+          ..write('kind: $kind, ')
+          ..write('formulaId: $formulaId, ')
+          ..write('sourceVersionId: $sourceVersionId, ')
+          ..write('customerId: $customerId, ')
+          ..write('plaqueTypeId: $plaqueTypeId, ')
+          ..write('formulaName: $formulaName, ')
+          ..write('productionTypeId: $productionTypeId, ')
+          ..write('targetWeight: $targetWeight, ')
+          ..write('notes: $notes, ')
+          ..write('itemsJson: $itemsJson, ')
+          ..write('actualWeightsJson: $actualWeightsJson, ')
+          ..write('confirmedWarningsJson: $confirmedWarningsJson, ')
+          ..write('createdAtUtc: $createdAtUtc')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    revisionId,
+    updatedByDevice,
+    updatedAtUtc,
+    isDeleted,
+    deletedAtUtc,
+    kind,
+    formulaId,
+    sourceVersionId,
+    customerId,
+    plaqueTypeId,
+    formulaName,
+    productionTypeId,
+    targetWeight,
+    notes,
+    itemsJson,
+    actualWeightsJson,
+    confirmedWarningsJson,
+    createdAtUtc,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FormulaDraft &&
+          other.id == this.id &&
+          other.revisionId == this.revisionId &&
+          other.updatedByDevice == this.updatedByDevice &&
+          other.updatedAtUtc == this.updatedAtUtc &&
+          other.isDeleted == this.isDeleted &&
+          other.deletedAtUtc == this.deletedAtUtc &&
+          other.kind == this.kind &&
+          other.formulaId == this.formulaId &&
+          other.sourceVersionId == this.sourceVersionId &&
+          other.customerId == this.customerId &&
+          other.plaqueTypeId == this.plaqueTypeId &&
+          other.formulaName == this.formulaName &&
+          other.productionTypeId == this.productionTypeId &&
+          other.targetWeight == this.targetWeight &&
+          other.notes == this.notes &&
+          other.itemsJson == this.itemsJson &&
+          other.actualWeightsJson == this.actualWeightsJson &&
+          other.confirmedWarningsJson == this.confirmedWarningsJson &&
+          other.createdAtUtc == this.createdAtUtc);
+}
+
+class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
+  final Value<String> id;
+  final Value<String> revisionId;
+  final Value<String> updatedByDevice;
+  final Value<DateTime> updatedAtUtc;
+  final Value<bool> isDeleted;
+  final Value<DateTime?> deletedAtUtc;
+  final Value<String> kind;
+  final Value<String?> formulaId;
+  final Value<String?> sourceVersionId;
+  final Value<String?> customerId;
+  final Value<String?> plaqueTypeId;
+  final Value<String> formulaName;
+  final Value<String> productionTypeId;
+  final Value<int> targetWeight;
+  final Value<String?> notes;
+  final Value<String> itemsJson;
+  final Value<String> actualWeightsJson;
+  final Value<String> confirmedWarningsJson;
+  final Value<DateTime> createdAtUtc;
+  final Value<int> rowid;
+  const FormulaDraftsCompanion({
+    this.id = const Value.absent(),
+    this.revisionId = const Value.absent(),
+    this.updatedByDevice = const Value.absent(),
+    this.updatedAtUtc = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.deletedAtUtc = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.formulaId = const Value.absent(),
+    this.sourceVersionId = const Value.absent(),
+    this.customerId = const Value.absent(),
+    this.plaqueTypeId = const Value.absent(),
+    this.formulaName = const Value.absent(),
+    this.productionTypeId = const Value.absent(),
+    this.targetWeight = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.itemsJson = const Value.absent(),
+    this.actualWeightsJson = const Value.absent(),
+    this.confirmedWarningsJson = const Value.absent(),
+    this.createdAtUtc = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  FormulaDraftsCompanion.insert({
+    required String id,
+    required String revisionId,
+    required String updatedByDevice,
+    required DateTime updatedAtUtc,
+    this.isDeleted = const Value.absent(),
+    this.deletedAtUtc = const Value.absent(),
+    required String kind,
+    this.formulaId = const Value.absent(),
+    this.sourceVersionId = const Value.absent(),
+    this.customerId = const Value.absent(),
+    this.plaqueTypeId = const Value.absent(),
+    this.formulaName = const Value.absent(),
+    required String productionTypeId,
+    required int targetWeight,
+    this.notes = const Value.absent(),
+    required String itemsJson,
+    required String actualWeightsJson,
+    this.confirmedWarningsJson = const Value.absent(),
+    required DateTime createdAtUtc,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       revisionId = Value(revisionId),
+       updatedByDevice = Value(updatedByDevice),
+       updatedAtUtc = Value(updatedAtUtc),
+       kind = Value(kind),
+       productionTypeId = Value(productionTypeId),
+       targetWeight = Value(targetWeight),
+       itemsJson = Value(itemsJson),
+       actualWeightsJson = Value(actualWeightsJson),
+       createdAtUtc = Value(createdAtUtc);
+  static Insertable<FormulaDraft> custom({
+    Expression<String>? id,
+    Expression<String>? revisionId,
+    Expression<String>? updatedByDevice,
+    Expression<DateTime>? updatedAtUtc,
+    Expression<bool>? isDeleted,
+    Expression<DateTime>? deletedAtUtc,
+    Expression<String>? kind,
+    Expression<String>? formulaId,
+    Expression<String>? sourceVersionId,
+    Expression<String>? customerId,
+    Expression<String>? plaqueTypeId,
+    Expression<String>? formulaName,
+    Expression<String>? productionTypeId,
+    Expression<int>? targetWeight,
+    Expression<String>? notes,
+    Expression<String>? itemsJson,
+    Expression<String>? actualWeightsJson,
+    Expression<String>? confirmedWarningsJson,
+    Expression<DateTime>? createdAtUtc,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (revisionId != null) 'revision_id': revisionId,
+      if (updatedByDevice != null) 'updated_by_device': updatedByDevice,
+      if (updatedAtUtc != null) 'updated_at_utc': updatedAtUtc,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (deletedAtUtc != null) 'deleted_at_utc': deletedAtUtc,
+      if (kind != null) 'kind': kind,
+      if (formulaId != null) 'formula_id': formulaId,
+      if (sourceVersionId != null) 'source_version_id': sourceVersionId,
+      if (customerId != null) 'customer_id': customerId,
+      if (plaqueTypeId != null) 'plaque_type_id': plaqueTypeId,
+      if (formulaName != null) 'formula_name': formulaName,
+      if (productionTypeId != null) 'production_type_id': productionTypeId,
+      if (targetWeight != null) 'target_weight': targetWeight,
+      if (notes != null) 'notes': notes,
+      if (itemsJson != null) 'items_json': itemsJson,
+      if (actualWeightsJson != null) 'actual_weights_json': actualWeightsJson,
+      if (confirmedWarningsJson != null)
+        'confirmed_warnings_json': confirmedWarningsJson,
+      if (createdAtUtc != null) 'created_at_utc': createdAtUtc,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  FormulaDraftsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? revisionId,
+    Value<String>? updatedByDevice,
+    Value<DateTime>? updatedAtUtc,
+    Value<bool>? isDeleted,
+    Value<DateTime?>? deletedAtUtc,
+    Value<String>? kind,
+    Value<String?>? formulaId,
+    Value<String?>? sourceVersionId,
+    Value<String?>? customerId,
+    Value<String?>? plaqueTypeId,
+    Value<String>? formulaName,
+    Value<String>? productionTypeId,
+    Value<int>? targetWeight,
+    Value<String?>? notes,
+    Value<String>? itemsJson,
+    Value<String>? actualWeightsJson,
+    Value<String>? confirmedWarningsJson,
+    Value<DateTime>? createdAtUtc,
+    Value<int>? rowid,
+  }) {
+    return FormulaDraftsCompanion(
+      id: id ?? this.id,
+      revisionId: revisionId ?? this.revisionId,
+      updatedByDevice: updatedByDevice ?? this.updatedByDevice,
+      updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAtUtc: deletedAtUtc ?? this.deletedAtUtc,
+      kind: kind ?? this.kind,
+      formulaId: formulaId ?? this.formulaId,
+      sourceVersionId: sourceVersionId ?? this.sourceVersionId,
+      customerId: customerId ?? this.customerId,
+      plaqueTypeId: plaqueTypeId ?? this.plaqueTypeId,
+      formulaName: formulaName ?? this.formulaName,
+      productionTypeId: productionTypeId ?? this.productionTypeId,
+      targetWeight: targetWeight ?? this.targetWeight,
+      notes: notes ?? this.notes,
+      itemsJson: itemsJson ?? this.itemsJson,
+      actualWeightsJson: actualWeightsJson ?? this.actualWeightsJson,
+      confirmedWarningsJson:
+          confirmedWarningsJson ?? this.confirmedWarningsJson,
+      createdAtUtc: createdAtUtc ?? this.createdAtUtc,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (revisionId.present) {
+      map['revision_id'] = Variable<String>(revisionId.value);
+    }
+    if (updatedByDevice.present) {
+      map['updated_by_device'] = Variable<String>(updatedByDevice.value);
+    }
+    if (updatedAtUtc.present) {
+      map['updated_at_utc'] = Variable<DateTime>(updatedAtUtc.value);
+    }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (deletedAtUtc.present) {
+      map['deleted_at_utc'] = Variable<DateTime>(deletedAtUtc.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (formulaId.present) {
+      map['formula_id'] = Variable<String>(formulaId.value);
+    }
+    if (sourceVersionId.present) {
+      map['source_version_id'] = Variable<String>(sourceVersionId.value);
+    }
+    if (customerId.present) {
+      map['customer_id'] = Variable<String>(customerId.value);
+    }
+    if (plaqueTypeId.present) {
+      map['plaque_type_id'] = Variable<String>(plaqueTypeId.value);
+    }
+    if (formulaName.present) {
+      map['formula_name'] = Variable<String>(formulaName.value);
+    }
+    if (productionTypeId.present) {
+      map['production_type_id'] = Variable<String>(productionTypeId.value);
+    }
+    if (targetWeight.present) {
+      map['target_weight'] = Variable<int>(targetWeight.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (itemsJson.present) {
+      map['items_json'] = Variable<String>(itemsJson.value);
+    }
+    if (actualWeightsJson.present) {
+      map['actual_weights_json'] = Variable<String>(actualWeightsJson.value);
+    }
+    if (confirmedWarningsJson.present) {
+      map['confirmed_warnings_json'] = Variable<String>(
+        confirmedWarningsJson.value,
+      );
+    }
+    if (createdAtUtc.present) {
+      map['created_at_utc'] = Variable<DateTime>(createdAtUtc.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FormulaDraftsCompanion(')
+          ..write('id: $id, ')
+          ..write('revisionId: $revisionId, ')
+          ..write('updatedByDevice: $updatedByDevice, ')
+          ..write('updatedAtUtc: $updatedAtUtc, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('deletedAtUtc: $deletedAtUtc, ')
+          ..write('kind: $kind, ')
+          ..write('formulaId: $formulaId, ')
+          ..write('sourceVersionId: $sourceVersionId, ')
+          ..write('customerId: $customerId, ')
+          ..write('plaqueTypeId: $plaqueTypeId, ')
+          ..write('formulaName: $formulaName, ')
+          ..write('productionTypeId: $productionTypeId, ')
+          ..write('targetWeight: $targetWeight, ')
+          ..write('notes: $notes, ')
+          ..write('itemsJson: $itemsJson, ')
+          ..write('actualWeightsJson: $actualWeightsJson, ')
+          ..write('confirmedWarningsJson: $confirmedWarningsJson, ')
+          ..write('createdAtUtc: $createdAtUtc, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $FormulaVersionsTable extends FormulaVersions
+    with TableInfo<$FormulaVersionsTable, FormulaVersion> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FormulaVersionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _revisionIdMeta = const VerificationMeta(
+    'revisionId',
+  );
+  @override
+  late final GeneratedColumn<String> revisionId = GeneratedColumn<String>(
+    'revision_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedByDeviceMeta = const VerificationMeta(
+    'updatedByDevice',
+  );
+  @override
+  late final GeneratedColumn<String> updatedByDevice = GeneratedColumn<String>(
+    'updated_by_device',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtUtcMeta = const VerificationMeta(
+    'updatedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAtUtc = GeneratedColumn<DateTime>(
+    'updated_at_utc',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _deletedAtUtcMeta = const VerificationMeta(
+    'deletedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAtUtc = GeneratedColumn<DateTime>(
+    'deleted_at_utc',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _formulaIdMeta = const VerificationMeta(
+    'formulaId',
+  );
+  @override
+  late final GeneratedColumn<String> formulaId = GeneratedColumn<String>(
+    'formula_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES formulas (id)',
+    ),
+  );
+  static const VerificationMeta _versionNumberMeta = const VerificationMeta(
+    'versionNumber',
+  );
+  @override
+  late final GeneratedColumn<int> versionNumber = GeneratedColumn<int>(
+    'version_number',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceVersionIdMeta = const VerificationMeta(
+    'sourceVersionId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceVersionId = GeneratedColumn<String>(
+    'source_version_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _productionTypeIdMeta = const VerificationMeta(
+    'productionTypeId',
+  );
+  @override
+  late final GeneratedColumn<String> productionTypeId = GeneratedColumn<String>(
+    'production_type_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES production_types (id)',
+    ),
+  );
+  static const VerificationMeta _createdAtUtcMeta = const VerificationMeta(
+    'createdAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAtUtc = GeneratedColumn<DateTime>(
+    'created_at_utc',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    revisionId,
+    updatedByDevice,
+    updatedAtUtc,
+    isDeleted,
+    deletedAtUtc,
+    formulaId,
+    versionNumber,
+    sourceVersionId,
+    productionTypeId,
+    createdAtUtc,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'formula_versions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FormulaVersion> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('revision_id')) {
+      context.handle(
+        _revisionIdMeta,
+        revisionId.isAcceptableOrUnknown(data['revision_id']!, _revisionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_revisionIdMeta);
+    }
+    if (data.containsKey('updated_by_device')) {
+      context.handle(
+        _updatedByDeviceMeta,
+        updatedByDevice.isAcceptableOrUnknown(
+          data['updated_by_device']!,
+          _updatedByDeviceMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedByDeviceMeta);
+    }
+    if (data.containsKey('updated_at_utc')) {
+      context.handle(
+        _updatedAtUtcMeta,
+        updatedAtUtc.isAcceptableOrUnknown(
+          data['updated_at_utc']!,
+          _updatedAtUtcMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMeta);
+    }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
+    if (data.containsKey('deleted_at_utc')) {
+      context.handle(
+        _deletedAtUtcMeta,
+        deletedAtUtc.isAcceptableOrUnknown(
+          data['deleted_at_utc']!,
+          _deletedAtUtcMeta,
+        ),
+      );
+    }
+    if (data.containsKey('formula_id')) {
+      context.handle(
+        _formulaIdMeta,
+        formulaId.isAcceptableOrUnknown(data['formula_id']!, _formulaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_formulaIdMeta);
+    }
+    if (data.containsKey('version_number')) {
+      context.handle(
+        _versionNumberMeta,
+        versionNumber.isAcceptableOrUnknown(
+          data['version_number']!,
+          _versionNumberMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_versionNumberMeta);
+    }
+    if (data.containsKey('source_version_id')) {
+      context.handle(
+        _sourceVersionIdMeta,
+        sourceVersionId.isAcceptableOrUnknown(
+          data['source_version_id']!,
+          _sourceVersionIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('production_type_id')) {
+      context.handle(
+        _productionTypeIdMeta,
+        productionTypeId.isAcceptableOrUnknown(
+          data['production_type_id']!,
+          _productionTypeIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_productionTypeIdMeta);
+    }
+    if (data.containsKey('created_at_utc')) {
+      context.handle(
+        _createdAtUtcMeta,
+        createdAtUtc.isAcceptableOrUnknown(
+          data['created_at_utc']!,
+          _createdAtUtcMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtUtcMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {formulaId, versionNumber},
+  ];
+  @override
+  FormulaVersion map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FormulaVersion(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      revisionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}revision_id'],
+      )!,
+      updatedByDevice: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}updated_by_device'],
+      )!,
+      updatedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at_utc'],
+      )!,
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
+      deletedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at_utc'],
+      ),
+      formulaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}formula_id'],
+      )!,
+      versionNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}version_number'],
+      )!,
+      sourceVersionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_version_id'],
+      ),
+      productionTypeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}production_type_id'],
+      )!,
+      createdAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at_utc'],
+      )!,
+    );
+  }
+
+  @override
+  $FormulaVersionsTable createAlias(String alias) {
+    return $FormulaVersionsTable(attachedDatabase, alias);
+  }
+}
+
+class FormulaVersion extends DataClass implements Insertable<FormulaVersion> {
+  final String id;
+  final String revisionId;
+  final String updatedByDevice;
+  final DateTime updatedAtUtc;
+  final bool isDeleted;
+  final DateTime? deletedAtUtc;
+  final String formulaId;
+  final int versionNumber;
+  final String? sourceVersionId;
+  final String productionTypeId;
+  final DateTime createdAtUtc;
+  const FormulaVersion({
+    required this.id,
+    required this.revisionId,
+    required this.updatedByDevice,
+    required this.updatedAtUtc,
+    required this.isDeleted,
+    this.deletedAtUtc,
+    required this.formulaId,
+    required this.versionNumber,
+    this.sourceVersionId,
+    required this.productionTypeId,
+    required this.createdAtUtc,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['revision_id'] = Variable<String>(revisionId);
+    map['updated_by_device'] = Variable<String>(updatedByDevice);
+    map['updated_at_utc'] = Variable<DateTime>(updatedAtUtc);
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    if (!nullToAbsent || deletedAtUtc != null) {
+      map['deleted_at_utc'] = Variable<DateTime>(deletedAtUtc);
+    }
+    map['formula_id'] = Variable<String>(formulaId);
+    map['version_number'] = Variable<int>(versionNumber);
+    if (!nullToAbsent || sourceVersionId != null) {
+      map['source_version_id'] = Variable<String>(sourceVersionId);
+    }
+    map['production_type_id'] = Variable<String>(productionTypeId);
+    map['created_at_utc'] = Variable<DateTime>(createdAtUtc);
+    return map;
+  }
+
+  FormulaVersionsCompanion toCompanion(bool nullToAbsent) {
+    return FormulaVersionsCompanion(
+      id: Value(id),
+      revisionId: Value(revisionId),
+      updatedByDevice: Value(updatedByDevice),
+      updatedAtUtc: Value(updatedAtUtc),
+      isDeleted: Value(isDeleted),
+      deletedAtUtc: deletedAtUtc == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAtUtc),
+      formulaId: Value(formulaId),
+      versionNumber: Value(versionNumber),
+      sourceVersionId: sourceVersionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceVersionId),
+      productionTypeId: Value(productionTypeId),
+      createdAtUtc: Value(createdAtUtc),
+    );
+  }
+
+  factory FormulaVersion.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FormulaVersion(
+      id: serializer.fromJson<String>(json['id']),
+      revisionId: serializer.fromJson<String>(json['revisionId']),
+      updatedByDevice: serializer.fromJson<String>(json['updatedByDevice']),
+      updatedAtUtc: serializer.fromJson<DateTime>(json['updatedAtUtc']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      deletedAtUtc: serializer.fromJson<DateTime?>(json['deletedAtUtc']),
+      formulaId: serializer.fromJson<String>(json['formulaId']),
+      versionNumber: serializer.fromJson<int>(json['versionNumber']),
+      sourceVersionId: serializer.fromJson<String?>(json['sourceVersionId']),
+      productionTypeId: serializer.fromJson<String>(json['productionTypeId']),
+      createdAtUtc: serializer.fromJson<DateTime>(json['createdAtUtc']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'revisionId': serializer.toJson<String>(revisionId),
+      'updatedByDevice': serializer.toJson<String>(updatedByDevice),
+      'updatedAtUtc': serializer.toJson<DateTime>(updatedAtUtc),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'deletedAtUtc': serializer.toJson<DateTime?>(deletedAtUtc),
+      'formulaId': serializer.toJson<String>(formulaId),
+      'versionNumber': serializer.toJson<int>(versionNumber),
+      'sourceVersionId': serializer.toJson<String?>(sourceVersionId),
+      'productionTypeId': serializer.toJson<String>(productionTypeId),
+      'createdAtUtc': serializer.toJson<DateTime>(createdAtUtc),
+    };
+  }
+
+  FormulaVersion copyWith({
+    String? id,
+    String? revisionId,
+    String? updatedByDevice,
+    DateTime? updatedAtUtc,
+    bool? isDeleted,
+    Value<DateTime?> deletedAtUtc = const Value.absent(),
+    String? formulaId,
+    int? versionNumber,
+    Value<String?> sourceVersionId = const Value.absent(),
+    String? productionTypeId,
+    DateTime? createdAtUtc,
+  }) => FormulaVersion(
+    id: id ?? this.id,
+    revisionId: revisionId ?? this.revisionId,
+    updatedByDevice: updatedByDevice ?? this.updatedByDevice,
+    updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
+    isDeleted: isDeleted ?? this.isDeleted,
+    deletedAtUtc: deletedAtUtc.present ? deletedAtUtc.value : this.deletedAtUtc,
+    formulaId: formulaId ?? this.formulaId,
+    versionNumber: versionNumber ?? this.versionNumber,
+    sourceVersionId: sourceVersionId.present
+        ? sourceVersionId.value
+        : this.sourceVersionId,
+    productionTypeId: productionTypeId ?? this.productionTypeId,
+    createdAtUtc: createdAtUtc ?? this.createdAtUtc,
+  );
+  FormulaVersion copyWithCompanion(FormulaVersionsCompanion data) {
+    return FormulaVersion(
+      id: data.id.present ? data.id.value : this.id,
+      revisionId: data.revisionId.present
+          ? data.revisionId.value
+          : this.revisionId,
+      updatedByDevice: data.updatedByDevice.present
+          ? data.updatedByDevice.value
+          : this.updatedByDevice,
+      updatedAtUtc: data.updatedAtUtc.present
+          ? data.updatedAtUtc.value
+          : this.updatedAtUtc,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      deletedAtUtc: data.deletedAtUtc.present
+          ? data.deletedAtUtc.value
+          : this.deletedAtUtc,
+      formulaId: data.formulaId.present ? data.formulaId.value : this.formulaId,
+      versionNumber: data.versionNumber.present
+          ? data.versionNumber.value
+          : this.versionNumber,
+      sourceVersionId: data.sourceVersionId.present
+          ? data.sourceVersionId.value
+          : this.sourceVersionId,
+      productionTypeId: data.productionTypeId.present
+          ? data.productionTypeId.value
+          : this.productionTypeId,
+      createdAtUtc: data.createdAtUtc.present
+          ? data.createdAtUtc.value
+          : this.createdAtUtc,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FormulaVersion(')
+          ..write('id: $id, ')
+          ..write('revisionId: $revisionId, ')
+          ..write('updatedByDevice: $updatedByDevice, ')
+          ..write('updatedAtUtc: $updatedAtUtc, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('deletedAtUtc: $deletedAtUtc, ')
+          ..write('formulaId: $formulaId, ')
+          ..write('versionNumber: $versionNumber, ')
+          ..write('sourceVersionId: $sourceVersionId, ')
+          ..write('productionTypeId: $productionTypeId, ')
+          ..write('createdAtUtc: $createdAtUtc')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    revisionId,
+    updatedByDevice,
+    updatedAtUtc,
+    isDeleted,
+    deletedAtUtc,
+    formulaId,
+    versionNumber,
+    sourceVersionId,
+    productionTypeId,
+    createdAtUtc,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FormulaVersion &&
+          other.id == this.id &&
+          other.revisionId == this.revisionId &&
+          other.updatedByDevice == this.updatedByDevice &&
+          other.updatedAtUtc == this.updatedAtUtc &&
+          other.isDeleted == this.isDeleted &&
+          other.deletedAtUtc == this.deletedAtUtc &&
+          other.formulaId == this.formulaId &&
+          other.versionNumber == this.versionNumber &&
+          other.sourceVersionId == this.sourceVersionId &&
+          other.productionTypeId == this.productionTypeId &&
+          other.createdAtUtc == this.createdAtUtc);
+}
+
+class FormulaVersionsCompanion extends UpdateCompanion<FormulaVersion> {
+  final Value<String> id;
+  final Value<String> revisionId;
+  final Value<String> updatedByDevice;
+  final Value<DateTime> updatedAtUtc;
+  final Value<bool> isDeleted;
+  final Value<DateTime?> deletedAtUtc;
+  final Value<String> formulaId;
+  final Value<int> versionNumber;
+  final Value<String?> sourceVersionId;
+  final Value<String> productionTypeId;
+  final Value<DateTime> createdAtUtc;
+  final Value<int> rowid;
+  const FormulaVersionsCompanion({
+    this.id = const Value.absent(),
+    this.revisionId = const Value.absent(),
+    this.updatedByDevice = const Value.absent(),
+    this.updatedAtUtc = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.deletedAtUtc = const Value.absent(),
+    this.formulaId = const Value.absent(),
+    this.versionNumber = const Value.absent(),
+    this.sourceVersionId = const Value.absent(),
+    this.productionTypeId = const Value.absent(),
+    this.createdAtUtc = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  FormulaVersionsCompanion.insert({
+    required String id,
+    required String revisionId,
+    required String updatedByDevice,
+    required DateTime updatedAtUtc,
+    this.isDeleted = const Value.absent(),
+    this.deletedAtUtc = const Value.absent(),
+    required String formulaId,
+    required int versionNumber,
+    this.sourceVersionId = const Value.absent(),
+    required String productionTypeId,
+    required DateTime createdAtUtc,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       revisionId = Value(revisionId),
+       updatedByDevice = Value(updatedByDevice),
+       updatedAtUtc = Value(updatedAtUtc),
+       formulaId = Value(formulaId),
+       versionNumber = Value(versionNumber),
+       productionTypeId = Value(productionTypeId),
+       createdAtUtc = Value(createdAtUtc);
+  static Insertable<FormulaVersion> custom({
+    Expression<String>? id,
+    Expression<String>? revisionId,
+    Expression<String>? updatedByDevice,
+    Expression<DateTime>? updatedAtUtc,
+    Expression<bool>? isDeleted,
+    Expression<DateTime>? deletedAtUtc,
+    Expression<String>? formulaId,
+    Expression<int>? versionNumber,
+    Expression<String>? sourceVersionId,
+    Expression<String>? productionTypeId,
+    Expression<DateTime>? createdAtUtc,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (revisionId != null) 'revision_id': revisionId,
+      if (updatedByDevice != null) 'updated_by_device': updatedByDevice,
+      if (updatedAtUtc != null) 'updated_at_utc': updatedAtUtc,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (deletedAtUtc != null) 'deleted_at_utc': deletedAtUtc,
+      if (formulaId != null) 'formula_id': formulaId,
+      if (versionNumber != null) 'version_number': versionNumber,
+      if (sourceVersionId != null) 'source_version_id': sourceVersionId,
+      if (productionTypeId != null) 'production_type_id': productionTypeId,
+      if (createdAtUtc != null) 'created_at_utc': createdAtUtc,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  FormulaVersionsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? revisionId,
+    Value<String>? updatedByDevice,
+    Value<DateTime>? updatedAtUtc,
+    Value<bool>? isDeleted,
+    Value<DateTime?>? deletedAtUtc,
+    Value<String>? formulaId,
+    Value<int>? versionNumber,
+    Value<String?>? sourceVersionId,
+    Value<String>? productionTypeId,
+    Value<DateTime>? createdAtUtc,
+    Value<int>? rowid,
+  }) {
+    return FormulaVersionsCompanion(
+      id: id ?? this.id,
+      revisionId: revisionId ?? this.revisionId,
+      updatedByDevice: updatedByDevice ?? this.updatedByDevice,
+      updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAtUtc: deletedAtUtc ?? this.deletedAtUtc,
+      formulaId: formulaId ?? this.formulaId,
+      versionNumber: versionNumber ?? this.versionNumber,
+      sourceVersionId: sourceVersionId ?? this.sourceVersionId,
+      productionTypeId: productionTypeId ?? this.productionTypeId,
+      createdAtUtc: createdAtUtc ?? this.createdAtUtc,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (revisionId.present) {
+      map['revision_id'] = Variable<String>(revisionId.value);
+    }
+    if (updatedByDevice.present) {
+      map['updated_by_device'] = Variable<String>(updatedByDevice.value);
+    }
+    if (updatedAtUtc.present) {
+      map['updated_at_utc'] = Variable<DateTime>(updatedAtUtc.value);
+    }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (deletedAtUtc.present) {
+      map['deleted_at_utc'] = Variable<DateTime>(deletedAtUtc.value);
+    }
+    if (formulaId.present) {
+      map['formula_id'] = Variable<String>(formulaId.value);
+    }
+    if (versionNumber.present) {
+      map['version_number'] = Variable<int>(versionNumber.value);
+    }
+    if (sourceVersionId.present) {
+      map['source_version_id'] = Variable<String>(sourceVersionId.value);
+    }
+    if (productionTypeId.present) {
+      map['production_type_id'] = Variable<String>(productionTypeId.value);
+    }
+    if (createdAtUtc.present) {
+      map['created_at_utc'] = Variable<DateTime>(createdAtUtc.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FormulaVersionsCompanion(')
+          ..write('id: $id, ')
+          ..write('revisionId: $revisionId, ')
+          ..write('updatedByDevice: $updatedByDevice, ')
+          ..write('updatedAtUtc: $updatedAtUtc, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('deletedAtUtc: $deletedAtUtc, ')
+          ..write('formulaId: $formulaId, ')
+          ..write('versionNumber: $versionNumber, ')
+          ..write('sourceVersionId: $sourceVersionId, ')
+          ..write('productionTypeId: $productionTypeId, ')
+          ..write('createdAtUtc: $createdAtUtc, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $FormulaItemsTable extends FormulaItems
+    with TableInfo<$FormulaItemsTable, FormulaItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FormulaItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _revisionIdMeta = const VerificationMeta(
+    'revisionId',
+  );
+  @override
+  late final GeneratedColumn<String> revisionId = GeneratedColumn<String>(
+    'revision_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedByDeviceMeta = const VerificationMeta(
+    'updatedByDevice',
+  );
+  @override
+  late final GeneratedColumn<String> updatedByDevice = GeneratedColumn<String>(
+    'updated_by_device',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtUtcMeta = const VerificationMeta(
+    'updatedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAtUtc = GeneratedColumn<DateTime>(
+    'updated_at_utc',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _deletedAtUtcMeta = const VerificationMeta(
+    'deletedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAtUtc = GeneratedColumn<DateTime>(
+    'deleted_at_utc',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _versionIdMeta = const VerificationMeta(
+    'versionId',
+  );
+  @override
+  late final GeneratedColumn<String> versionId = GeneratedColumn<String>(
+    'version_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES formula_versions (id)',
+    ),
+  );
+  static const VerificationMeta _categoryNameMeta = const VerificationMeta(
+    'categoryName',
+  );
+  @override
+  late final GeneratedColumn<String> categoryName = GeneratedColumn<String>(
+    'category_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ingredientNameMeta = const VerificationMeta(
+    'ingredientName',
+  );
+  @override
+  late final GeneratedColumn<String> ingredientName = GeneratedColumn<String>(
+    'ingredient_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _skuCodeMeta = const VerificationMeta(
+    'skuCode',
+  );
+  @override
+  late final GeneratedColumn<String> skuCode = GeneratedColumn<String>(
+    'sku_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _skuIdMeta = const VerificationMeta('skuId');
+  @override
+  late final GeneratedColumn<String> skuId = GeneratedColumn<String>(
+    'sku_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ratioMeta = const VerificationMeta('ratio');
+  @override
+  late final GeneratedColumn<int> ratio = GeneratedColumn<int>(
+    'ratio',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    revisionId,
+    updatedByDevice,
+    updatedAtUtc,
+    isDeleted,
+    deletedAtUtc,
+    versionId,
+    categoryName,
+    ingredientName,
+    skuCode,
+    skuId,
+    ratio,
+    sortOrder,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'formula_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FormulaItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('revision_id')) {
+      context.handle(
+        _revisionIdMeta,
+        revisionId.isAcceptableOrUnknown(data['revision_id']!, _revisionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_revisionIdMeta);
+    }
+    if (data.containsKey('updated_by_device')) {
+      context.handle(
+        _updatedByDeviceMeta,
+        updatedByDevice.isAcceptableOrUnknown(
+          data['updated_by_device']!,
+          _updatedByDeviceMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedByDeviceMeta);
+    }
+    if (data.containsKey('updated_at_utc')) {
+      context.handle(
+        _updatedAtUtcMeta,
+        updatedAtUtc.isAcceptableOrUnknown(
+          data['updated_at_utc']!,
+          _updatedAtUtcMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMeta);
+    }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
+    if (data.containsKey('deleted_at_utc')) {
+      context.handle(
+        _deletedAtUtcMeta,
+        deletedAtUtc.isAcceptableOrUnknown(
+          data['deleted_at_utc']!,
+          _deletedAtUtcMeta,
+        ),
+      );
+    }
+    if (data.containsKey('version_id')) {
+      context.handle(
+        _versionIdMeta,
+        versionId.isAcceptableOrUnknown(data['version_id']!, _versionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_versionIdMeta);
+    }
+    if (data.containsKey('category_name')) {
+      context.handle(
+        _categoryNameMeta,
+        categoryName.isAcceptableOrUnknown(
+          data['category_name']!,
+          _categoryNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_categoryNameMeta);
+    }
+    if (data.containsKey('ingredient_name')) {
+      context.handle(
+        _ingredientNameMeta,
+        ingredientName.isAcceptableOrUnknown(
+          data['ingredient_name']!,
+          _ingredientNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_ingredientNameMeta);
+    }
+    if (data.containsKey('sku_code')) {
+      context.handle(
+        _skuCodeMeta,
+        skuCode.isAcceptableOrUnknown(data['sku_code']!, _skuCodeMeta),
+      );
+    }
+    if (data.containsKey('sku_id')) {
+      context.handle(
+        _skuIdMeta,
+        skuId.isAcceptableOrUnknown(data['sku_id']!, _skuIdMeta),
+      );
+    }
+    if (data.containsKey('ratio')) {
+      context.handle(
+        _ratioMeta,
+        ratio.isAcceptableOrUnknown(data['ratio']!, _ratioMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ratioMeta);
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sortOrderMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  FormulaItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FormulaItem(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      revisionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}revision_id'],
+      )!,
+      updatedByDevice: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}updated_by_device'],
+      )!,
+      updatedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at_utc'],
+      )!,
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
+      deletedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at_utc'],
+      ),
+      versionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}version_id'],
+      )!,
+      categoryName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category_name'],
+      )!,
+      ingredientName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ingredient_name'],
+      )!,
+      skuCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sku_code'],
+      ),
+      skuId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sku_id'],
+      ),
+      ratio: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ratio'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+    );
+  }
+
+  @override
+  $FormulaItemsTable createAlias(String alias) {
+    return $FormulaItemsTable(attachedDatabase, alias);
+  }
+}
+
+class FormulaItem extends DataClass implements Insertable<FormulaItem> {
+  final String id;
+  final String revisionId;
+  final String updatedByDevice;
+  final DateTime updatedAtUtc;
+  final bool isDeleted;
+  final DateTime? deletedAtUtc;
+  final String versionId;
+  final String categoryName;
+  final String ingredientName;
+  final String? skuCode;
+  final String? skuId;
+  final int ratio;
+  final int sortOrder;
+  const FormulaItem({
+    required this.id,
+    required this.revisionId,
+    required this.updatedByDevice,
+    required this.updatedAtUtc,
+    required this.isDeleted,
+    this.deletedAtUtc,
+    required this.versionId,
+    required this.categoryName,
+    required this.ingredientName,
+    this.skuCode,
+    this.skuId,
+    required this.ratio,
+    required this.sortOrder,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['revision_id'] = Variable<String>(revisionId);
+    map['updated_by_device'] = Variable<String>(updatedByDevice);
+    map['updated_at_utc'] = Variable<DateTime>(updatedAtUtc);
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    if (!nullToAbsent || deletedAtUtc != null) {
+      map['deleted_at_utc'] = Variable<DateTime>(deletedAtUtc);
+    }
+    map['version_id'] = Variable<String>(versionId);
+    map['category_name'] = Variable<String>(categoryName);
+    map['ingredient_name'] = Variable<String>(ingredientName);
+    if (!nullToAbsent || skuCode != null) {
+      map['sku_code'] = Variable<String>(skuCode);
+    }
+    if (!nullToAbsent || skuId != null) {
+      map['sku_id'] = Variable<String>(skuId);
+    }
+    map['ratio'] = Variable<int>(ratio);
+    map['sort_order'] = Variable<int>(sortOrder);
+    return map;
+  }
+
+  FormulaItemsCompanion toCompanion(bool nullToAbsent) {
+    return FormulaItemsCompanion(
+      id: Value(id),
+      revisionId: Value(revisionId),
+      updatedByDevice: Value(updatedByDevice),
+      updatedAtUtc: Value(updatedAtUtc),
+      isDeleted: Value(isDeleted),
+      deletedAtUtc: deletedAtUtc == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAtUtc),
+      versionId: Value(versionId),
+      categoryName: Value(categoryName),
+      ingredientName: Value(ingredientName),
+      skuCode: skuCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(skuCode),
+      skuId: skuId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(skuId),
+      ratio: Value(ratio),
+      sortOrder: Value(sortOrder),
+    );
+  }
+
+  factory FormulaItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FormulaItem(
+      id: serializer.fromJson<String>(json['id']),
+      revisionId: serializer.fromJson<String>(json['revisionId']),
+      updatedByDevice: serializer.fromJson<String>(json['updatedByDevice']),
+      updatedAtUtc: serializer.fromJson<DateTime>(json['updatedAtUtc']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      deletedAtUtc: serializer.fromJson<DateTime?>(json['deletedAtUtc']),
+      versionId: serializer.fromJson<String>(json['versionId']),
+      categoryName: serializer.fromJson<String>(json['categoryName']),
+      ingredientName: serializer.fromJson<String>(json['ingredientName']),
+      skuCode: serializer.fromJson<String?>(json['skuCode']),
+      skuId: serializer.fromJson<String?>(json['skuId']),
+      ratio: serializer.fromJson<int>(json['ratio']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'revisionId': serializer.toJson<String>(revisionId),
+      'updatedByDevice': serializer.toJson<String>(updatedByDevice),
+      'updatedAtUtc': serializer.toJson<DateTime>(updatedAtUtc),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'deletedAtUtc': serializer.toJson<DateTime?>(deletedAtUtc),
+      'versionId': serializer.toJson<String>(versionId),
+      'categoryName': serializer.toJson<String>(categoryName),
+      'ingredientName': serializer.toJson<String>(ingredientName),
+      'skuCode': serializer.toJson<String?>(skuCode),
+      'skuId': serializer.toJson<String?>(skuId),
+      'ratio': serializer.toJson<int>(ratio),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+    };
+  }
+
+  FormulaItem copyWith({
+    String? id,
+    String? revisionId,
+    String? updatedByDevice,
+    DateTime? updatedAtUtc,
+    bool? isDeleted,
+    Value<DateTime?> deletedAtUtc = const Value.absent(),
+    String? versionId,
+    String? categoryName,
+    String? ingredientName,
+    Value<String?> skuCode = const Value.absent(),
+    Value<String?> skuId = const Value.absent(),
+    int? ratio,
+    int? sortOrder,
+  }) => FormulaItem(
+    id: id ?? this.id,
+    revisionId: revisionId ?? this.revisionId,
+    updatedByDevice: updatedByDevice ?? this.updatedByDevice,
+    updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
+    isDeleted: isDeleted ?? this.isDeleted,
+    deletedAtUtc: deletedAtUtc.present ? deletedAtUtc.value : this.deletedAtUtc,
+    versionId: versionId ?? this.versionId,
+    categoryName: categoryName ?? this.categoryName,
+    ingredientName: ingredientName ?? this.ingredientName,
+    skuCode: skuCode.present ? skuCode.value : this.skuCode,
+    skuId: skuId.present ? skuId.value : this.skuId,
+    ratio: ratio ?? this.ratio,
+    sortOrder: sortOrder ?? this.sortOrder,
+  );
+  FormulaItem copyWithCompanion(FormulaItemsCompanion data) {
+    return FormulaItem(
+      id: data.id.present ? data.id.value : this.id,
+      revisionId: data.revisionId.present
+          ? data.revisionId.value
+          : this.revisionId,
+      updatedByDevice: data.updatedByDevice.present
+          ? data.updatedByDevice.value
+          : this.updatedByDevice,
+      updatedAtUtc: data.updatedAtUtc.present
+          ? data.updatedAtUtc.value
+          : this.updatedAtUtc,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      deletedAtUtc: data.deletedAtUtc.present
+          ? data.deletedAtUtc.value
+          : this.deletedAtUtc,
+      versionId: data.versionId.present ? data.versionId.value : this.versionId,
+      categoryName: data.categoryName.present
+          ? data.categoryName.value
+          : this.categoryName,
+      ingredientName: data.ingredientName.present
+          ? data.ingredientName.value
+          : this.ingredientName,
+      skuCode: data.skuCode.present ? data.skuCode.value : this.skuCode,
+      skuId: data.skuId.present ? data.skuId.value : this.skuId,
+      ratio: data.ratio.present ? data.ratio.value : this.ratio,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FormulaItem(')
+          ..write('id: $id, ')
+          ..write('revisionId: $revisionId, ')
+          ..write('updatedByDevice: $updatedByDevice, ')
+          ..write('updatedAtUtc: $updatedAtUtc, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('deletedAtUtc: $deletedAtUtc, ')
+          ..write('versionId: $versionId, ')
+          ..write('categoryName: $categoryName, ')
+          ..write('ingredientName: $ingredientName, ')
+          ..write('skuCode: $skuCode, ')
+          ..write('skuId: $skuId, ')
+          ..write('ratio: $ratio, ')
+          ..write('sortOrder: $sortOrder')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    revisionId,
+    updatedByDevice,
+    updatedAtUtc,
+    isDeleted,
+    deletedAtUtc,
+    versionId,
+    categoryName,
+    ingredientName,
+    skuCode,
+    skuId,
+    ratio,
+    sortOrder,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FormulaItem &&
+          other.id == this.id &&
+          other.revisionId == this.revisionId &&
+          other.updatedByDevice == this.updatedByDevice &&
+          other.updatedAtUtc == this.updatedAtUtc &&
+          other.isDeleted == this.isDeleted &&
+          other.deletedAtUtc == this.deletedAtUtc &&
+          other.versionId == this.versionId &&
+          other.categoryName == this.categoryName &&
+          other.ingredientName == this.ingredientName &&
+          other.skuCode == this.skuCode &&
+          other.skuId == this.skuId &&
+          other.ratio == this.ratio &&
+          other.sortOrder == this.sortOrder);
+}
+
+class FormulaItemsCompanion extends UpdateCompanion<FormulaItem> {
+  final Value<String> id;
+  final Value<String> revisionId;
+  final Value<String> updatedByDevice;
+  final Value<DateTime> updatedAtUtc;
+  final Value<bool> isDeleted;
+  final Value<DateTime?> deletedAtUtc;
+  final Value<String> versionId;
+  final Value<String> categoryName;
+  final Value<String> ingredientName;
+  final Value<String?> skuCode;
+  final Value<String?> skuId;
+  final Value<int> ratio;
+  final Value<int> sortOrder;
+  final Value<int> rowid;
+  const FormulaItemsCompanion({
+    this.id = const Value.absent(),
+    this.revisionId = const Value.absent(),
+    this.updatedByDevice = const Value.absent(),
+    this.updatedAtUtc = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.deletedAtUtc = const Value.absent(),
+    this.versionId = const Value.absent(),
+    this.categoryName = const Value.absent(),
+    this.ingredientName = const Value.absent(),
+    this.skuCode = const Value.absent(),
+    this.skuId = const Value.absent(),
+    this.ratio = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  FormulaItemsCompanion.insert({
+    required String id,
+    required String revisionId,
+    required String updatedByDevice,
+    required DateTime updatedAtUtc,
+    this.isDeleted = const Value.absent(),
+    this.deletedAtUtc = const Value.absent(),
+    required String versionId,
+    required String categoryName,
+    required String ingredientName,
+    this.skuCode = const Value.absent(),
+    this.skuId = const Value.absent(),
+    required int ratio,
+    required int sortOrder,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       revisionId = Value(revisionId),
+       updatedByDevice = Value(updatedByDevice),
+       updatedAtUtc = Value(updatedAtUtc),
+       versionId = Value(versionId),
+       categoryName = Value(categoryName),
+       ingredientName = Value(ingredientName),
+       ratio = Value(ratio),
+       sortOrder = Value(sortOrder);
+  static Insertable<FormulaItem> custom({
+    Expression<String>? id,
+    Expression<String>? revisionId,
+    Expression<String>? updatedByDevice,
+    Expression<DateTime>? updatedAtUtc,
+    Expression<bool>? isDeleted,
+    Expression<DateTime>? deletedAtUtc,
+    Expression<String>? versionId,
+    Expression<String>? categoryName,
+    Expression<String>? ingredientName,
+    Expression<String>? skuCode,
+    Expression<String>? skuId,
+    Expression<int>? ratio,
+    Expression<int>? sortOrder,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (revisionId != null) 'revision_id': revisionId,
+      if (updatedByDevice != null) 'updated_by_device': updatedByDevice,
+      if (updatedAtUtc != null) 'updated_at_utc': updatedAtUtc,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (deletedAtUtc != null) 'deleted_at_utc': deletedAtUtc,
+      if (versionId != null) 'version_id': versionId,
+      if (categoryName != null) 'category_name': categoryName,
+      if (ingredientName != null) 'ingredient_name': ingredientName,
+      if (skuCode != null) 'sku_code': skuCode,
+      if (skuId != null) 'sku_id': skuId,
+      if (ratio != null) 'ratio': ratio,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  FormulaItemsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? revisionId,
+    Value<String>? updatedByDevice,
+    Value<DateTime>? updatedAtUtc,
+    Value<bool>? isDeleted,
+    Value<DateTime?>? deletedAtUtc,
+    Value<String>? versionId,
+    Value<String>? categoryName,
+    Value<String>? ingredientName,
+    Value<String?>? skuCode,
+    Value<String?>? skuId,
+    Value<int>? ratio,
+    Value<int>? sortOrder,
+    Value<int>? rowid,
+  }) {
+    return FormulaItemsCompanion(
+      id: id ?? this.id,
+      revisionId: revisionId ?? this.revisionId,
+      updatedByDevice: updatedByDevice ?? this.updatedByDevice,
+      updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAtUtc: deletedAtUtc ?? this.deletedAtUtc,
+      versionId: versionId ?? this.versionId,
+      categoryName: categoryName ?? this.categoryName,
+      ingredientName: ingredientName ?? this.ingredientName,
+      skuCode: skuCode ?? this.skuCode,
+      skuId: skuId ?? this.skuId,
+      ratio: ratio ?? this.ratio,
+      sortOrder: sortOrder ?? this.sortOrder,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (revisionId.present) {
+      map['revision_id'] = Variable<String>(revisionId.value);
+    }
+    if (updatedByDevice.present) {
+      map['updated_by_device'] = Variable<String>(updatedByDevice.value);
+    }
+    if (updatedAtUtc.present) {
+      map['updated_at_utc'] = Variable<DateTime>(updatedAtUtc.value);
+    }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (deletedAtUtc.present) {
+      map['deleted_at_utc'] = Variable<DateTime>(deletedAtUtc.value);
+    }
+    if (versionId.present) {
+      map['version_id'] = Variable<String>(versionId.value);
+    }
+    if (categoryName.present) {
+      map['category_name'] = Variable<String>(categoryName.value);
+    }
+    if (ingredientName.present) {
+      map['ingredient_name'] = Variable<String>(ingredientName.value);
+    }
+    if (skuCode.present) {
+      map['sku_code'] = Variable<String>(skuCode.value);
+    }
+    if (skuId.present) {
+      map['sku_id'] = Variable<String>(skuId.value);
+    }
+    if (ratio.present) {
+      map['ratio'] = Variable<int>(ratio.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FormulaItemsCompanion(')
+          ..write('id: $id, ')
+          ..write('revisionId: $revisionId, ')
+          ..write('updatedByDevice: $updatedByDevice, ')
+          ..write('updatedAtUtc: $updatedAtUtc, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('deletedAtUtc: $deletedAtUtc, ')
+          ..write('versionId: $versionId, ')
+          ..write('categoryName: $categoryName, ')
+          ..write('ingredientName: $ingredientName, ')
+          ..write('skuCode: $skuCode, ')
+          ..write('skuId: $skuId, ')
+          ..write('ratio: $ratio, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MixingSessionsTable extends MixingSessions
+    with TableInfo<$MixingSessionsTable, MixingSession> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MixingSessionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _revisionIdMeta = const VerificationMeta(
+    'revisionId',
+  );
+  @override
+  late final GeneratedColumn<String> revisionId = GeneratedColumn<String>(
+    'revision_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedByDeviceMeta = const VerificationMeta(
+    'updatedByDevice',
+  );
+  @override
+  late final GeneratedColumn<String> updatedByDevice = GeneratedColumn<String>(
+    'updated_by_device',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtUtcMeta = const VerificationMeta(
+    'updatedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAtUtc = GeneratedColumn<DateTime>(
+    'updated_at_utc',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _deletedAtUtcMeta = const VerificationMeta(
+    'deletedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAtUtc = GeneratedColumn<DateTime>(
+    'deleted_at_utc',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _formulaIdMeta = const VerificationMeta(
+    'formulaId',
+  );
+  @override
+  late final GeneratedColumn<String> formulaId = GeneratedColumn<String>(
+    'formula_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES formulas (id)',
+    ),
+  );
+  static const VerificationMeta _versionIdMeta = const VerificationMeta(
+    'versionId',
+  );
+  @override
+  late final GeneratedColumn<String> versionId = GeneratedColumn<String>(
+    'version_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES formula_versions (id)',
+    ),
+  );
+  static const VerificationMeta _customerIdMeta = const VerificationMeta(
+    'customerId',
+  );
+  @override
+  late final GeneratedColumn<String> customerId = GeneratedColumn<String>(
+    'customer_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES customers (id)',
+    ),
+  );
+  static const VerificationMeta _plaqueTypeIdMeta = const VerificationMeta(
+    'plaqueTypeId',
+  );
+  @override
+  late final GeneratedColumn<String> plaqueTypeId = GeneratedColumn<String>(
+    'plaque_type_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES plaque_types (id)',
+    ),
+  );
+  static const VerificationMeta _formulaNameMeta = const VerificationMeta(
+    'formulaName',
+  );
+  @override
+  late final GeneratedColumn<String> formulaName = GeneratedColumn<String>(
+    'formula_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _productionTypeNameMeta =
+      const VerificationMeta('productionTypeName');
+  @override
+  late final GeneratedColumn<String> productionTypeName =
+      GeneratedColumn<String>(
+        'production_type_name',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _targetWeightMeta = const VerificationMeta(
+    'targetWeight',
+  );
+  @override
+  late final GeneratedColumn<int> targetWeight = GeneratedColumn<int>(
+    'target_weight',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _finalWeightMeta = const VerificationMeta(
+    'finalWeight',
+  );
+  @override
+  late final GeneratedColumn<int> finalWeight = GeneratedColumn<int>(
+    'final_weight',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtUtcMeta = const VerificationMeta(
+    'createdAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAtUtc = GeneratedColumn<DateTime>(
+    'created_at_utc',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _completedAtUtcMeta = const VerificationMeta(
+    'completedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> completedAtUtc =
+      GeneratedColumn<DateTime>(
+        'completed_at_utc',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: true,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    revisionId,
+    updatedByDevice,
+    updatedAtUtc,
+    isDeleted,
+    deletedAtUtc,
+    formulaId,
+    versionId,
+    customerId,
+    plaqueTypeId,
+    formulaName,
+    productionTypeName,
+    targetWeight,
+    finalWeight,
+    notes,
+    createdAtUtc,
+    completedAtUtc,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'mixing_sessions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MixingSession> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('revision_id')) {
+      context.handle(
+        _revisionIdMeta,
+        revisionId.isAcceptableOrUnknown(data['revision_id']!, _revisionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_revisionIdMeta);
+    }
+    if (data.containsKey('updated_by_device')) {
+      context.handle(
+        _updatedByDeviceMeta,
+        updatedByDevice.isAcceptableOrUnknown(
+          data['updated_by_device']!,
+          _updatedByDeviceMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedByDeviceMeta);
+    }
+    if (data.containsKey('updated_at_utc')) {
+      context.handle(
+        _updatedAtUtcMeta,
+        updatedAtUtc.isAcceptableOrUnknown(
+          data['updated_at_utc']!,
+          _updatedAtUtcMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMeta);
+    }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
+    if (data.containsKey('deleted_at_utc')) {
+      context.handle(
+        _deletedAtUtcMeta,
+        deletedAtUtc.isAcceptableOrUnknown(
+          data['deleted_at_utc']!,
+          _deletedAtUtcMeta,
+        ),
+      );
+    }
+    if (data.containsKey('formula_id')) {
+      context.handle(
+        _formulaIdMeta,
+        formulaId.isAcceptableOrUnknown(data['formula_id']!, _formulaIdMeta),
+      );
+    }
+    if (data.containsKey('version_id')) {
+      context.handle(
+        _versionIdMeta,
+        versionId.isAcceptableOrUnknown(data['version_id']!, _versionIdMeta),
+      );
+    }
+    if (data.containsKey('customer_id')) {
+      context.handle(
+        _customerIdMeta,
+        customerId.isAcceptableOrUnknown(data['customer_id']!, _customerIdMeta),
+      );
+    }
+    if (data.containsKey('plaque_type_id')) {
+      context.handle(
+        _plaqueTypeIdMeta,
+        plaqueTypeId.isAcceptableOrUnknown(
+          data['plaque_type_id']!,
+          _plaqueTypeIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('formula_name')) {
+      context.handle(
+        _formulaNameMeta,
+        formulaName.isAcceptableOrUnknown(
+          data['formula_name']!,
+          _formulaNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_formulaNameMeta);
+    }
+    if (data.containsKey('production_type_name')) {
+      context.handle(
+        _productionTypeNameMeta,
+        productionTypeName.isAcceptableOrUnknown(
+          data['production_type_name']!,
+          _productionTypeNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_productionTypeNameMeta);
+    }
+    if (data.containsKey('target_weight')) {
+      context.handle(
+        _targetWeightMeta,
+        targetWeight.isAcceptableOrUnknown(
+          data['target_weight']!,
+          _targetWeightMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_targetWeightMeta);
+    }
+    if (data.containsKey('final_weight')) {
+      context.handle(
+        _finalWeightMeta,
+        finalWeight.isAcceptableOrUnknown(
+          data['final_weight']!,
+          _finalWeightMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_finalWeightMeta);
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at_utc')) {
+      context.handle(
+        _createdAtUtcMeta,
+        createdAtUtc.isAcceptableOrUnknown(
+          data['created_at_utc']!,
+          _createdAtUtcMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtUtcMeta);
+    }
+    if (data.containsKey('completed_at_utc')) {
+      context.handle(
+        _completedAtUtcMeta,
+        completedAtUtc.isAcceptableOrUnknown(
+          data['completed_at_utc']!,
+          _completedAtUtcMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_completedAtUtcMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MixingSession map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MixingSession(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      revisionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}revision_id'],
+      )!,
+      updatedByDevice: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}updated_by_device'],
+      )!,
+      updatedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at_utc'],
+      )!,
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
+      deletedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at_utc'],
+      ),
+      formulaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}formula_id'],
+      ),
+      versionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}version_id'],
+      ),
+      customerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}customer_id'],
+      ),
+      plaqueTypeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plaque_type_id'],
+      ),
+      formulaName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}formula_name'],
+      )!,
+      productionTypeName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}production_type_name'],
+      )!,
+      targetWeight: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}target_weight'],
+      )!,
+      finalWeight: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}final_weight'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at_utc'],
+      )!,
+      completedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}completed_at_utc'],
+      )!,
+    );
+  }
+
+  @override
+  $MixingSessionsTable createAlias(String alias) {
+    return $MixingSessionsTable(attachedDatabase, alias);
+  }
+}
+
+class MixingSession extends DataClass implements Insertable<MixingSession> {
+  final String id;
+  final String revisionId;
+  final String updatedByDevice;
+  final DateTime updatedAtUtc;
+  final bool isDeleted;
+  final DateTime? deletedAtUtc;
+  final String? formulaId;
+  final String? versionId;
+  final String? customerId;
+  final String? plaqueTypeId;
+  final String formulaName;
+  final String productionTypeName;
+  final int targetWeight;
+  final int finalWeight;
+  final String? notes;
+  final DateTime createdAtUtc;
+  final DateTime completedAtUtc;
+  const MixingSession({
+    required this.id,
+    required this.revisionId,
+    required this.updatedByDevice,
+    required this.updatedAtUtc,
+    required this.isDeleted,
+    this.deletedAtUtc,
+    this.formulaId,
+    this.versionId,
+    this.customerId,
+    this.plaqueTypeId,
+    required this.formulaName,
+    required this.productionTypeName,
+    required this.targetWeight,
+    required this.finalWeight,
+    this.notes,
+    required this.createdAtUtc,
+    required this.completedAtUtc,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['revision_id'] = Variable<String>(revisionId);
+    map['updated_by_device'] = Variable<String>(updatedByDevice);
+    map['updated_at_utc'] = Variable<DateTime>(updatedAtUtc);
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    if (!nullToAbsent || deletedAtUtc != null) {
+      map['deleted_at_utc'] = Variable<DateTime>(deletedAtUtc);
+    }
+    if (!nullToAbsent || formulaId != null) {
+      map['formula_id'] = Variable<String>(formulaId);
+    }
+    if (!nullToAbsent || versionId != null) {
+      map['version_id'] = Variable<String>(versionId);
+    }
+    if (!nullToAbsent || customerId != null) {
+      map['customer_id'] = Variable<String>(customerId);
+    }
+    if (!nullToAbsent || plaqueTypeId != null) {
+      map['plaque_type_id'] = Variable<String>(plaqueTypeId);
+    }
+    map['formula_name'] = Variable<String>(formulaName);
+    map['production_type_name'] = Variable<String>(productionTypeName);
+    map['target_weight'] = Variable<int>(targetWeight);
+    map['final_weight'] = Variable<int>(finalWeight);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at_utc'] = Variable<DateTime>(createdAtUtc);
+    map['completed_at_utc'] = Variable<DateTime>(completedAtUtc);
+    return map;
+  }
+
+  MixingSessionsCompanion toCompanion(bool nullToAbsent) {
+    return MixingSessionsCompanion(
+      id: Value(id),
+      revisionId: Value(revisionId),
+      updatedByDevice: Value(updatedByDevice),
+      updatedAtUtc: Value(updatedAtUtc),
+      isDeleted: Value(isDeleted),
+      deletedAtUtc: deletedAtUtc == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAtUtc),
+      formulaId: formulaId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(formulaId),
+      versionId: versionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(versionId),
+      customerId: customerId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(customerId),
+      plaqueTypeId: plaqueTypeId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(plaqueTypeId),
+      formulaName: Value(formulaName),
+      productionTypeName: Value(productionTypeName),
+      targetWeight: Value(targetWeight),
+      finalWeight: Value(finalWeight),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAtUtc: Value(createdAtUtc),
+      completedAtUtc: Value(completedAtUtc),
+    );
+  }
+
+  factory MixingSession.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MixingSession(
+      id: serializer.fromJson<String>(json['id']),
+      revisionId: serializer.fromJson<String>(json['revisionId']),
+      updatedByDevice: serializer.fromJson<String>(json['updatedByDevice']),
+      updatedAtUtc: serializer.fromJson<DateTime>(json['updatedAtUtc']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      deletedAtUtc: serializer.fromJson<DateTime?>(json['deletedAtUtc']),
+      formulaId: serializer.fromJson<String?>(json['formulaId']),
+      versionId: serializer.fromJson<String?>(json['versionId']),
+      customerId: serializer.fromJson<String?>(json['customerId']),
+      plaqueTypeId: serializer.fromJson<String?>(json['plaqueTypeId']),
+      formulaName: serializer.fromJson<String>(json['formulaName']),
+      productionTypeName: serializer.fromJson<String>(
+        json['productionTypeName'],
+      ),
+      targetWeight: serializer.fromJson<int>(json['targetWeight']),
+      finalWeight: serializer.fromJson<int>(json['finalWeight']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAtUtc: serializer.fromJson<DateTime>(json['createdAtUtc']),
+      completedAtUtc: serializer.fromJson<DateTime>(json['completedAtUtc']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'revisionId': serializer.toJson<String>(revisionId),
+      'updatedByDevice': serializer.toJson<String>(updatedByDevice),
+      'updatedAtUtc': serializer.toJson<DateTime>(updatedAtUtc),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'deletedAtUtc': serializer.toJson<DateTime?>(deletedAtUtc),
+      'formulaId': serializer.toJson<String?>(formulaId),
+      'versionId': serializer.toJson<String?>(versionId),
+      'customerId': serializer.toJson<String?>(customerId),
+      'plaqueTypeId': serializer.toJson<String?>(plaqueTypeId),
+      'formulaName': serializer.toJson<String>(formulaName),
+      'productionTypeName': serializer.toJson<String>(productionTypeName),
+      'targetWeight': serializer.toJson<int>(targetWeight),
+      'finalWeight': serializer.toJson<int>(finalWeight),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAtUtc': serializer.toJson<DateTime>(createdAtUtc),
+      'completedAtUtc': serializer.toJson<DateTime>(completedAtUtc),
+    };
+  }
+
+  MixingSession copyWith({
+    String? id,
+    String? revisionId,
+    String? updatedByDevice,
+    DateTime? updatedAtUtc,
+    bool? isDeleted,
+    Value<DateTime?> deletedAtUtc = const Value.absent(),
+    Value<String?> formulaId = const Value.absent(),
+    Value<String?> versionId = const Value.absent(),
+    Value<String?> customerId = const Value.absent(),
+    Value<String?> plaqueTypeId = const Value.absent(),
+    String? formulaName,
+    String? productionTypeName,
+    int? targetWeight,
+    int? finalWeight,
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAtUtc,
+    DateTime? completedAtUtc,
+  }) => MixingSession(
+    id: id ?? this.id,
+    revisionId: revisionId ?? this.revisionId,
+    updatedByDevice: updatedByDevice ?? this.updatedByDevice,
+    updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
+    isDeleted: isDeleted ?? this.isDeleted,
+    deletedAtUtc: deletedAtUtc.present ? deletedAtUtc.value : this.deletedAtUtc,
+    formulaId: formulaId.present ? formulaId.value : this.formulaId,
+    versionId: versionId.present ? versionId.value : this.versionId,
+    customerId: customerId.present ? customerId.value : this.customerId,
+    plaqueTypeId: plaqueTypeId.present ? plaqueTypeId.value : this.plaqueTypeId,
+    formulaName: formulaName ?? this.formulaName,
+    productionTypeName: productionTypeName ?? this.productionTypeName,
+    targetWeight: targetWeight ?? this.targetWeight,
+    finalWeight: finalWeight ?? this.finalWeight,
+    notes: notes.present ? notes.value : this.notes,
+    createdAtUtc: createdAtUtc ?? this.createdAtUtc,
+    completedAtUtc: completedAtUtc ?? this.completedAtUtc,
+  );
+  MixingSession copyWithCompanion(MixingSessionsCompanion data) {
+    return MixingSession(
+      id: data.id.present ? data.id.value : this.id,
+      revisionId: data.revisionId.present
+          ? data.revisionId.value
+          : this.revisionId,
+      updatedByDevice: data.updatedByDevice.present
+          ? data.updatedByDevice.value
+          : this.updatedByDevice,
+      updatedAtUtc: data.updatedAtUtc.present
+          ? data.updatedAtUtc.value
+          : this.updatedAtUtc,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      deletedAtUtc: data.deletedAtUtc.present
+          ? data.deletedAtUtc.value
+          : this.deletedAtUtc,
+      formulaId: data.formulaId.present ? data.formulaId.value : this.formulaId,
+      versionId: data.versionId.present ? data.versionId.value : this.versionId,
+      customerId: data.customerId.present
+          ? data.customerId.value
+          : this.customerId,
+      plaqueTypeId: data.plaqueTypeId.present
+          ? data.plaqueTypeId.value
+          : this.plaqueTypeId,
+      formulaName: data.formulaName.present
+          ? data.formulaName.value
+          : this.formulaName,
+      productionTypeName: data.productionTypeName.present
+          ? data.productionTypeName.value
+          : this.productionTypeName,
+      targetWeight: data.targetWeight.present
+          ? data.targetWeight.value
+          : this.targetWeight,
+      finalWeight: data.finalWeight.present
+          ? data.finalWeight.value
+          : this.finalWeight,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAtUtc: data.createdAtUtc.present
+          ? data.createdAtUtc.value
+          : this.createdAtUtc,
+      completedAtUtc: data.completedAtUtc.present
+          ? data.completedAtUtc.value
+          : this.completedAtUtc,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MixingSession(')
+          ..write('id: $id, ')
+          ..write('revisionId: $revisionId, ')
+          ..write('updatedByDevice: $updatedByDevice, ')
+          ..write('updatedAtUtc: $updatedAtUtc, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('deletedAtUtc: $deletedAtUtc, ')
+          ..write('formulaId: $formulaId, ')
+          ..write('versionId: $versionId, ')
+          ..write('customerId: $customerId, ')
+          ..write('plaqueTypeId: $plaqueTypeId, ')
+          ..write('formulaName: $formulaName, ')
+          ..write('productionTypeName: $productionTypeName, ')
+          ..write('targetWeight: $targetWeight, ')
+          ..write('finalWeight: $finalWeight, ')
+          ..write('notes: $notes, ')
+          ..write('createdAtUtc: $createdAtUtc, ')
+          ..write('completedAtUtc: $completedAtUtc')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    revisionId,
+    updatedByDevice,
+    updatedAtUtc,
+    isDeleted,
+    deletedAtUtc,
+    formulaId,
+    versionId,
+    customerId,
+    plaqueTypeId,
+    formulaName,
+    productionTypeName,
+    targetWeight,
+    finalWeight,
+    notes,
+    createdAtUtc,
+    completedAtUtc,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MixingSession &&
+          other.id == this.id &&
+          other.revisionId == this.revisionId &&
+          other.updatedByDevice == this.updatedByDevice &&
+          other.updatedAtUtc == this.updatedAtUtc &&
+          other.isDeleted == this.isDeleted &&
+          other.deletedAtUtc == this.deletedAtUtc &&
+          other.formulaId == this.formulaId &&
+          other.versionId == this.versionId &&
+          other.customerId == this.customerId &&
+          other.plaqueTypeId == this.plaqueTypeId &&
+          other.formulaName == this.formulaName &&
+          other.productionTypeName == this.productionTypeName &&
+          other.targetWeight == this.targetWeight &&
+          other.finalWeight == this.finalWeight &&
+          other.notes == this.notes &&
+          other.createdAtUtc == this.createdAtUtc &&
+          other.completedAtUtc == this.completedAtUtc);
+}
+
+class MixingSessionsCompanion extends UpdateCompanion<MixingSession> {
+  final Value<String> id;
+  final Value<String> revisionId;
+  final Value<String> updatedByDevice;
+  final Value<DateTime> updatedAtUtc;
+  final Value<bool> isDeleted;
+  final Value<DateTime?> deletedAtUtc;
+  final Value<String?> formulaId;
+  final Value<String?> versionId;
+  final Value<String?> customerId;
+  final Value<String?> plaqueTypeId;
+  final Value<String> formulaName;
+  final Value<String> productionTypeName;
+  final Value<int> targetWeight;
+  final Value<int> finalWeight;
+  final Value<String?> notes;
+  final Value<DateTime> createdAtUtc;
+  final Value<DateTime> completedAtUtc;
+  final Value<int> rowid;
+  const MixingSessionsCompanion({
+    this.id = const Value.absent(),
+    this.revisionId = const Value.absent(),
+    this.updatedByDevice = const Value.absent(),
+    this.updatedAtUtc = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.deletedAtUtc = const Value.absent(),
+    this.formulaId = const Value.absent(),
+    this.versionId = const Value.absent(),
+    this.customerId = const Value.absent(),
+    this.plaqueTypeId = const Value.absent(),
+    this.formulaName = const Value.absent(),
+    this.productionTypeName = const Value.absent(),
+    this.targetWeight = const Value.absent(),
+    this.finalWeight = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAtUtc = const Value.absent(),
+    this.completedAtUtc = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MixingSessionsCompanion.insert({
+    required String id,
+    required String revisionId,
+    required String updatedByDevice,
+    required DateTime updatedAtUtc,
+    this.isDeleted = const Value.absent(),
+    this.deletedAtUtc = const Value.absent(),
+    this.formulaId = const Value.absent(),
+    this.versionId = const Value.absent(),
+    this.customerId = const Value.absent(),
+    this.plaqueTypeId = const Value.absent(),
+    required String formulaName,
+    required String productionTypeName,
+    required int targetWeight,
+    required int finalWeight,
+    this.notes = const Value.absent(),
+    required DateTime createdAtUtc,
+    required DateTime completedAtUtc,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       revisionId = Value(revisionId),
+       updatedByDevice = Value(updatedByDevice),
+       updatedAtUtc = Value(updatedAtUtc),
+       formulaName = Value(formulaName),
+       productionTypeName = Value(productionTypeName),
+       targetWeight = Value(targetWeight),
+       finalWeight = Value(finalWeight),
+       createdAtUtc = Value(createdAtUtc),
+       completedAtUtc = Value(completedAtUtc);
+  static Insertable<MixingSession> custom({
+    Expression<String>? id,
+    Expression<String>? revisionId,
+    Expression<String>? updatedByDevice,
+    Expression<DateTime>? updatedAtUtc,
+    Expression<bool>? isDeleted,
+    Expression<DateTime>? deletedAtUtc,
+    Expression<String>? formulaId,
+    Expression<String>? versionId,
+    Expression<String>? customerId,
+    Expression<String>? plaqueTypeId,
+    Expression<String>? formulaName,
+    Expression<String>? productionTypeName,
+    Expression<int>? targetWeight,
+    Expression<int>? finalWeight,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAtUtc,
+    Expression<DateTime>? completedAtUtc,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (revisionId != null) 'revision_id': revisionId,
+      if (updatedByDevice != null) 'updated_by_device': updatedByDevice,
+      if (updatedAtUtc != null) 'updated_at_utc': updatedAtUtc,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (deletedAtUtc != null) 'deleted_at_utc': deletedAtUtc,
+      if (formulaId != null) 'formula_id': formulaId,
+      if (versionId != null) 'version_id': versionId,
+      if (customerId != null) 'customer_id': customerId,
+      if (plaqueTypeId != null) 'plaque_type_id': plaqueTypeId,
+      if (formulaName != null) 'formula_name': formulaName,
+      if (productionTypeName != null)
+        'production_type_name': productionTypeName,
+      if (targetWeight != null) 'target_weight': targetWeight,
+      if (finalWeight != null) 'final_weight': finalWeight,
+      if (notes != null) 'notes': notes,
+      if (createdAtUtc != null) 'created_at_utc': createdAtUtc,
+      if (completedAtUtc != null) 'completed_at_utc': completedAtUtc,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MixingSessionsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? revisionId,
+    Value<String>? updatedByDevice,
+    Value<DateTime>? updatedAtUtc,
+    Value<bool>? isDeleted,
+    Value<DateTime?>? deletedAtUtc,
+    Value<String?>? formulaId,
+    Value<String?>? versionId,
+    Value<String?>? customerId,
+    Value<String?>? plaqueTypeId,
+    Value<String>? formulaName,
+    Value<String>? productionTypeName,
+    Value<int>? targetWeight,
+    Value<int>? finalWeight,
+    Value<String?>? notes,
+    Value<DateTime>? createdAtUtc,
+    Value<DateTime>? completedAtUtc,
+    Value<int>? rowid,
+  }) {
+    return MixingSessionsCompanion(
+      id: id ?? this.id,
+      revisionId: revisionId ?? this.revisionId,
+      updatedByDevice: updatedByDevice ?? this.updatedByDevice,
+      updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAtUtc: deletedAtUtc ?? this.deletedAtUtc,
+      formulaId: formulaId ?? this.formulaId,
+      versionId: versionId ?? this.versionId,
+      customerId: customerId ?? this.customerId,
+      plaqueTypeId: plaqueTypeId ?? this.plaqueTypeId,
+      formulaName: formulaName ?? this.formulaName,
+      productionTypeName: productionTypeName ?? this.productionTypeName,
+      targetWeight: targetWeight ?? this.targetWeight,
+      finalWeight: finalWeight ?? this.finalWeight,
+      notes: notes ?? this.notes,
+      createdAtUtc: createdAtUtc ?? this.createdAtUtc,
+      completedAtUtc: completedAtUtc ?? this.completedAtUtc,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (revisionId.present) {
+      map['revision_id'] = Variable<String>(revisionId.value);
+    }
+    if (updatedByDevice.present) {
+      map['updated_by_device'] = Variable<String>(updatedByDevice.value);
+    }
+    if (updatedAtUtc.present) {
+      map['updated_at_utc'] = Variable<DateTime>(updatedAtUtc.value);
+    }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (deletedAtUtc.present) {
+      map['deleted_at_utc'] = Variable<DateTime>(deletedAtUtc.value);
+    }
+    if (formulaId.present) {
+      map['formula_id'] = Variable<String>(formulaId.value);
+    }
+    if (versionId.present) {
+      map['version_id'] = Variable<String>(versionId.value);
+    }
+    if (customerId.present) {
+      map['customer_id'] = Variable<String>(customerId.value);
+    }
+    if (plaqueTypeId.present) {
+      map['plaque_type_id'] = Variable<String>(plaqueTypeId.value);
+    }
+    if (formulaName.present) {
+      map['formula_name'] = Variable<String>(formulaName.value);
+    }
+    if (productionTypeName.present) {
+      map['production_type_name'] = Variable<String>(productionTypeName.value);
+    }
+    if (targetWeight.present) {
+      map['target_weight'] = Variable<int>(targetWeight.value);
+    }
+    if (finalWeight.present) {
+      map['final_weight'] = Variable<int>(finalWeight.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAtUtc.present) {
+      map['created_at_utc'] = Variable<DateTime>(createdAtUtc.value);
+    }
+    if (completedAtUtc.present) {
+      map['completed_at_utc'] = Variable<DateTime>(completedAtUtc.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MixingSessionsCompanion(')
+          ..write('id: $id, ')
+          ..write('revisionId: $revisionId, ')
+          ..write('updatedByDevice: $updatedByDevice, ')
+          ..write('updatedAtUtc: $updatedAtUtc, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('deletedAtUtc: $deletedAtUtc, ')
+          ..write('formulaId: $formulaId, ')
+          ..write('versionId: $versionId, ')
+          ..write('customerId: $customerId, ')
+          ..write('plaqueTypeId: $plaqueTypeId, ')
+          ..write('formulaName: $formulaName, ')
+          ..write('productionTypeName: $productionTypeName, ')
+          ..write('targetWeight: $targetWeight, ')
+          ..write('finalWeight: $finalWeight, ')
+          ..write('notes: $notes, ')
+          ..write('createdAtUtc: $createdAtUtc, ')
+          ..write('completedAtUtc: $completedAtUtc, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MixingItemsTable extends MixingItems
+    with TableInfo<$MixingItemsTable, MixingItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MixingItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _revisionIdMeta = const VerificationMeta(
+    'revisionId',
+  );
+  @override
+  late final GeneratedColumn<String> revisionId = GeneratedColumn<String>(
+    'revision_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedByDeviceMeta = const VerificationMeta(
+    'updatedByDevice',
+  );
+  @override
+  late final GeneratedColumn<String> updatedByDevice = GeneratedColumn<String>(
+    'updated_by_device',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtUtcMeta = const VerificationMeta(
+    'updatedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAtUtc = GeneratedColumn<DateTime>(
+    'updated_at_utc',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _deletedAtUtcMeta = const VerificationMeta(
+    'deletedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAtUtc = GeneratedColumn<DateTime>(
+    'deleted_at_utc',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sessionIdMeta = const VerificationMeta(
+    'sessionId',
+  );
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+    'session_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES mixing_sessions (id)',
+    ),
+  );
+  static const VerificationMeta _categoryNameMeta = const VerificationMeta(
+    'categoryName',
+  );
+  @override
+  late final GeneratedColumn<String> categoryName = GeneratedColumn<String>(
+    'category_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ingredientNameMeta = const VerificationMeta(
+    'ingredientName',
+  );
+  @override
+  late final GeneratedColumn<String> ingredientName = GeneratedColumn<String>(
+    'ingredient_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _skuCodeMeta = const VerificationMeta(
+    'skuCode',
+  );
+  @override
+  late final GeneratedColumn<String> skuCode = GeneratedColumn<String>(
+    'sku_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _skuIdMeta = const VerificationMeta('skuId');
+  @override
+  late final GeneratedColumn<String> skuId = GeneratedColumn<String>(
+    'sku_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _plannedWeightMeta = const VerificationMeta(
+    'plannedWeight',
+  );
+  @override
+  late final GeneratedColumn<int> plannedWeight = GeneratedColumn<int>(
+    'planned_weight',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _finalWeightMeta = const VerificationMeta(
+    'finalWeight',
+  );
+  @override
+  late final GeneratedColumn<int> finalWeight = GeneratedColumn<int>(
+    'final_weight',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isManualMeta = const VerificationMeta(
+    'isManual',
+  );
+  @override
+  late final GeneratedColumn<bool> isManual = GeneratedColumn<bool>(
+    'is_manual',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_manual" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _finalRatioMeta = const VerificationMeta(
+    'finalRatio',
+  );
+  @override
+  late final GeneratedColumn<int> finalRatio = GeneratedColumn<int>(
+    'final_ratio',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    revisionId,
+    updatedByDevice,
+    updatedAtUtc,
+    isDeleted,
+    deletedAtUtc,
+    sessionId,
+    categoryName,
+    ingredientName,
+    skuCode,
+    skuId,
+    plannedWeight,
+    finalWeight,
+    isManual,
+    finalRatio,
+    sortOrder,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'mixing_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MixingItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('revision_id')) {
+      context.handle(
+        _revisionIdMeta,
+        revisionId.isAcceptableOrUnknown(data['revision_id']!, _revisionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_revisionIdMeta);
+    }
+    if (data.containsKey('updated_by_device')) {
+      context.handle(
+        _updatedByDeviceMeta,
+        updatedByDevice.isAcceptableOrUnknown(
+          data['updated_by_device']!,
+          _updatedByDeviceMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedByDeviceMeta);
+    }
+    if (data.containsKey('updated_at_utc')) {
+      context.handle(
+        _updatedAtUtcMeta,
+        updatedAtUtc.isAcceptableOrUnknown(
+          data['updated_at_utc']!,
+          _updatedAtUtcMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMeta);
+    }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
+    if (data.containsKey('deleted_at_utc')) {
+      context.handle(
+        _deletedAtUtcMeta,
+        deletedAtUtc.isAcceptableOrUnknown(
+          data['deleted_at_utc']!,
+          _deletedAtUtcMeta,
+        ),
+      );
+    }
+    if (data.containsKey('session_id')) {
+      context.handle(
+        _sessionIdMeta,
+        sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('category_name')) {
+      context.handle(
+        _categoryNameMeta,
+        categoryName.isAcceptableOrUnknown(
+          data['category_name']!,
+          _categoryNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_categoryNameMeta);
+    }
+    if (data.containsKey('ingredient_name')) {
+      context.handle(
+        _ingredientNameMeta,
+        ingredientName.isAcceptableOrUnknown(
+          data['ingredient_name']!,
+          _ingredientNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_ingredientNameMeta);
+    }
+    if (data.containsKey('sku_code')) {
+      context.handle(
+        _skuCodeMeta,
+        skuCode.isAcceptableOrUnknown(data['sku_code']!, _skuCodeMeta),
+      );
+    }
+    if (data.containsKey('sku_id')) {
+      context.handle(
+        _skuIdMeta,
+        skuId.isAcceptableOrUnknown(data['sku_id']!, _skuIdMeta),
+      );
+    }
+    if (data.containsKey('planned_weight')) {
+      context.handle(
+        _plannedWeightMeta,
+        plannedWeight.isAcceptableOrUnknown(
+          data['planned_weight']!,
+          _plannedWeightMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_plannedWeightMeta);
+    }
+    if (data.containsKey('final_weight')) {
+      context.handle(
+        _finalWeightMeta,
+        finalWeight.isAcceptableOrUnknown(
+          data['final_weight']!,
+          _finalWeightMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_finalWeightMeta);
+    }
+    if (data.containsKey('is_manual')) {
+      context.handle(
+        _isManualMeta,
+        isManual.isAcceptableOrUnknown(data['is_manual']!, _isManualMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_isManualMeta);
+    }
+    if (data.containsKey('final_ratio')) {
+      context.handle(
+        _finalRatioMeta,
+        finalRatio.isAcceptableOrUnknown(data['final_ratio']!, _finalRatioMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_finalRatioMeta);
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sortOrderMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MixingItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MixingItem(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      revisionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}revision_id'],
+      )!,
+      updatedByDevice: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}updated_by_device'],
+      )!,
+      updatedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at_utc'],
+      )!,
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
+      deletedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at_utc'],
+      ),
+      sessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_id'],
+      )!,
+      categoryName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category_name'],
+      )!,
+      ingredientName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ingredient_name'],
+      )!,
+      skuCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sku_code'],
+      ),
+      skuId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sku_id'],
+      ),
+      plannedWeight: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}planned_weight'],
+      )!,
+      finalWeight: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}final_weight'],
+      )!,
+      isManual: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_manual'],
+      )!,
+      finalRatio: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}final_ratio'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+    );
+  }
+
+  @override
+  $MixingItemsTable createAlias(String alias) {
+    return $MixingItemsTable(attachedDatabase, alias);
+  }
+}
+
+class MixingItem extends DataClass implements Insertable<MixingItem> {
+  final String id;
+  final String revisionId;
+  final String updatedByDevice;
+  final DateTime updatedAtUtc;
+  final bool isDeleted;
+  final DateTime? deletedAtUtc;
+  final String sessionId;
+  final String categoryName;
+  final String ingredientName;
+  final String? skuCode;
+  final String? skuId;
+  final int plannedWeight;
+  final int finalWeight;
+  final bool isManual;
+  final int finalRatio;
+  final int sortOrder;
+  const MixingItem({
+    required this.id,
+    required this.revisionId,
+    required this.updatedByDevice,
+    required this.updatedAtUtc,
+    required this.isDeleted,
+    this.deletedAtUtc,
+    required this.sessionId,
+    required this.categoryName,
+    required this.ingredientName,
+    this.skuCode,
+    this.skuId,
+    required this.plannedWeight,
+    required this.finalWeight,
+    required this.isManual,
+    required this.finalRatio,
+    required this.sortOrder,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['revision_id'] = Variable<String>(revisionId);
+    map['updated_by_device'] = Variable<String>(updatedByDevice);
+    map['updated_at_utc'] = Variable<DateTime>(updatedAtUtc);
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    if (!nullToAbsent || deletedAtUtc != null) {
+      map['deleted_at_utc'] = Variable<DateTime>(deletedAtUtc);
+    }
+    map['session_id'] = Variable<String>(sessionId);
+    map['category_name'] = Variable<String>(categoryName);
+    map['ingredient_name'] = Variable<String>(ingredientName);
+    if (!nullToAbsent || skuCode != null) {
+      map['sku_code'] = Variable<String>(skuCode);
+    }
+    if (!nullToAbsent || skuId != null) {
+      map['sku_id'] = Variable<String>(skuId);
+    }
+    map['planned_weight'] = Variable<int>(plannedWeight);
+    map['final_weight'] = Variable<int>(finalWeight);
+    map['is_manual'] = Variable<bool>(isManual);
+    map['final_ratio'] = Variable<int>(finalRatio);
+    map['sort_order'] = Variable<int>(sortOrder);
+    return map;
+  }
+
+  MixingItemsCompanion toCompanion(bool nullToAbsent) {
+    return MixingItemsCompanion(
+      id: Value(id),
+      revisionId: Value(revisionId),
+      updatedByDevice: Value(updatedByDevice),
+      updatedAtUtc: Value(updatedAtUtc),
+      isDeleted: Value(isDeleted),
+      deletedAtUtc: deletedAtUtc == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAtUtc),
+      sessionId: Value(sessionId),
+      categoryName: Value(categoryName),
+      ingredientName: Value(ingredientName),
+      skuCode: skuCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(skuCode),
+      skuId: skuId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(skuId),
+      plannedWeight: Value(plannedWeight),
+      finalWeight: Value(finalWeight),
+      isManual: Value(isManual),
+      finalRatio: Value(finalRatio),
+      sortOrder: Value(sortOrder),
+    );
+  }
+
+  factory MixingItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MixingItem(
+      id: serializer.fromJson<String>(json['id']),
+      revisionId: serializer.fromJson<String>(json['revisionId']),
+      updatedByDevice: serializer.fromJson<String>(json['updatedByDevice']),
+      updatedAtUtc: serializer.fromJson<DateTime>(json['updatedAtUtc']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      deletedAtUtc: serializer.fromJson<DateTime?>(json['deletedAtUtc']),
+      sessionId: serializer.fromJson<String>(json['sessionId']),
+      categoryName: serializer.fromJson<String>(json['categoryName']),
+      ingredientName: serializer.fromJson<String>(json['ingredientName']),
+      skuCode: serializer.fromJson<String?>(json['skuCode']),
+      skuId: serializer.fromJson<String?>(json['skuId']),
+      plannedWeight: serializer.fromJson<int>(json['plannedWeight']),
+      finalWeight: serializer.fromJson<int>(json['finalWeight']),
+      isManual: serializer.fromJson<bool>(json['isManual']),
+      finalRatio: serializer.fromJson<int>(json['finalRatio']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'revisionId': serializer.toJson<String>(revisionId),
+      'updatedByDevice': serializer.toJson<String>(updatedByDevice),
+      'updatedAtUtc': serializer.toJson<DateTime>(updatedAtUtc),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'deletedAtUtc': serializer.toJson<DateTime?>(deletedAtUtc),
+      'sessionId': serializer.toJson<String>(sessionId),
+      'categoryName': serializer.toJson<String>(categoryName),
+      'ingredientName': serializer.toJson<String>(ingredientName),
+      'skuCode': serializer.toJson<String?>(skuCode),
+      'skuId': serializer.toJson<String?>(skuId),
+      'plannedWeight': serializer.toJson<int>(plannedWeight),
+      'finalWeight': serializer.toJson<int>(finalWeight),
+      'isManual': serializer.toJson<bool>(isManual),
+      'finalRatio': serializer.toJson<int>(finalRatio),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+    };
+  }
+
+  MixingItem copyWith({
+    String? id,
+    String? revisionId,
+    String? updatedByDevice,
+    DateTime? updatedAtUtc,
+    bool? isDeleted,
+    Value<DateTime?> deletedAtUtc = const Value.absent(),
+    String? sessionId,
+    String? categoryName,
+    String? ingredientName,
+    Value<String?> skuCode = const Value.absent(),
+    Value<String?> skuId = const Value.absent(),
+    int? plannedWeight,
+    int? finalWeight,
+    bool? isManual,
+    int? finalRatio,
+    int? sortOrder,
+  }) => MixingItem(
+    id: id ?? this.id,
+    revisionId: revisionId ?? this.revisionId,
+    updatedByDevice: updatedByDevice ?? this.updatedByDevice,
+    updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
+    isDeleted: isDeleted ?? this.isDeleted,
+    deletedAtUtc: deletedAtUtc.present ? deletedAtUtc.value : this.deletedAtUtc,
+    sessionId: sessionId ?? this.sessionId,
+    categoryName: categoryName ?? this.categoryName,
+    ingredientName: ingredientName ?? this.ingredientName,
+    skuCode: skuCode.present ? skuCode.value : this.skuCode,
+    skuId: skuId.present ? skuId.value : this.skuId,
+    plannedWeight: plannedWeight ?? this.plannedWeight,
+    finalWeight: finalWeight ?? this.finalWeight,
+    isManual: isManual ?? this.isManual,
+    finalRatio: finalRatio ?? this.finalRatio,
+    sortOrder: sortOrder ?? this.sortOrder,
+  );
+  MixingItem copyWithCompanion(MixingItemsCompanion data) {
+    return MixingItem(
+      id: data.id.present ? data.id.value : this.id,
+      revisionId: data.revisionId.present
+          ? data.revisionId.value
+          : this.revisionId,
+      updatedByDevice: data.updatedByDevice.present
+          ? data.updatedByDevice.value
+          : this.updatedByDevice,
+      updatedAtUtc: data.updatedAtUtc.present
+          ? data.updatedAtUtc.value
+          : this.updatedAtUtc,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      deletedAtUtc: data.deletedAtUtc.present
+          ? data.deletedAtUtc.value
+          : this.deletedAtUtc,
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      categoryName: data.categoryName.present
+          ? data.categoryName.value
+          : this.categoryName,
+      ingredientName: data.ingredientName.present
+          ? data.ingredientName.value
+          : this.ingredientName,
+      skuCode: data.skuCode.present ? data.skuCode.value : this.skuCode,
+      skuId: data.skuId.present ? data.skuId.value : this.skuId,
+      plannedWeight: data.plannedWeight.present
+          ? data.plannedWeight.value
+          : this.plannedWeight,
+      finalWeight: data.finalWeight.present
+          ? data.finalWeight.value
+          : this.finalWeight,
+      isManual: data.isManual.present ? data.isManual.value : this.isManual,
+      finalRatio: data.finalRatio.present
+          ? data.finalRatio.value
+          : this.finalRatio,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MixingItem(')
+          ..write('id: $id, ')
+          ..write('revisionId: $revisionId, ')
+          ..write('updatedByDevice: $updatedByDevice, ')
+          ..write('updatedAtUtc: $updatedAtUtc, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('deletedAtUtc: $deletedAtUtc, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('categoryName: $categoryName, ')
+          ..write('ingredientName: $ingredientName, ')
+          ..write('skuCode: $skuCode, ')
+          ..write('skuId: $skuId, ')
+          ..write('plannedWeight: $plannedWeight, ')
+          ..write('finalWeight: $finalWeight, ')
+          ..write('isManual: $isManual, ')
+          ..write('finalRatio: $finalRatio, ')
+          ..write('sortOrder: $sortOrder')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    revisionId,
+    updatedByDevice,
+    updatedAtUtc,
+    isDeleted,
+    deletedAtUtc,
+    sessionId,
+    categoryName,
+    ingredientName,
+    skuCode,
+    skuId,
+    plannedWeight,
+    finalWeight,
+    isManual,
+    finalRatio,
+    sortOrder,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MixingItem &&
+          other.id == this.id &&
+          other.revisionId == this.revisionId &&
+          other.updatedByDevice == this.updatedByDevice &&
+          other.updatedAtUtc == this.updatedAtUtc &&
+          other.isDeleted == this.isDeleted &&
+          other.deletedAtUtc == this.deletedAtUtc &&
+          other.sessionId == this.sessionId &&
+          other.categoryName == this.categoryName &&
+          other.ingredientName == this.ingredientName &&
+          other.skuCode == this.skuCode &&
+          other.skuId == this.skuId &&
+          other.plannedWeight == this.plannedWeight &&
+          other.finalWeight == this.finalWeight &&
+          other.isManual == this.isManual &&
+          other.finalRatio == this.finalRatio &&
+          other.sortOrder == this.sortOrder);
+}
+
+class MixingItemsCompanion extends UpdateCompanion<MixingItem> {
+  final Value<String> id;
+  final Value<String> revisionId;
+  final Value<String> updatedByDevice;
+  final Value<DateTime> updatedAtUtc;
+  final Value<bool> isDeleted;
+  final Value<DateTime?> deletedAtUtc;
+  final Value<String> sessionId;
+  final Value<String> categoryName;
+  final Value<String> ingredientName;
+  final Value<String?> skuCode;
+  final Value<String?> skuId;
+  final Value<int> plannedWeight;
+  final Value<int> finalWeight;
+  final Value<bool> isManual;
+  final Value<int> finalRatio;
+  final Value<int> sortOrder;
+  final Value<int> rowid;
+  const MixingItemsCompanion({
+    this.id = const Value.absent(),
+    this.revisionId = const Value.absent(),
+    this.updatedByDevice = const Value.absent(),
+    this.updatedAtUtc = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.deletedAtUtc = const Value.absent(),
+    this.sessionId = const Value.absent(),
+    this.categoryName = const Value.absent(),
+    this.ingredientName = const Value.absent(),
+    this.skuCode = const Value.absent(),
+    this.skuId = const Value.absent(),
+    this.plannedWeight = const Value.absent(),
+    this.finalWeight = const Value.absent(),
+    this.isManual = const Value.absent(),
+    this.finalRatio = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MixingItemsCompanion.insert({
+    required String id,
+    required String revisionId,
+    required String updatedByDevice,
+    required DateTime updatedAtUtc,
+    this.isDeleted = const Value.absent(),
+    this.deletedAtUtc = const Value.absent(),
+    required String sessionId,
+    required String categoryName,
+    required String ingredientName,
+    this.skuCode = const Value.absent(),
+    this.skuId = const Value.absent(),
+    required int plannedWeight,
+    required int finalWeight,
+    required bool isManual,
+    required int finalRatio,
+    required int sortOrder,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       revisionId = Value(revisionId),
+       updatedByDevice = Value(updatedByDevice),
+       updatedAtUtc = Value(updatedAtUtc),
+       sessionId = Value(sessionId),
+       categoryName = Value(categoryName),
+       ingredientName = Value(ingredientName),
+       plannedWeight = Value(plannedWeight),
+       finalWeight = Value(finalWeight),
+       isManual = Value(isManual),
+       finalRatio = Value(finalRatio),
+       sortOrder = Value(sortOrder);
+  static Insertable<MixingItem> custom({
+    Expression<String>? id,
+    Expression<String>? revisionId,
+    Expression<String>? updatedByDevice,
+    Expression<DateTime>? updatedAtUtc,
+    Expression<bool>? isDeleted,
+    Expression<DateTime>? deletedAtUtc,
+    Expression<String>? sessionId,
+    Expression<String>? categoryName,
+    Expression<String>? ingredientName,
+    Expression<String>? skuCode,
+    Expression<String>? skuId,
+    Expression<int>? plannedWeight,
+    Expression<int>? finalWeight,
+    Expression<bool>? isManual,
+    Expression<int>? finalRatio,
+    Expression<int>? sortOrder,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (revisionId != null) 'revision_id': revisionId,
+      if (updatedByDevice != null) 'updated_by_device': updatedByDevice,
+      if (updatedAtUtc != null) 'updated_at_utc': updatedAtUtc,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (deletedAtUtc != null) 'deleted_at_utc': deletedAtUtc,
+      if (sessionId != null) 'session_id': sessionId,
+      if (categoryName != null) 'category_name': categoryName,
+      if (ingredientName != null) 'ingredient_name': ingredientName,
+      if (skuCode != null) 'sku_code': skuCode,
+      if (skuId != null) 'sku_id': skuId,
+      if (plannedWeight != null) 'planned_weight': plannedWeight,
+      if (finalWeight != null) 'final_weight': finalWeight,
+      if (isManual != null) 'is_manual': isManual,
+      if (finalRatio != null) 'final_ratio': finalRatio,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MixingItemsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? revisionId,
+    Value<String>? updatedByDevice,
+    Value<DateTime>? updatedAtUtc,
+    Value<bool>? isDeleted,
+    Value<DateTime?>? deletedAtUtc,
+    Value<String>? sessionId,
+    Value<String>? categoryName,
+    Value<String>? ingredientName,
+    Value<String?>? skuCode,
+    Value<String?>? skuId,
+    Value<int>? plannedWeight,
+    Value<int>? finalWeight,
+    Value<bool>? isManual,
+    Value<int>? finalRatio,
+    Value<int>? sortOrder,
+    Value<int>? rowid,
+  }) {
+    return MixingItemsCompanion(
+      id: id ?? this.id,
+      revisionId: revisionId ?? this.revisionId,
+      updatedByDevice: updatedByDevice ?? this.updatedByDevice,
+      updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAtUtc: deletedAtUtc ?? this.deletedAtUtc,
+      sessionId: sessionId ?? this.sessionId,
+      categoryName: categoryName ?? this.categoryName,
+      ingredientName: ingredientName ?? this.ingredientName,
+      skuCode: skuCode ?? this.skuCode,
+      skuId: skuId ?? this.skuId,
+      plannedWeight: plannedWeight ?? this.plannedWeight,
+      finalWeight: finalWeight ?? this.finalWeight,
+      isManual: isManual ?? this.isManual,
+      finalRatio: finalRatio ?? this.finalRatio,
+      sortOrder: sortOrder ?? this.sortOrder,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (revisionId.present) {
+      map['revision_id'] = Variable<String>(revisionId.value);
+    }
+    if (updatedByDevice.present) {
+      map['updated_by_device'] = Variable<String>(updatedByDevice.value);
+    }
+    if (updatedAtUtc.present) {
+      map['updated_at_utc'] = Variable<DateTime>(updatedAtUtc.value);
+    }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (deletedAtUtc.present) {
+      map['deleted_at_utc'] = Variable<DateTime>(deletedAtUtc.value);
+    }
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    if (categoryName.present) {
+      map['category_name'] = Variable<String>(categoryName.value);
+    }
+    if (ingredientName.present) {
+      map['ingredient_name'] = Variable<String>(ingredientName.value);
+    }
+    if (skuCode.present) {
+      map['sku_code'] = Variable<String>(skuCode.value);
+    }
+    if (skuId.present) {
+      map['sku_id'] = Variable<String>(skuId.value);
+    }
+    if (plannedWeight.present) {
+      map['planned_weight'] = Variable<int>(plannedWeight.value);
+    }
+    if (finalWeight.present) {
+      map['final_weight'] = Variable<int>(finalWeight.value);
+    }
+    if (isManual.present) {
+      map['is_manual'] = Variable<bool>(isManual.value);
+    }
+    if (finalRatio.present) {
+      map['final_ratio'] = Variable<int>(finalRatio.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MixingItemsCompanion(')
+          ..write('id: $id, ')
+          ..write('revisionId: $revisionId, ')
+          ..write('updatedByDevice: $updatedByDevice, ')
+          ..write('updatedAtUtc: $updatedAtUtc, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('deletedAtUtc: $deletedAtUtc, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('categoryName: $categoryName, ')
+          ..write('ingredientName: $ingredientName, ')
+          ..write('skuCode: $skuCode, ')
+          ..write('skuId: $skuId, ')
+          ..write('plannedWeight: $plannedWeight, ')
+          ..write('finalWeight: $finalWeight, ')
+          ..write('isManual: $isManual, ')
+          ..write('finalRatio: $finalRatio, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MixingRevisionsTable extends MixingRevisions
+    with TableInfo<$MixingRevisionsTable, MixingRevision> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MixingRevisionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _revisionIdMeta = const VerificationMeta(
+    'revisionId',
+  );
+  @override
+  late final GeneratedColumn<String> revisionId = GeneratedColumn<String>(
+    'revision_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedByDeviceMeta = const VerificationMeta(
+    'updatedByDevice',
+  );
+  @override
+  late final GeneratedColumn<String> updatedByDevice = GeneratedColumn<String>(
+    'updated_by_device',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtUtcMeta = const VerificationMeta(
+    'updatedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAtUtc = GeneratedColumn<DateTime>(
+    'updated_at_utc',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _deletedAtUtcMeta = const VerificationMeta(
+    'deletedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAtUtc = GeneratedColumn<DateTime>(
+    'deleted_at_utc',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sessionIdMeta = const VerificationMeta(
+    'sessionId',
+  );
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+    'session_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES mixing_sessions (id)',
+    ),
+  );
+  static const VerificationMeta _previousDataJsonMeta = const VerificationMeta(
+    'previousDataJson',
+  );
+  @override
+  late final GeneratedColumn<String> previousDataJson = GeneratedColumn<String>(
+    'previous_data_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _modifiedAtUtcMeta = const VerificationMeta(
+    'modifiedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> modifiedAtUtc =
+      GeneratedColumn<DateTime>(
+        'modified_at_utc',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _modifiedByDeviceMeta = const VerificationMeta(
+    'modifiedByDevice',
+  );
+  @override
+  late final GeneratedColumn<String> modifiedByDevice = GeneratedColumn<String>(
+    'modified_by_device',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    revisionId,
+    updatedByDevice,
+    updatedAtUtc,
+    isDeleted,
+    deletedAtUtc,
+    sessionId,
+    previousDataJson,
+    modifiedAtUtc,
+    modifiedByDevice,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'mixing_revisions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MixingRevision> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('revision_id')) {
+      context.handle(
+        _revisionIdMeta,
+        revisionId.isAcceptableOrUnknown(data['revision_id']!, _revisionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_revisionIdMeta);
+    }
+    if (data.containsKey('updated_by_device')) {
+      context.handle(
+        _updatedByDeviceMeta,
+        updatedByDevice.isAcceptableOrUnknown(
+          data['updated_by_device']!,
+          _updatedByDeviceMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedByDeviceMeta);
+    }
+    if (data.containsKey('updated_at_utc')) {
+      context.handle(
+        _updatedAtUtcMeta,
+        updatedAtUtc.isAcceptableOrUnknown(
+          data['updated_at_utc']!,
+          _updatedAtUtcMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMeta);
+    }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
+    if (data.containsKey('deleted_at_utc')) {
+      context.handle(
+        _deletedAtUtcMeta,
+        deletedAtUtc.isAcceptableOrUnknown(
+          data['deleted_at_utc']!,
+          _deletedAtUtcMeta,
+        ),
+      );
+    }
+    if (data.containsKey('session_id')) {
+      context.handle(
+        _sessionIdMeta,
+        sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('previous_data_json')) {
+      context.handle(
+        _previousDataJsonMeta,
+        previousDataJson.isAcceptableOrUnknown(
+          data['previous_data_json']!,
+          _previousDataJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_previousDataJsonMeta);
+    }
+    if (data.containsKey('modified_at_utc')) {
+      context.handle(
+        _modifiedAtUtcMeta,
+        modifiedAtUtc.isAcceptableOrUnknown(
+          data['modified_at_utc']!,
+          _modifiedAtUtcMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_modifiedAtUtcMeta);
+    }
+    if (data.containsKey('modified_by_device')) {
+      context.handle(
+        _modifiedByDeviceMeta,
+        modifiedByDevice.isAcceptableOrUnknown(
+          data['modified_by_device']!,
+          _modifiedByDeviceMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_modifiedByDeviceMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MixingRevision map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MixingRevision(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      revisionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}revision_id'],
+      )!,
+      updatedByDevice: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}updated_by_device'],
+      )!,
+      updatedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at_utc'],
+      )!,
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
+      deletedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at_utc'],
+      ),
+      sessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_id'],
+      )!,
+      previousDataJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}previous_data_json'],
+      )!,
+      modifiedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}modified_at_utc'],
+      )!,
+      modifiedByDevice: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}modified_by_device'],
+      )!,
+    );
+  }
+
+  @override
+  $MixingRevisionsTable createAlias(String alias) {
+    return $MixingRevisionsTable(attachedDatabase, alias);
+  }
+}
+
+class MixingRevision extends DataClass implements Insertable<MixingRevision> {
+  final String id;
+  final String revisionId;
+  final String updatedByDevice;
+  final DateTime updatedAtUtc;
+  final bool isDeleted;
+  final DateTime? deletedAtUtc;
+  final String sessionId;
+  final String previousDataJson;
+  final DateTime modifiedAtUtc;
+  final String modifiedByDevice;
+  const MixingRevision({
+    required this.id,
+    required this.revisionId,
+    required this.updatedByDevice,
+    required this.updatedAtUtc,
+    required this.isDeleted,
+    this.deletedAtUtc,
+    required this.sessionId,
+    required this.previousDataJson,
+    required this.modifiedAtUtc,
+    required this.modifiedByDevice,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['revision_id'] = Variable<String>(revisionId);
+    map['updated_by_device'] = Variable<String>(updatedByDevice);
+    map['updated_at_utc'] = Variable<DateTime>(updatedAtUtc);
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    if (!nullToAbsent || deletedAtUtc != null) {
+      map['deleted_at_utc'] = Variable<DateTime>(deletedAtUtc);
+    }
+    map['session_id'] = Variable<String>(sessionId);
+    map['previous_data_json'] = Variable<String>(previousDataJson);
+    map['modified_at_utc'] = Variable<DateTime>(modifiedAtUtc);
+    map['modified_by_device'] = Variable<String>(modifiedByDevice);
+    return map;
+  }
+
+  MixingRevisionsCompanion toCompanion(bool nullToAbsent) {
+    return MixingRevisionsCompanion(
+      id: Value(id),
+      revisionId: Value(revisionId),
+      updatedByDevice: Value(updatedByDevice),
+      updatedAtUtc: Value(updatedAtUtc),
+      isDeleted: Value(isDeleted),
+      deletedAtUtc: deletedAtUtc == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAtUtc),
+      sessionId: Value(sessionId),
+      previousDataJson: Value(previousDataJson),
+      modifiedAtUtc: Value(modifiedAtUtc),
+      modifiedByDevice: Value(modifiedByDevice),
+    );
+  }
+
+  factory MixingRevision.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MixingRevision(
+      id: serializer.fromJson<String>(json['id']),
+      revisionId: serializer.fromJson<String>(json['revisionId']),
+      updatedByDevice: serializer.fromJson<String>(json['updatedByDevice']),
+      updatedAtUtc: serializer.fromJson<DateTime>(json['updatedAtUtc']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      deletedAtUtc: serializer.fromJson<DateTime?>(json['deletedAtUtc']),
+      sessionId: serializer.fromJson<String>(json['sessionId']),
+      previousDataJson: serializer.fromJson<String>(json['previousDataJson']),
+      modifiedAtUtc: serializer.fromJson<DateTime>(json['modifiedAtUtc']),
+      modifiedByDevice: serializer.fromJson<String>(json['modifiedByDevice']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'revisionId': serializer.toJson<String>(revisionId),
+      'updatedByDevice': serializer.toJson<String>(updatedByDevice),
+      'updatedAtUtc': serializer.toJson<DateTime>(updatedAtUtc),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'deletedAtUtc': serializer.toJson<DateTime?>(deletedAtUtc),
+      'sessionId': serializer.toJson<String>(sessionId),
+      'previousDataJson': serializer.toJson<String>(previousDataJson),
+      'modifiedAtUtc': serializer.toJson<DateTime>(modifiedAtUtc),
+      'modifiedByDevice': serializer.toJson<String>(modifiedByDevice),
+    };
+  }
+
+  MixingRevision copyWith({
+    String? id,
+    String? revisionId,
+    String? updatedByDevice,
+    DateTime? updatedAtUtc,
+    bool? isDeleted,
+    Value<DateTime?> deletedAtUtc = const Value.absent(),
+    String? sessionId,
+    String? previousDataJson,
+    DateTime? modifiedAtUtc,
+    String? modifiedByDevice,
+  }) => MixingRevision(
+    id: id ?? this.id,
+    revisionId: revisionId ?? this.revisionId,
+    updatedByDevice: updatedByDevice ?? this.updatedByDevice,
+    updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
+    isDeleted: isDeleted ?? this.isDeleted,
+    deletedAtUtc: deletedAtUtc.present ? deletedAtUtc.value : this.deletedAtUtc,
+    sessionId: sessionId ?? this.sessionId,
+    previousDataJson: previousDataJson ?? this.previousDataJson,
+    modifiedAtUtc: modifiedAtUtc ?? this.modifiedAtUtc,
+    modifiedByDevice: modifiedByDevice ?? this.modifiedByDevice,
+  );
+  MixingRevision copyWithCompanion(MixingRevisionsCompanion data) {
+    return MixingRevision(
+      id: data.id.present ? data.id.value : this.id,
+      revisionId: data.revisionId.present
+          ? data.revisionId.value
+          : this.revisionId,
+      updatedByDevice: data.updatedByDevice.present
+          ? data.updatedByDevice.value
+          : this.updatedByDevice,
+      updatedAtUtc: data.updatedAtUtc.present
+          ? data.updatedAtUtc.value
+          : this.updatedAtUtc,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      deletedAtUtc: data.deletedAtUtc.present
+          ? data.deletedAtUtc.value
+          : this.deletedAtUtc,
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      previousDataJson: data.previousDataJson.present
+          ? data.previousDataJson.value
+          : this.previousDataJson,
+      modifiedAtUtc: data.modifiedAtUtc.present
+          ? data.modifiedAtUtc.value
+          : this.modifiedAtUtc,
+      modifiedByDevice: data.modifiedByDevice.present
+          ? data.modifiedByDevice.value
+          : this.modifiedByDevice,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MixingRevision(')
+          ..write('id: $id, ')
+          ..write('revisionId: $revisionId, ')
+          ..write('updatedByDevice: $updatedByDevice, ')
+          ..write('updatedAtUtc: $updatedAtUtc, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('deletedAtUtc: $deletedAtUtc, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('previousDataJson: $previousDataJson, ')
+          ..write('modifiedAtUtc: $modifiedAtUtc, ')
+          ..write('modifiedByDevice: $modifiedByDevice')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    revisionId,
+    updatedByDevice,
+    updatedAtUtc,
+    isDeleted,
+    deletedAtUtc,
+    sessionId,
+    previousDataJson,
+    modifiedAtUtc,
+    modifiedByDevice,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MixingRevision &&
+          other.id == this.id &&
+          other.revisionId == this.revisionId &&
+          other.updatedByDevice == this.updatedByDevice &&
+          other.updatedAtUtc == this.updatedAtUtc &&
+          other.isDeleted == this.isDeleted &&
+          other.deletedAtUtc == this.deletedAtUtc &&
+          other.sessionId == this.sessionId &&
+          other.previousDataJson == this.previousDataJson &&
+          other.modifiedAtUtc == this.modifiedAtUtc &&
+          other.modifiedByDevice == this.modifiedByDevice);
+}
+
+class MixingRevisionsCompanion extends UpdateCompanion<MixingRevision> {
+  final Value<String> id;
+  final Value<String> revisionId;
+  final Value<String> updatedByDevice;
+  final Value<DateTime> updatedAtUtc;
+  final Value<bool> isDeleted;
+  final Value<DateTime?> deletedAtUtc;
+  final Value<String> sessionId;
+  final Value<String> previousDataJson;
+  final Value<DateTime> modifiedAtUtc;
+  final Value<String> modifiedByDevice;
+  final Value<int> rowid;
+  const MixingRevisionsCompanion({
+    this.id = const Value.absent(),
+    this.revisionId = const Value.absent(),
+    this.updatedByDevice = const Value.absent(),
+    this.updatedAtUtc = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.deletedAtUtc = const Value.absent(),
+    this.sessionId = const Value.absent(),
+    this.previousDataJson = const Value.absent(),
+    this.modifiedAtUtc = const Value.absent(),
+    this.modifiedByDevice = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MixingRevisionsCompanion.insert({
+    required String id,
+    required String revisionId,
+    required String updatedByDevice,
+    required DateTime updatedAtUtc,
+    this.isDeleted = const Value.absent(),
+    this.deletedAtUtc = const Value.absent(),
+    required String sessionId,
+    required String previousDataJson,
+    required DateTime modifiedAtUtc,
+    required String modifiedByDevice,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       revisionId = Value(revisionId),
+       updatedByDevice = Value(updatedByDevice),
+       updatedAtUtc = Value(updatedAtUtc),
+       sessionId = Value(sessionId),
+       previousDataJson = Value(previousDataJson),
+       modifiedAtUtc = Value(modifiedAtUtc),
+       modifiedByDevice = Value(modifiedByDevice);
+  static Insertable<MixingRevision> custom({
+    Expression<String>? id,
+    Expression<String>? revisionId,
+    Expression<String>? updatedByDevice,
+    Expression<DateTime>? updatedAtUtc,
+    Expression<bool>? isDeleted,
+    Expression<DateTime>? deletedAtUtc,
+    Expression<String>? sessionId,
+    Expression<String>? previousDataJson,
+    Expression<DateTime>? modifiedAtUtc,
+    Expression<String>? modifiedByDevice,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (revisionId != null) 'revision_id': revisionId,
+      if (updatedByDevice != null) 'updated_by_device': updatedByDevice,
+      if (updatedAtUtc != null) 'updated_at_utc': updatedAtUtc,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (deletedAtUtc != null) 'deleted_at_utc': deletedAtUtc,
+      if (sessionId != null) 'session_id': sessionId,
+      if (previousDataJson != null) 'previous_data_json': previousDataJson,
+      if (modifiedAtUtc != null) 'modified_at_utc': modifiedAtUtc,
+      if (modifiedByDevice != null) 'modified_by_device': modifiedByDevice,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MixingRevisionsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? revisionId,
+    Value<String>? updatedByDevice,
+    Value<DateTime>? updatedAtUtc,
+    Value<bool>? isDeleted,
+    Value<DateTime?>? deletedAtUtc,
+    Value<String>? sessionId,
+    Value<String>? previousDataJson,
+    Value<DateTime>? modifiedAtUtc,
+    Value<String>? modifiedByDevice,
+    Value<int>? rowid,
+  }) {
+    return MixingRevisionsCompanion(
+      id: id ?? this.id,
+      revisionId: revisionId ?? this.revisionId,
+      updatedByDevice: updatedByDevice ?? this.updatedByDevice,
+      updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAtUtc: deletedAtUtc ?? this.deletedAtUtc,
+      sessionId: sessionId ?? this.sessionId,
+      previousDataJson: previousDataJson ?? this.previousDataJson,
+      modifiedAtUtc: modifiedAtUtc ?? this.modifiedAtUtc,
+      modifiedByDevice: modifiedByDevice ?? this.modifiedByDevice,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (revisionId.present) {
+      map['revision_id'] = Variable<String>(revisionId.value);
+    }
+    if (updatedByDevice.present) {
+      map['updated_by_device'] = Variable<String>(updatedByDevice.value);
+    }
+    if (updatedAtUtc.present) {
+      map['updated_at_utc'] = Variable<DateTime>(updatedAtUtc.value);
+    }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (deletedAtUtc.present) {
+      map['deleted_at_utc'] = Variable<DateTime>(deletedAtUtc.value);
+    }
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    if (previousDataJson.present) {
+      map['previous_data_json'] = Variable<String>(previousDataJson.value);
+    }
+    if (modifiedAtUtc.present) {
+      map['modified_at_utc'] = Variable<DateTime>(modifiedAtUtc.value);
+    }
+    if (modifiedByDevice.present) {
+      map['modified_by_device'] = Variable<String>(modifiedByDevice.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MixingRevisionsCompanion(')
+          ..write('id: $id, ')
+          ..write('revisionId: $revisionId, ')
+          ..write('updatedByDevice: $updatedByDevice, ')
+          ..write('updatedAtUtc: $updatedAtUtc, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('deletedAtUtc: $deletedAtUtc, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('previousDataJson: $previousDataJson, ')
+          ..write('modifiedAtUtc: $modifiedAtUtc, ')
+          ..write('modifiedByDevice: $modifiedByDevice, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $LocalDevicesTable extends LocalDevices
     with TableInfo<$LocalDevicesTable, LocalDevice> {
   @override
@@ -10766,6 +16627,17 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $AssetStatusesTable assetStatuses = $AssetStatusesTable(this);
   late final $AssetsTable assets = $AssetsTable(this);
+  late final $FormulasTable formulas = $FormulasTable(this);
+  late final $FormulaDraftsTable formulaDrafts = $FormulaDraftsTable(this);
+  late final $FormulaVersionsTable formulaVersions = $FormulaVersionsTable(
+    this,
+  );
+  late final $FormulaItemsTable formulaItems = $FormulaItemsTable(this);
+  late final $MixingSessionsTable mixingSessions = $MixingSessionsTable(this);
+  late final $MixingItemsTable mixingItems = $MixingItemsTable(this);
+  late final $MixingRevisionsTable mixingRevisions = $MixingRevisionsTable(
+    this,
+  );
   late final $LocalDevicesTable localDevices = $LocalDevicesTable(this);
   late final $SyncOperationsTable syncOperations = $SyncOperationsTable(this);
   @override
@@ -10788,6 +16660,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     assetCategories,
     assetStatuses,
     assets,
+    formulas,
+    formulaDrafts,
+    formulaVersions,
+    formulaItems,
+    mixingSessions,
+    mixingItems,
+    mixingRevisions,
     localDevices,
     syncOperations,
   ];
@@ -10934,6 +16813,44 @@ final class $$ProductionTypesTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _recommendationPresetsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$FormulaDraftsTable, List<FormulaDraft>>
+  _formulaDraftsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.formulaDrafts,
+    aliasName: 'production_types__id__formula_drafts__production_type_id',
+  );
+
+  $$FormulaDraftsTableProcessedTableManager get formulaDraftsRefs {
+    final manager = $$FormulaDraftsTableTableManager($_db, $_db.formulaDrafts)
+        .filter(
+          (f) => f.productionTypeId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(_formulaDraftsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$FormulaVersionsTable, List<FormulaVersion>>
+  _formulaVersionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.formulaVersions,
+    aliasName: 'production_types__id__formula_versions__production_type_id',
+  );
+
+  $$FormulaVersionsTableProcessedTableManager get formulaVersionsRefs {
+    final manager =
+        $$FormulaVersionsTableTableManager($_db, $_db.formulaVersions).filter(
+          (f) => f.productionTypeId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _formulaVersionsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -11094,6 +17011,56 @@ class $$ProductionTypesTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
+    return f(composer);
+  }
+
+  Expression<bool> formulaDraftsRefs(
+    Expression<bool> Function($$FormulaDraftsTableFilterComposer f) f,
+  ) {
+    final $$FormulaDraftsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.formulaDrafts,
+      getReferencedColumn: (t) => t.productionTypeId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulaDraftsTableFilterComposer(
+            $db: $db,
+            $table: $db.formulaDrafts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> formulaVersionsRefs(
+    Expression<bool> Function($$FormulaVersionsTableFilterComposer f) f,
+  ) {
+    final $$FormulaVersionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.formulaVersions,
+      getReferencedColumn: (t) => t.productionTypeId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulaVersionsTableFilterComposer(
+            $db: $db,
+            $table: $db.formulaVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
     return f(composer);
   }
 }
@@ -11302,6 +17269,56 @@ class $$ProductionTypesTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> formulaDraftsRefs<T extends Object>(
+    Expression<T> Function($$FormulaDraftsTableAnnotationComposer a) f,
+  ) {
+    final $$FormulaDraftsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.formulaDrafts,
+      getReferencedColumn: (t) => t.productionTypeId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulaDraftsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.formulaDrafts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> formulaVersionsRefs<T extends Object>(
+    Expression<T> Function($$FormulaVersionsTableAnnotationComposer a) f,
+  ) {
+    final $$FormulaVersionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.formulaVersions,
+      getReferencedColumn: (t) => t.productionTypeId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulaVersionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.formulaVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ProductionTypesTableTableManager
@@ -11322,6 +17339,8 @@ class $$ProductionTypesTableTableManager
             bool ingredientRatioRangesRefs,
             bool skuRatioOverridesRefs,
             bool recommendationPresetsRefs,
+            bool formulaDraftsRefs,
+            bool formulaVersionsRefs,
           })
         > {
   $$ProductionTypesTableTableManager(
@@ -11399,6 +17418,8 @@ class $$ProductionTypesTableTableManager
                 ingredientRatioRangesRefs = false,
                 skuRatioOverridesRefs = false,
                 recommendationPresetsRefs = false,
+                formulaDraftsRefs = false,
+                formulaVersionsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -11407,6 +17428,8 @@ class $$ProductionTypesTableTableManager
                     if (ingredientRatioRangesRefs) db.ingredientRatioRanges,
                     if (skuRatioOverridesRefs) db.skuRatioOverrides,
                     if (recommendationPresetsRefs) db.recommendationPresets,
+                    if (formulaDraftsRefs) db.formulaDrafts,
+                    if (formulaVersionsRefs) db.formulaVersions,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -11495,6 +17518,48 @@ class $$ProductionTypesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (formulaDraftsRefs)
+                        await $_getPrefetchedData<
+                          ProductionType,
+                          $ProductionTypesTable,
+                          FormulaDraft
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProductionTypesTableReferences
+                              ._formulaDraftsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProductionTypesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).formulaDraftsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.productionTypeId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (formulaVersionsRefs)
+                        await $_getPrefetchedData<
+                          ProductionType,
+                          $ProductionTypesTable,
+                          FormulaVersion
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProductionTypesTableReferences
+                              ._formulaVersionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProductionTypesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).formulaVersionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.productionTypeId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -11520,6 +17585,8 @@ typedef $$ProductionTypesTableProcessedTableManager =
         bool ingredientRatioRangesRefs,
         bool skuRatioOverridesRefs,
         bool recommendationPresetsRefs,
+        bool formulaDraftsRefs,
+        bool formulaVersionsRefs,
       })
     >;
 typedef $$IngredientCategoriesTableCreateCompanionBuilder =
@@ -16807,6 +22874,47 @@ typedef $$CustomersTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
+final class $$CustomersTableReferences
+    extends BaseReferences<_$AppDatabase, $CustomersTable, Customer> {
+  $$CustomersTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$FormulaDraftsTable, List<FormulaDraft>>
+  _formulaDraftsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.formulaDrafts,
+    aliasName: 'customers__id__formula_drafts__customer_id',
+  );
+
+  $$FormulaDraftsTableProcessedTableManager get formulaDraftsRefs {
+    final manager = $$FormulaDraftsTableTableManager(
+      $_db,
+      $_db.formulaDrafts,
+    ).filter((f) => f.customerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_formulaDraftsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$MixingSessionsTable, List<MixingSession>>
+  _mixingSessionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.mixingSessions,
+    aliasName: 'customers__id__mixing_sessions__customer_id',
+  );
+
+  $$MixingSessionsTableProcessedTableManager get mixingSessionsRefs {
+    final manager = $$MixingSessionsTableTableManager(
+      $_db,
+      $_db.mixingSessions,
+    ).filter((f) => f.customerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_mixingSessionsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
 class $$CustomersTableFilterComposer
     extends Composer<_$AppDatabase, $CustomersTable> {
   $$CustomersTableFilterComposer({
@@ -16865,6 +22973,56 @@ class $$CustomersTableFilterComposer
     column: $table.createdAtUtc,
     builder: (column) => ColumnFilters(column),
   );
+
+  Expression<bool> formulaDraftsRefs(
+    Expression<bool> Function($$FormulaDraftsTableFilterComposer f) f,
+  ) {
+    final $$FormulaDraftsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.formulaDrafts,
+      getReferencedColumn: (t) => t.customerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulaDraftsTableFilterComposer(
+            $db: $db,
+            $table: $db.formulaDrafts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> mixingSessionsRefs(
+    Expression<bool> Function($$MixingSessionsTableFilterComposer f) f,
+  ) {
+    final $$MixingSessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.mixingSessions,
+      getReferencedColumn: (t) => t.customerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MixingSessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.mixingSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$CustomersTableOrderingComposer
@@ -16975,6 +23133,56 @@ class $$CustomersTableAnnotationComposer
     column: $table.createdAtUtc,
     builder: (column) => column,
   );
+
+  Expression<T> formulaDraftsRefs<T extends Object>(
+    Expression<T> Function($$FormulaDraftsTableAnnotationComposer a) f,
+  ) {
+    final $$FormulaDraftsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.formulaDrafts,
+      getReferencedColumn: (t) => t.customerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulaDraftsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.formulaDrafts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> mixingSessionsRefs<T extends Object>(
+    Expression<T> Function($$MixingSessionsTableAnnotationComposer a) f,
+  ) {
+    final $$MixingSessionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.mixingSessions,
+      getReferencedColumn: (t) => t.customerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MixingSessionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.mixingSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$CustomersTableTableManager
@@ -16988,9 +23196,12 @@ class $$CustomersTableTableManager
           $$CustomersTableAnnotationComposer,
           $$CustomersTableCreateCompanionBuilder,
           $$CustomersTableUpdateCompanionBuilder,
-          (Customer, BaseReferences<_$AppDatabase, $CustomersTable, Customer>),
+          (Customer, $$CustomersTableReferences),
           Customer,
-          PrefetchHooks Function()
+          PrefetchHooks Function({
+            bool formulaDraftsRefs,
+            bool mixingSessionsRefs,
+          })
         > {
   $$CustomersTableTableManager(_$AppDatabase db, $CustomersTable table)
     : super(
@@ -17056,9 +23267,70 @@ class $$CustomersTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$CustomersTableReferences(db, table, e),
+                ),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback:
+              ({formulaDraftsRefs = false, mixingSessionsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (formulaDraftsRefs) db.formulaDrafts,
+                    if (mixingSessionsRefs) db.mixingSessions,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (formulaDraftsRefs)
+                        await $_getPrefetchedData<
+                          Customer,
+                          $CustomersTable,
+                          FormulaDraft
+                        >(
+                          currentTable: table,
+                          referencedTable: $$CustomersTableReferences
+                              ._formulaDraftsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$CustomersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).formulaDraftsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.customerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (mixingSessionsRefs)
+                        await $_getPrefetchedData<
+                          Customer,
+                          $CustomersTable,
+                          MixingSession
+                        >(
+                          currentTable: table,
+                          referencedTable: $$CustomersTableReferences
+                              ._mixingSessionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$CustomersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).mixingSessionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.customerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
         ),
       );
 }
@@ -17073,9 +23345,9 @@ typedef $$CustomersTableProcessedTableManager =
       $$CustomersTableAnnotationComposer,
       $$CustomersTableCreateCompanionBuilder,
       $$CustomersTableUpdateCompanionBuilder,
-      (Customer, BaseReferences<_$AppDatabase, $CustomersTable, Customer>),
+      (Customer, $$CustomersTableReferences),
       Customer,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool formulaDraftsRefs, bool mixingSessionsRefs})
     >;
 typedef $$PlaqueTypesTableCreateCompanionBuilder =
     PlaqueTypesCompanion Function({
@@ -17109,6 +23381,47 @@ typedef $$PlaqueTypesTableUpdateCompanionBuilder =
       Value<bool> isInactive,
       Value<int> rowid,
     });
+
+final class $$PlaqueTypesTableReferences
+    extends BaseReferences<_$AppDatabase, $PlaqueTypesTable, PlaqueType> {
+  $$PlaqueTypesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$FormulaDraftsTable, List<FormulaDraft>>
+  _formulaDraftsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.formulaDrafts,
+    aliasName: 'plaque_types__id__formula_drafts__plaque_type_id',
+  );
+
+  $$FormulaDraftsTableProcessedTableManager get formulaDraftsRefs {
+    final manager = $$FormulaDraftsTableTableManager(
+      $_db,
+      $_db.formulaDrafts,
+    ).filter((f) => f.plaqueTypeId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_formulaDraftsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$MixingSessionsTable, List<MixingSession>>
+  _mixingSessionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.mixingSessions,
+    aliasName: 'plaque_types__id__mixing_sessions__plaque_type_id',
+  );
+
+  $$MixingSessionsTableProcessedTableManager get mixingSessionsRefs {
+    final manager = $$MixingSessionsTableTableManager(
+      $_db,
+      $_db.mixingSessions,
+    ).filter((f) => f.plaqueTypeId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_mixingSessionsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
 
 class $$PlaqueTypesTableFilterComposer
     extends Composer<_$AppDatabase, $PlaqueTypesTable> {
@@ -17178,6 +23491,56 @@ class $$PlaqueTypesTableFilterComposer
     column: $table.isInactive,
     builder: (column) => ColumnFilters(column),
   );
+
+  Expression<bool> formulaDraftsRefs(
+    Expression<bool> Function($$FormulaDraftsTableFilterComposer f) f,
+  ) {
+    final $$FormulaDraftsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.formulaDrafts,
+      getReferencedColumn: (t) => t.plaqueTypeId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulaDraftsTableFilterComposer(
+            $db: $db,
+            $table: $db.formulaDrafts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> mixingSessionsRefs(
+    Expression<bool> Function($$MixingSessionsTableFilterComposer f) f,
+  ) {
+    final $$MixingSessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.mixingSessions,
+      getReferencedColumn: (t) => t.plaqueTypeId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MixingSessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.mixingSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$PlaqueTypesTableOrderingComposer
@@ -17306,6 +23669,56 @@ class $$PlaqueTypesTableAnnotationComposer
     column: $table.isInactive,
     builder: (column) => column,
   );
+
+  Expression<T> formulaDraftsRefs<T extends Object>(
+    Expression<T> Function($$FormulaDraftsTableAnnotationComposer a) f,
+  ) {
+    final $$FormulaDraftsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.formulaDrafts,
+      getReferencedColumn: (t) => t.plaqueTypeId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulaDraftsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.formulaDrafts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> mixingSessionsRefs<T extends Object>(
+    Expression<T> Function($$MixingSessionsTableAnnotationComposer a) f,
+  ) {
+    final $$MixingSessionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.mixingSessions,
+      getReferencedColumn: (t) => t.plaqueTypeId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MixingSessionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.mixingSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$PlaqueTypesTableTableManager
@@ -17319,12 +23732,12 @@ class $$PlaqueTypesTableTableManager
           $$PlaqueTypesTableAnnotationComposer,
           $$PlaqueTypesTableCreateCompanionBuilder,
           $$PlaqueTypesTableUpdateCompanionBuilder,
-          (
-            PlaqueType,
-            BaseReferences<_$AppDatabase, $PlaqueTypesTable, PlaqueType>,
-          ),
+          (PlaqueType, $$PlaqueTypesTableReferences),
           PlaqueType,
-          PrefetchHooks Function()
+          PrefetchHooks Function({
+            bool formulaDraftsRefs,
+            bool mixingSessionsRefs,
+          })
         > {
   $$PlaqueTypesTableTableManager(_$AppDatabase db, $PlaqueTypesTable table)
     : super(
@@ -17398,9 +23811,70 @@ class $$PlaqueTypesTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PlaqueTypesTableReferences(db, table, e),
+                ),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback:
+              ({formulaDraftsRefs = false, mixingSessionsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (formulaDraftsRefs) db.formulaDrafts,
+                    if (mixingSessionsRefs) db.mixingSessions,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (formulaDraftsRefs)
+                        await $_getPrefetchedData<
+                          PlaqueType,
+                          $PlaqueTypesTable,
+                          FormulaDraft
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PlaqueTypesTableReferences
+                              ._formulaDraftsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PlaqueTypesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).formulaDraftsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.plaqueTypeId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (mixingSessionsRefs)
+                        await $_getPrefetchedData<
+                          PlaqueType,
+                          $PlaqueTypesTable,
+                          MixingSession
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PlaqueTypesTableReferences
+                              ._mixingSessionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PlaqueTypesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).mixingSessionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.plaqueTypeId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
         ),
       );
 }
@@ -17415,12 +23889,9 @@ typedef $$PlaqueTypesTableProcessedTableManager =
       $$PlaqueTypesTableAnnotationComposer,
       $$PlaqueTypesTableCreateCompanionBuilder,
       $$PlaqueTypesTableUpdateCompanionBuilder,
-      (
-        PlaqueType,
-        BaseReferences<_$AppDatabase, $PlaqueTypesTable, PlaqueType>,
-      ),
+      (PlaqueType, $$PlaqueTypesTableReferences),
       PlaqueType,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool formulaDraftsRefs, bool mixingSessionsRefs})
     >;
 typedef $$AssetCategoriesTableCreateCompanionBuilder =
     AssetCategoriesCompanion Function({
@@ -18813,6 +25284,4754 @@ typedef $$AssetsTableProcessedTableManager =
       Asset,
       PrefetchHooks Function({bool categoryId, bool statusId})
     >;
+typedef $$FormulasTableCreateCompanionBuilder =
+    FormulasCompanion Function({
+      required String id,
+      required String revisionId,
+      required String updatedByDevice,
+      required DateTime updatedAtUtc,
+      Value<bool> isDeleted,
+      Value<DateTime?> deletedAtUtc,
+      required String name,
+      Value<String?> notes,
+      Value<String?> currentVersionId,
+      Value<DateTime?> lastUsedAtUtc,
+      Value<int> rowid,
+    });
+typedef $$FormulasTableUpdateCompanionBuilder =
+    FormulasCompanion Function({
+      Value<String> id,
+      Value<String> revisionId,
+      Value<String> updatedByDevice,
+      Value<DateTime> updatedAtUtc,
+      Value<bool> isDeleted,
+      Value<DateTime?> deletedAtUtc,
+      Value<String> name,
+      Value<String?> notes,
+      Value<String?> currentVersionId,
+      Value<DateTime?> lastUsedAtUtc,
+      Value<int> rowid,
+    });
+
+final class $$FormulasTableReferences
+    extends BaseReferences<_$AppDatabase, $FormulasTable, Formula> {
+  $$FormulasTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$FormulaDraftsTable, List<FormulaDraft>>
+  _formulaDraftsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.formulaDrafts,
+    aliasName: 'formulas__id__formula_drafts__formula_id',
+  );
+
+  $$FormulaDraftsTableProcessedTableManager get formulaDraftsRefs {
+    final manager = $$FormulaDraftsTableTableManager(
+      $_db,
+      $_db.formulaDrafts,
+    ).filter((f) => f.formulaId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_formulaDraftsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$FormulaVersionsTable, List<FormulaVersion>>
+  _formulaVersionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.formulaVersions,
+    aliasName: 'formulas__id__formula_versions__formula_id',
+  );
+
+  $$FormulaVersionsTableProcessedTableManager get formulaVersionsRefs {
+    final manager = $$FormulaVersionsTableTableManager(
+      $_db,
+      $_db.formulaVersions,
+    ).filter((f) => f.formulaId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _formulaVersionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$MixingSessionsTable, List<MixingSession>>
+  _mixingSessionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.mixingSessions,
+    aliasName: 'formulas__id__mixing_sessions__formula_id',
+  );
+
+  $$MixingSessionsTableProcessedTableManager get mixingSessionsRefs {
+    final manager = $$MixingSessionsTableTableManager(
+      $_db,
+      $_db.mixingSessions,
+    ).filter((f) => f.formulaId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_mixingSessionsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$FormulasTableFilterComposer
+    extends Composer<_$AppDatabase, $FormulasTable> {
+  $$FormulasTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get revisionId => $composableBuilder(
+    column: $table.revisionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get updatedByDevice => $composableBuilder(
+    column: $table.updatedByDevice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAtUtc => $composableBuilder(
+    column: $table.deletedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get currentVersionId => $composableBuilder(
+    column: $table.currentVersionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastUsedAtUtc => $composableBuilder(
+    column: $table.lastUsedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> formulaDraftsRefs(
+    Expression<bool> Function($$FormulaDraftsTableFilterComposer f) f,
+  ) {
+    final $$FormulaDraftsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.formulaDrafts,
+      getReferencedColumn: (t) => t.formulaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulaDraftsTableFilterComposer(
+            $db: $db,
+            $table: $db.formulaDrafts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> formulaVersionsRefs(
+    Expression<bool> Function($$FormulaVersionsTableFilterComposer f) f,
+  ) {
+    final $$FormulaVersionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.formulaVersions,
+      getReferencedColumn: (t) => t.formulaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulaVersionsTableFilterComposer(
+            $db: $db,
+            $table: $db.formulaVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> mixingSessionsRefs(
+    Expression<bool> Function($$MixingSessionsTableFilterComposer f) f,
+  ) {
+    final $$MixingSessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.mixingSessions,
+      getReferencedColumn: (t) => t.formulaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MixingSessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.mixingSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$FormulasTableOrderingComposer
+    extends Composer<_$AppDatabase, $FormulasTable> {
+  $$FormulasTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get revisionId => $composableBuilder(
+    column: $table.revisionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get updatedByDevice => $composableBuilder(
+    column: $table.updatedByDevice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAtUtc => $composableBuilder(
+    column: $table.deletedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get currentVersionId => $composableBuilder(
+    column: $table.currentVersionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastUsedAtUtc => $composableBuilder(
+    column: $table.lastUsedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$FormulasTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FormulasTable> {
+  $$FormulasTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get revisionId => $composableBuilder(
+    column: $table.revisionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get updatedByDevice => $composableBuilder(
+    column: $table.updatedByDevice,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAtUtc => $composableBuilder(
+    column: $table.deletedAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get currentVersionId => $composableBuilder(
+    column: $table.currentVersionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lastUsedAtUtc => $composableBuilder(
+    column: $table.lastUsedAtUtc,
+    builder: (column) => column,
+  );
+
+  Expression<T> formulaDraftsRefs<T extends Object>(
+    Expression<T> Function($$FormulaDraftsTableAnnotationComposer a) f,
+  ) {
+    final $$FormulaDraftsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.formulaDrafts,
+      getReferencedColumn: (t) => t.formulaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulaDraftsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.formulaDrafts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> formulaVersionsRefs<T extends Object>(
+    Expression<T> Function($$FormulaVersionsTableAnnotationComposer a) f,
+  ) {
+    final $$FormulaVersionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.formulaVersions,
+      getReferencedColumn: (t) => t.formulaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulaVersionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.formulaVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> mixingSessionsRefs<T extends Object>(
+    Expression<T> Function($$MixingSessionsTableAnnotationComposer a) f,
+  ) {
+    final $$MixingSessionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.mixingSessions,
+      getReferencedColumn: (t) => t.formulaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MixingSessionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.mixingSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$FormulasTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FormulasTable,
+          Formula,
+          $$FormulasTableFilterComposer,
+          $$FormulasTableOrderingComposer,
+          $$FormulasTableAnnotationComposer,
+          $$FormulasTableCreateCompanionBuilder,
+          $$FormulasTableUpdateCompanionBuilder,
+          (Formula, $$FormulasTableReferences),
+          Formula,
+          PrefetchHooks Function({
+            bool formulaDraftsRefs,
+            bool formulaVersionsRefs,
+            bool mixingSessionsRefs,
+          })
+        > {
+  $$FormulasTableTableManager(_$AppDatabase db, $FormulasTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FormulasTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FormulasTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FormulasTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> revisionId = const Value.absent(),
+                Value<String> updatedByDevice = const Value.absent(),
+                Value<DateTime> updatedAtUtc = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<DateTime?> deletedAtUtc = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String?> currentVersionId = const Value.absent(),
+                Value<DateTime?> lastUsedAtUtc = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FormulasCompanion(
+                id: id,
+                revisionId: revisionId,
+                updatedByDevice: updatedByDevice,
+                updatedAtUtc: updatedAtUtc,
+                isDeleted: isDeleted,
+                deletedAtUtc: deletedAtUtc,
+                name: name,
+                notes: notes,
+                currentVersionId: currentVersionId,
+                lastUsedAtUtc: lastUsedAtUtc,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String revisionId,
+                required String updatedByDevice,
+                required DateTime updatedAtUtc,
+                Value<bool> isDeleted = const Value.absent(),
+                Value<DateTime?> deletedAtUtc = const Value.absent(),
+                required String name,
+                Value<String?> notes = const Value.absent(),
+                Value<String?> currentVersionId = const Value.absent(),
+                Value<DateTime?> lastUsedAtUtc = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FormulasCompanion.insert(
+                id: id,
+                revisionId: revisionId,
+                updatedByDevice: updatedByDevice,
+                updatedAtUtc: updatedAtUtc,
+                isDeleted: isDeleted,
+                deletedAtUtc: deletedAtUtc,
+                name: name,
+                notes: notes,
+                currentVersionId: currentVersionId,
+                lastUsedAtUtc: lastUsedAtUtc,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$FormulasTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                formulaDraftsRefs = false,
+                formulaVersionsRefs = false,
+                mixingSessionsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (formulaDraftsRefs) db.formulaDrafts,
+                    if (formulaVersionsRefs) db.formulaVersions,
+                    if (mixingSessionsRefs) db.mixingSessions,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (formulaDraftsRefs)
+                        await $_getPrefetchedData<
+                          Formula,
+                          $FormulasTable,
+                          FormulaDraft
+                        >(
+                          currentTable: table,
+                          referencedTable: $$FormulasTableReferences
+                              ._formulaDraftsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$FormulasTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).formulaDraftsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.formulaId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (formulaVersionsRefs)
+                        await $_getPrefetchedData<
+                          Formula,
+                          $FormulasTable,
+                          FormulaVersion
+                        >(
+                          currentTable: table,
+                          referencedTable: $$FormulasTableReferences
+                              ._formulaVersionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$FormulasTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).formulaVersionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.formulaId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (mixingSessionsRefs)
+                        await $_getPrefetchedData<
+                          Formula,
+                          $FormulasTable,
+                          MixingSession
+                        >(
+                          currentTable: table,
+                          referencedTable: $$FormulasTableReferences
+                              ._mixingSessionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$FormulasTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).mixingSessionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.formulaId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$FormulasTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FormulasTable,
+      Formula,
+      $$FormulasTableFilterComposer,
+      $$FormulasTableOrderingComposer,
+      $$FormulasTableAnnotationComposer,
+      $$FormulasTableCreateCompanionBuilder,
+      $$FormulasTableUpdateCompanionBuilder,
+      (Formula, $$FormulasTableReferences),
+      Formula,
+      PrefetchHooks Function({
+        bool formulaDraftsRefs,
+        bool formulaVersionsRefs,
+        bool mixingSessionsRefs,
+      })
+    >;
+typedef $$FormulaDraftsTableCreateCompanionBuilder =
+    FormulaDraftsCompanion Function({
+      required String id,
+      required String revisionId,
+      required String updatedByDevice,
+      required DateTime updatedAtUtc,
+      Value<bool> isDeleted,
+      Value<DateTime?> deletedAtUtc,
+      required String kind,
+      Value<String?> formulaId,
+      Value<String?> sourceVersionId,
+      Value<String?> customerId,
+      Value<String?> plaqueTypeId,
+      Value<String> formulaName,
+      required String productionTypeId,
+      required int targetWeight,
+      Value<String?> notes,
+      required String itemsJson,
+      required String actualWeightsJson,
+      Value<String> confirmedWarningsJson,
+      required DateTime createdAtUtc,
+      Value<int> rowid,
+    });
+typedef $$FormulaDraftsTableUpdateCompanionBuilder =
+    FormulaDraftsCompanion Function({
+      Value<String> id,
+      Value<String> revisionId,
+      Value<String> updatedByDevice,
+      Value<DateTime> updatedAtUtc,
+      Value<bool> isDeleted,
+      Value<DateTime?> deletedAtUtc,
+      Value<String> kind,
+      Value<String?> formulaId,
+      Value<String?> sourceVersionId,
+      Value<String?> customerId,
+      Value<String?> plaqueTypeId,
+      Value<String> formulaName,
+      Value<String> productionTypeId,
+      Value<int> targetWeight,
+      Value<String?> notes,
+      Value<String> itemsJson,
+      Value<String> actualWeightsJson,
+      Value<String> confirmedWarningsJson,
+      Value<DateTime> createdAtUtc,
+      Value<int> rowid,
+    });
+
+final class $$FormulaDraftsTableReferences
+    extends BaseReferences<_$AppDatabase, $FormulaDraftsTable, FormulaDraft> {
+  $$FormulaDraftsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $FormulasTable _formulaIdTable(_$AppDatabase db) =>
+      db.formulas.createAlias('formula_drafts__formula_id__formulas__id');
+
+  $$FormulasTableProcessedTableManager? get formulaId {
+    final $_column = $_itemColumn<String>('formula_id');
+    if ($_column == null) return null;
+    final manager = $$FormulasTableTableManager(
+      $_db,
+      $_db.formulas,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_formulaIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $CustomersTable _customerIdTable(_$AppDatabase db) =>
+      db.customers.createAlias('formula_drafts__customer_id__customers__id');
+
+  $$CustomersTableProcessedTableManager? get customerId {
+    final $_column = $_itemColumn<String>('customer_id');
+    if ($_column == null) return null;
+    final manager = $$CustomersTableTableManager(
+      $_db,
+      $_db.customers,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_customerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $PlaqueTypesTable _plaqueTypeIdTable(_$AppDatabase db) => db
+      .plaqueTypes
+      .createAlias('formula_drafts__plaque_type_id__plaque_types__id');
+
+  $$PlaqueTypesTableProcessedTableManager? get plaqueTypeId {
+    final $_column = $_itemColumn<String>('plaque_type_id');
+    if ($_column == null) return null;
+    final manager = $$PlaqueTypesTableTableManager(
+      $_db,
+      $_db.plaqueTypes,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_plaqueTypeIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ProductionTypesTable _productionTypeIdTable(_$AppDatabase db) => db
+      .productionTypes
+      .createAlias('formula_drafts__production_type_id__production_types__id');
+
+  $$ProductionTypesTableProcessedTableManager get productionTypeId {
+    final $_column = $_itemColumn<String>('production_type_id')!;
+
+    final manager = $$ProductionTypesTableTableManager(
+      $_db,
+      $_db.productionTypes,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_productionTypeIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$FormulaDraftsTableFilterComposer
+    extends Composer<_$AppDatabase, $FormulaDraftsTable> {
+  $$FormulaDraftsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get revisionId => $composableBuilder(
+    column: $table.revisionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get updatedByDevice => $composableBuilder(
+    column: $table.updatedByDevice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAtUtc => $composableBuilder(
+    column: $table.deletedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceVersionId => $composableBuilder(
+    column: $table.sourceVersionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get formulaName => $composableBuilder(
+    column: $table.formulaName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get targetWeight => $composableBuilder(
+    column: $table.targetWeight,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get itemsJson => $composableBuilder(
+    column: $table.itemsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get actualWeightsJson => $composableBuilder(
+    column: $table.actualWeightsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get confirmedWarningsJson => $composableBuilder(
+    column: $table.confirmedWarningsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAtUtc => $composableBuilder(
+    column: $table.createdAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$FormulasTableFilterComposer get formulaId {
+    final $$FormulasTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.formulaId,
+      referencedTable: $db.formulas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulasTableFilterComposer(
+            $db: $db,
+            $table: $db.formulas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$CustomersTableFilterComposer get customerId {
+    final $$CustomersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.customerId,
+      referencedTable: $db.customers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CustomersTableFilterComposer(
+            $db: $db,
+            $table: $db.customers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PlaqueTypesTableFilterComposer get plaqueTypeId {
+    final $$PlaqueTypesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.plaqueTypeId,
+      referencedTable: $db.plaqueTypes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaqueTypesTableFilterComposer(
+            $db: $db,
+            $table: $db.plaqueTypes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProductionTypesTableFilterComposer get productionTypeId {
+    final $$ProductionTypesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.productionTypeId,
+      referencedTable: $db.productionTypes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductionTypesTableFilterComposer(
+            $db: $db,
+            $table: $db.productionTypes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$FormulaDraftsTableOrderingComposer
+    extends Composer<_$AppDatabase, $FormulaDraftsTable> {
+  $$FormulaDraftsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get revisionId => $composableBuilder(
+    column: $table.revisionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get updatedByDevice => $composableBuilder(
+    column: $table.updatedByDevice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAtUtc => $composableBuilder(
+    column: $table.deletedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceVersionId => $composableBuilder(
+    column: $table.sourceVersionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get formulaName => $composableBuilder(
+    column: $table.formulaName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get targetWeight => $composableBuilder(
+    column: $table.targetWeight,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get itemsJson => $composableBuilder(
+    column: $table.itemsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get actualWeightsJson => $composableBuilder(
+    column: $table.actualWeightsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get confirmedWarningsJson => $composableBuilder(
+    column: $table.confirmedWarningsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAtUtc => $composableBuilder(
+    column: $table.createdAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$FormulasTableOrderingComposer get formulaId {
+    final $$FormulasTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.formulaId,
+      referencedTable: $db.formulas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulasTableOrderingComposer(
+            $db: $db,
+            $table: $db.formulas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$CustomersTableOrderingComposer get customerId {
+    final $$CustomersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.customerId,
+      referencedTable: $db.customers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CustomersTableOrderingComposer(
+            $db: $db,
+            $table: $db.customers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PlaqueTypesTableOrderingComposer get plaqueTypeId {
+    final $$PlaqueTypesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.plaqueTypeId,
+      referencedTable: $db.plaqueTypes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaqueTypesTableOrderingComposer(
+            $db: $db,
+            $table: $db.plaqueTypes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProductionTypesTableOrderingComposer get productionTypeId {
+    final $$ProductionTypesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.productionTypeId,
+      referencedTable: $db.productionTypes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductionTypesTableOrderingComposer(
+            $db: $db,
+            $table: $db.productionTypes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$FormulaDraftsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FormulaDraftsTable> {
+  $$FormulaDraftsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get revisionId => $composableBuilder(
+    column: $table.revisionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get updatedByDevice => $composableBuilder(
+    column: $table.updatedByDevice,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAtUtc => $composableBuilder(
+    column: $table.deletedAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceVersionId => $composableBuilder(
+    column: $table.sourceVersionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get formulaName => $composableBuilder(
+    column: $table.formulaName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get targetWeight => $composableBuilder(
+    column: $table.targetWeight,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get itemsJson =>
+      $composableBuilder(column: $table.itemsJson, builder: (column) => column);
+
+  GeneratedColumn<String> get actualWeightsJson => $composableBuilder(
+    column: $table.actualWeightsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get confirmedWarningsJson => $composableBuilder(
+    column: $table.confirmedWarningsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAtUtc => $composableBuilder(
+    column: $table.createdAtUtc,
+    builder: (column) => column,
+  );
+
+  $$FormulasTableAnnotationComposer get formulaId {
+    final $$FormulasTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.formulaId,
+      referencedTable: $db.formulas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulasTableAnnotationComposer(
+            $db: $db,
+            $table: $db.formulas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$CustomersTableAnnotationComposer get customerId {
+    final $$CustomersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.customerId,
+      referencedTable: $db.customers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CustomersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.customers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PlaqueTypesTableAnnotationComposer get plaqueTypeId {
+    final $$PlaqueTypesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.plaqueTypeId,
+      referencedTable: $db.plaqueTypes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaqueTypesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.plaqueTypes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProductionTypesTableAnnotationComposer get productionTypeId {
+    final $$ProductionTypesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.productionTypeId,
+      referencedTable: $db.productionTypes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductionTypesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.productionTypes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$FormulaDraftsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FormulaDraftsTable,
+          FormulaDraft,
+          $$FormulaDraftsTableFilterComposer,
+          $$FormulaDraftsTableOrderingComposer,
+          $$FormulaDraftsTableAnnotationComposer,
+          $$FormulaDraftsTableCreateCompanionBuilder,
+          $$FormulaDraftsTableUpdateCompanionBuilder,
+          (FormulaDraft, $$FormulaDraftsTableReferences),
+          FormulaDraft,
+          PrefetchHooks Function({
+            bool formulaId,
+            bool customerId,
+            bool plaqueTypeId,
+            bool productionTypeId,
+          })
+        > {
+  $$FormulaDraftsTableTableManager(_$AppDatabase db, $FormulaDraftsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FormulaDraftsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FormulaDraftsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FormulaDraftsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> revisionId = const Value.absent(),
+                Value<String> updatedByDevice = const Value.absent(),
+                Value<DateTime> updatedAtUtc = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<DateTime?> deletedAtUtc = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String?> formulaId = const Value.absent(),
+                Value<String?> sourceVersionId = const Value.absent(),
+                Value<String?> customerId = const Value.absent(),
+                Value<String?> plaqueTypeId = const Value.absent(),
+                Value<String> formulaName = const Value.absent(),
+                Value<String> productionTypeId = const Value.absent(),
+                Value<int> targetWeight = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String> itemsJson = const Value.absent(),
+                Value<String> actualWeightsJson = const Value.absent(),
+                Value<String> confirmedWarningsJson = const Value.absent(),
+                Value<DateTime> createdAtUtc = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FormulaDraftsCompanion(
+                id: id,
+                revisionId: revisionId,
+                updatedByDevice: updatedByDevice,
+                updatedAtUtc: updatedAtUtc,
+                isDeleted: isDeleted,
+                deletedAtUtc: deletedAtUtc,
+                kind: kind,
+                formulaId: formulaId,
+                sourceVersionId: sourceVersionId,
+                customerId: customerId,
+                plaqueTypeId: plaqueTypeId,
+                formulaName: formulaName,
+                productionTypeId: productionTypeId,
+                targetWeight: targetWeight,
+                notes: notes,
+                itemsJson: itemsJson,
+                actualWeightsJson: actualWeightsJson,
+                confirmedWarningsJson: confirmedWarningsJson,
+                createdAtUtc: createdAtUtc,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String revisionId,
+                required String updatedByDevice,
+                required DateTime updatedAtUtc,
+                Value<bool> isDeleted = const Value.absent(),
+                Value<DateTime?> deletedAtUtc = const Value.absent(),
+                required String kind,
+                Value<String?> formulaId = const Value.absent(),
+                Value<String?> sourceVersionId = const Value.absent(),
+                Value<String?> customerId = const Value.absent(),
+                Value<String?> plaqueTypeId = const Value.absent(),
+                Value<String> formulaName = const Value.absent(),
+                required String productionTypeId,
+                required int targetWeight,
+                Value<String?> notes = const Value.absent(),
+                required String itemsJson,
+                required String actualWeightsJson,
+                Value<String> confirmedWarningsJson = const Value.absent(),
+                required DateTime createdAtUtc,
+                Value<int> rowid = const Value.absent(),
+              }) => FormulaDraftsCompanion.insert(
+                id: id,
+                revisionId: revisionId,
+                updatedByDevice: updatedByDevice,
+                updatedAtUtc: updatedAtUtc,
+                isDeleted: isDeleted,
+                deletedAtUtc: deletedAtUtc,
+                kind: kind,
+                formulaId: formulaId,
+                sourceVersionId: sourceVersionId,
+                customerId: customerId,
+                plaqueTypeId: plaqueTypeId,
+                formulaName: formulaName,
+                productionTypeId: productionTypeId,
+                targetWeight: targetWeight,
+                notes: notes,
+                itemsJson: itemsJson,
+                actualWeightsJson: actualWeightsJson,
+                confirmedWarningsJson: confirmedWarningsJson,
+                createdAtUtc: createdAtUtc,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$FormulaDraftsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                formulaId = false,
+                customerId = false,
+                plaqueTypeId = false,
+                productionTypeId = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (formulaId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.formulaId,
+                                    referencedTable:
+                                        $$FormulaDraftsTableReferences
+                                            ._formulaIdTable(db),
+                                    referencedColumn:
+                                        $$FormulaDraftsTableReferences
+                                            ._formulaIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (customerId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.customerId,
+                                    referencedTable:
+                                        $$FormulaDraftsTableReferences
+                                            ._customerIdTable(db),
+                                    referencedColumn:
+                                        $$FormulaDraftsTableReferences
+                                            ._customerIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (plaqueTypeId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.plaqueTypeId,
+                                    referencedTable:
+                                        $$FormulaDraftsTableReferences
+                                            ._plaqueTypeIdTable(db),
+                                    referencedColumn:
+                                        $$FormulaDraftsTableReferences
+                                            ._plaqueTypeIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (productionTypeId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.productionTypeId,
+                                    referencedTable:
+                                        $$FormulaDraftsTableReferences
+                                            ._productionTypeIdTable(db),
+                                    referencedColumn:
+                                        $$FormulaDraftsTableReferences
+                                            ._productionTypeIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$FormulaDraftsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FormulaDraftsTable,
+      FormulaDraft,
+      $$FormulaDraftsTableFilterComposer,
+      $$FormulaDraftsTableOrderingComposer,
+      $$FormulaDraftsTableAnnotationComposer,
+      $$FormulaDraftsTableCreateCompanionBuilder,
+      $$FormulaDraftsTableUpdateCompanionBuilder,
+      (FormulaDraft, $$FormulaDraftsTableReferences),
+      FormulaDraft,
+      PrefetchHooks Function({
+        bool formulaId,
+        bool customerId,
+        bool plaqueTypeId,
+        bool productionTypeId,
+      })
+    >;
+typedef $$FormulaVersionsTableCreateCompanionBuilder =
+    FormulaVersionsCompanion Function({
+      required String id,
+      required String revisionId,
+      required String updatedByDevice,
+      required DateTime updatedAtUtc,
+      Value<bool> isDeleted,
+      Value<DateTime?> deletedAtUtc,
+      required String formulaId,
+      required int versionNumber,
+      Value<String?> sourceVersionId,
+      required String productionTypeId,
+      required DateTime createdAtUtc,
+      Value<int> rowid,
+    });
+typedef $$FormulaVersionsTableUpdateCompanionBuilder =
+    FormulaVersionsCompanion Function({
+      Value<String> id,
+      Value<String> revisionId,
+      Value<String> updatedByDevice,
+      Value<DateTime> updatedAtUtc,
+      Value<bool> isDeleted,
+      Value<DateTime?> deletedAtUtc,
+      Value<String> formulaId,
+      Value<int> versionNumber,
+      Value<String?> sourceVersionId,
+      Value<String> productionTypeId,
+      Value<DateTime> createdAtUtc,
+      Value<int> rowid,
+    });
+
+final class $$FormulaVersionsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $FormulaVersionsTable, FormulaVersion> {
+  $$FormulaVersionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $FormulasTable _formulaIdTable(_$AppDatabase db) =>
+      db.formulas.createAlias('formula_versions__formula_id__formulas__id');
+
+  $$FormulasTableProcessedTableManager get formulaId {
+    final $_column = $_itemColumn<String>('formula_id')!;
+
+    final manager = $$FormulasTableTableManager(
+      $_db,
+      $_db.formulas,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_formulaIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ProductionTypesTable _productionTypeIdTable(_$AppDatabase db) =>
+      db.productionTypes.createAlias(
+        'formula_versions__production_type_id__production_types__id',
+      );
+
+  $$ProductionTypesTableProcessedTableManager get productionTypeId {
+    final $_column = $_itemColumn<String>('production_type_id')!;
+
+    final manager = $$ProductionTypesTableTableManager(
+      $_db,
+      $_db.productionTypes,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_productionTypeIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$FormulaItemsTable, List<FormulaItem>>
+  _formulaItemsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.formulaItems,
+    aliasName: 'formula_versions__id__formula_items__version_id',
+  );
+
+  $$FormulaItemsTableProcessedTableManager get formulaItemsRefs {
+    final manager = $$FormulaItemsTableTableManager(
+      $_db,
+      $_db.formulaItems,
+    ).filter((f) => f.versionId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_formulaItemsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$MixingSessionsTable, List<MixingSession>>
+  _mixingSessionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.mixingSessions,
+    aliasName: 'formula_versions__id__mixing_sessions__version_id',
+  );
+
+  $$MixingSessionsTableProcessedTableManager get mixingSessionsRefs {
+    final manager = $$MixingSessionsTableTableManager(
+      $_db,
+      $_db.mixingSessions,
+    ).filter((f) => f.versionId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_mixingSessionsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$FormulaVersionsTableFilterComposer
+    extends Composer<_$AppDatabase, $FormulaVersionsTable> {
+  $$FormulaVersionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get revisionId => $composableBuilder(
+    column: $table.revisionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get updatedByDevice => $composableBuilder(
+    column: $table.updatedByDevice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAtUtc => $composableBuilder(
+    column: $table.deletedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get versionNumber => $composableBuilder(
+    column: $table.versionNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceVersionId => $composableBuilder(
+    column: $table.sourceVersionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAtUtc => $composableBuilder(
+    column: $table.createdAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$FormulasTableFilterComposer get formulaId {
+    final $$FormulasTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.formulaId,
+      referencedTable: $db.formulas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulasTableFilterComposer(
+            $db: $db,
+            $table: $db.formulas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProductionTypesTableFilterComposer get productionTypeId {
+    final $$ProductionTypesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.productionTypeId,
+      referencedTable: $db.productionTypes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductionTypesTableFilterComposer(
+            $db: $db,
+            $table: $db.productionTypes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> formulaItemsRefs(
+    Expression<bool> Function($$FormulaItemsTableFilterComposer f) f,
+  ) {
+    final $$FormulaItemsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.formulaItems,
+      getReferencedColumn: (t) => t.versionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulaItemsTableFilterComposer(
+            $db: $db,
+            $table: $db.formulaItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> mixingSessionsRefs(
+    Expression<bool> Function($$MixingSessionsTableFilterComposer f) f,
+  ) {
+    final $$MixingSessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.mixingSessions,
+      getReferencedColumn: (t) => t.versionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MixingSessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.mixingSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$FormulaVersionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $FormulaVersionsTable> {
+  $$FormulaVersionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get revisionId => $composableBuilder(
+    column: $table.revisionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get updatedByDevice => $composableBuilder(
+    column: $table.updatedByDevice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAtUtc => $composableBuilder(
+    column: $table.deletedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get versionNumber => $composableBuilder(
+    column: $table.versionNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceVersionId => $composableBuilder(
+    column: $table.sourceVersionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAtUtc => $composableBuilder(
+    column: $table.createdAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$FormulasTableOrderingComposer get formulaId {
+    final $$FormulasTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.formulaId,
+      referencedTable: $db.formulas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulasTableOrderingComposer(
+            $db: $db,
+            $table: $db.formulas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProductionTypesTableOrderingComposer get productionTypeId {
+    final $$ProductionTypesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.productionTypeId,
+      referencedTable: $db.productionTypes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductionTypesTableOrderingComposer(
+            $db: $db,
+            $table: $db.productionTypes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$FormulaVersionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FormulaVersionsTable> {
+  $$FormulaVersionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get revisionId => $composableBuilder(
+    column: $table.revisionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get updatedByDevice => $composableBuilder(
+    column: $table.updatedByDevice,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAtUtc => $composableBuilder(
+    column: $table.deletedAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get versionNumber => $composableBuilder(
+    column: $table.versionNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceVersionId => $composableBuilder(
+    column: $table.sourceVersionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAtUtc => $composableBuilder(
+    column: $table.createdAtUtc,
+    builder: (column) => column,
+  );
+
+  $$FormulasTableAnnotationComposer get formulaId {
+    final $$FormulasTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.formulaId,
+      referencedTable: $db.formulas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulasTableAnnotationComposer(
+            $db: $db,
+            $table: $db.formulas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProductionTypesTableAnnotationComposer get productionTypeId {
+    final $$ProductionTypesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.productionTypeId,
+      referencedTable: $db.productionTypes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductionTypesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.productionTypes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> formulaItemsRefs<T extends Object>(
+    Expression<T> Function($$FormulaItemsTableAnnotationComposer a) f,
+  ) {
+    final $$FormulaItemsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.formulaItems,
+      getReferencedColumn: (t) => t.versionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulaItemsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.formulaItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> mixingSessionsRefs<T extends Object>(
+    Expression<T> Function($$MixingSessionsTableAnnotationComposer a) f,
+  ) {
+    final $$MixingSessionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.mixingSessions,
+      getReferencedColumn: (t) => t.versionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MixingSessionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.mixingSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$FormulaVersionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FormulaVersionsTable,
+          FormulaVersion,
+          $$FormulaVersionsTableFilterComposer,
+          $$FormulaVersionsTableOrderingComposer,
+          $$FormulaVersionsTableAnnotationComposer,
+          $$FormulaVersionsTableCreateCompanionBuilder,
+          $$FormulaVersionsTableUpdateCompanionBuilder,
+          (FormulaVersion, $$FormulaVersionsTableReferences),
+          FormulaVersion,
+          PrefetchHooks Function({
+            bool formulaId,
+            bool productionTypeId,
+            bool formulaItemsRefs,
+            bool mixingSessionsRefs,
+          })
+        > {
+  $$FormulaVersionsTableTableManager(
+    _$AppDatabase db,
+    $FormulaVersionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FormulaVersionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FormulaVersionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FormulaVersionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> revisionId = const Value.absent(),
+                Value<String> updatedByDevice = const Value.absent(),
+                Value<DateTime> updatedAtUtc = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<DateTime?> deletedAtUtc = const Value.absent(),
+                Value<String> formulaId = const Value.absent(),
+                Value<int> versionNumber = const Value.absent(),
+                Value<String?> sourceVersionId = const Value.absent(),
+                Value<String> productionTypeId = const Value.absent(),
+                Value<DateTime> createdAtUtc = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FormulaVersionsCompanion(
+                id: id,
+                revisionId: revisionId,
+                updatedByDevice: updatedByDevice,
+                updatedAtUtc: updatedAtUtc,
+                isDeleted: isDeleted,
+                deletedAtUtc: deletedAtUtc,
+                formulaId: formulaId,
+                versionNumber: versionNumber,
+                sourceVersionId: sourceVersionId,
+                productionTypeId: productionTypeId,
+                createdAtUtc: createdAtUtc,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String revisionId,
+                required String updatedByDevice,
+                required DateTime updatedAtUtc,
+                Value<bool> isDeleted = const Value.absent(),
+                Value<DateTime?> deletedAtUtc = const Value.absent(),
+                required String formulaId,
+                required int versionNumber,
+                Value<String?> sourceVersionId = const Value.absent(),
+                required String productionTypeId,
+                required DateTime createdAtUtc,
+                Value<int> rowid = const Value.absent(),
+              }) => FormulaVersionsCompanion.insert(
+                id: id,
+                revisionId: revisionId,
+                updatedByDevice: updatedByDevice,
+                updatedAtUtc: updatedAtUtc,
+                isDeleted: isDeleted,
+                deletedAtUtc: deletedAtUtc,
+                formulaId: formulaId,
+                versionNumber: versionNumber,
+                sourceVersionId: sourceVersionId,
+                productionTypeId: productionTypeId,
+                createdAtUtc: createdAtUtc,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$FormulaVersionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                formulaId = false,
+                productionTypeId = false,
+                formulaItemsRefs = false,
+                mixingSessionsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (formulaItemsRefs) db.formulaItems,
+                    if (mixingSessionsRefs) db.mixingSessions,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (formulaId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.formulaId,
+                                    referencedTable:
+                                        $$FormulaVersionsTableReferences
+                                            ._formulaIdTable(db),
+                                    referencedColumn:
+                                        $$FormulaVersionsTableReferences
+                                            ._formulaIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (productionTypeId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.productionTypeId,
+                                    referencedTable:
+                                        $$FormulaVersionsTableReferences
+                                            ._productionTypeIdTable(db),
+                                    referencedColumn:
+                                        $$FormulaVersionsTableReferences
+                                            ._productionTypeIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (formulaItemsRefs)
+                        await $_getPrefetchedData<
+                          FormulaVersion,
+                          $FormulaVersionsTable,
+                          FormulaItem
+                        >(
+                          currentTable: table,
+                          referencedTable: $$FormulaVersionsTableReferences
+                              ._formulaItemsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$FormulaVersionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).formulaItemsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.versionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (mixingSessionsRefs)
+                        await $_getPrefetchedData<
+                          FormulaVersion,
+                          $FormulaVersionsTable,
+                          MixingSession
+                        >(
+                          currentTable: table,
+                          referencedTable: $$FormulaVersionsTableReferences
+                              ._mixingSessionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$FormulaVersionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).mixingSessionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.versionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$FormulaVersionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FormulaVersionsTable,
+      FormulaVersion,
+      $$FormulaVersionsTableFilterComposer,
+      $$FormulaVersionsTableOrderingComposer,
+      $$FormulaVersionsTableAnnotationComposer,
+      $$FormulaVersionsTableCreateCompanionBuilder,
+      $$FormulaVersionsTableUpdateCompanionBuilder,
+      (FormulaVersion, $$FormulaVersionsTableReferences),
+      FormulaVersion,
+      PrefetchHooks Function({
+        bool formulaId,
+        bool productionTypeId,
+        bool formulaItemsRefs,
+        bool mixingSessionsRefs,
+      })
+    >;
+typedef $$FormulaItemsTableCreateCompanionBuilder =
+    FormulaItemsCompanion Function({
+      required String id,
+      required String revisionId,
+      required String updatedByDevice,
+      required DateTime updatedAtUtc,
+      Value<bool> isDeleted,
+      Value<DateTime?> deletedAtUtc,
+      required String versionId,
+      required String categoryName,
+      required String ingredientName,
+      Value<String?> skuCode,
+      Value<String?> skuId,
+      required int ratio,
+      required int sortOrder,
+      Value<int> rowid,
+    });
+typedef $$FormulaItemsTableUpdateCompanionBuilder =
+    FormulaItemsCompanion Function({
+      Value<String> id,
+      Value<String> revisionId,
+      Value<String> updatedByDevice,
+      Value<DateTime> updatedAtUtc,
+      Value<bool> isDeleted,
+      Value<DateTime?> deletedAtUtc,
+      Value<String> versionId,
+      Value<String> categoryName,
+      Value<String> ingredientName,
+      Value<String?> skuCode,
+      Value<String?> skuId,
+      Value<int> ratio,
+      Value<int> sortOrder,
+      Value<int> rowid,
+    });
+
+final class $$FormulaItemsTableReferences
+    extends BaseReferences<_$AppDatabase, $FormulaItemsTable, FormulaItem> {
+  $$FormulaItemsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $FormulaVersionsTable _versionIdTable(_$AppDatabase db) => db
+      .formulaVersions
+      .createAlias('formula_items__version_id__formula_versions__id');
+
+  $$FormulaVersionsTableProcessedTableManager get versionId {
+    final $_column = $_itemColumn<String>('version_id')!;
+
+    final manager = $$FormulaVersionsTableTableManager(
+      $_db,
+      $_db.formulaVersions,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_versionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$FormulaItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $FormulaItemsTable> {
+  $$FormulaItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get revisionId => $composableBuilder(
+    column: $table.revisionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get updatedByDevice => $composableBuilder(
+    column: $table.updatedByDevice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAtUtc => $composableBuilder(
+    column: $table.deletedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get categoryName => $composableBuilder(
+    column: $table.categoryName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ingredientName => $composableBuilder(
+    column: $table.ingredientName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get skuCode => $composableBuilder(
+    column: $table.skuCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get skuId => $composableBuilder(
+    column: $table.skuId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get ratio => $composableBuilder(
+    column: $table.ratio,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$FormulaVersionsTableFilterComposer get versionId {
+    final $$FormulaVersionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.versionId,
+      referencedTable: $db.formulaVersions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulaVersionsTableFilterComposer(
+            $db: $db,
+            $table: $db.formulaVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$FormulaItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $FormulaItemsTable> {
+  $$FormulaItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get revisionId => $composableBuilder(
+    column: $table.revisionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get updatedByDevice => $composableBuilder(
+    column: $table.updatedByDevice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAtUtc => $composableBuilder(
+    column: $table.deletedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get categoryName => $composableBuilder(
+    column: $table.categoryName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ingredientName => $composableBuilder(
+    column: $table.ingredientName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get skuCode => $composableBuilder(
+    column: $table.skuCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get skuId => $composableBuilder(
+    column: $table.skuId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get ratio => $composableBuilder(
+    column: $table.ratio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$FormulaVersionsTableOrderingComposer get versionId {
+    final $$FormulaVersionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.versionId,
+      referencedTable: $db.formulaVersions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulaVersionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.formulaVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$FormulaItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FormulaItemsTable> {
+  $$FormulaItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get revisionId => $composableBuilder(
+    column: $table.revisionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get updatedByDevice => $composableBuilder(
+    column: $table.updatedByDevice,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAtUtc => $composableBuilder(
+    column: $table.deletedAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get categoryName => $composableBuilder(
+    column: $table.categoryName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get ingredientName => $composableBuilder(
+    column: $table.ingredientName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get skuCode =>
+      $composableBuilder(column: $table.skuCode, builder: (column) => column);
+
+  GeneratedColumn<String> get skuId =>
+      $composableBuilder(column: $table.skuId, builder: (column) => column);
+
+  GeneratedColumn<int> get ratio =>
+      $composableBuilder(column: $table.ratio, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  $$FormulaVersionsTableAnnotationComposer get versionId {
+    final $$FormulaVersionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.versionId,
+      referencedTable: $db.formulaVersions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulaVersionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.formulaVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$FormulaItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FormulaItemsTable,
+          FormulaItem,
+          $$FormulaItemsTableFilterComposer,
+          $$FormulaItemsTableOrderingComposer,
+          $$FormulaItemsTableAnnotationComposer,
+          $$FormulaItemsTableCreateCompanionBuilder,
+          $$FormulaItemsTableUpdateCompanionBuilder,
+          (FormulaItem, $$FormulaItemsTableReferences),
+          FormulaItem,
+          PrefetchHooks Function({bool versionId})
+        > {
+  $$FormulaItemsTableTableManager(_$AppDatabase db, $FormulaItemsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FormulaItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FormulaItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FormulaItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> revisionId = const Value.absent(),
+                Value<String> updatedByDevice = const Value.absent(),
+                Value<DateTime> updatedAtUtc = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<DateTime?> deletedAtUtc = const Value.absent(),
+                Value<String> versionId = const Value.absent(),
+                Value<String> categoryName = const Value.absent(),
+                Value<String> ingredientName = const Value.absent(),
+                Value<String?> skuCode = const Value.absent(),
+                Value<String?> skuId = const Value.absent(),
+                Value<int> ratio = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FormulaItemsCompanion(
+                id: id,
+                revisionId: revisionId,
+                updatedByDevice: updatedByDevice,
+                updatedAtUtc: updatedAtUtc,
+                isDeleted: isDeleted,
+                deletedAtUtc: deletedAtUtc,
+                versionId: versionId,
+                categoryName: categoryName,
+                ingredientName: ingredientName,
+                skuCode: skuCode,
+                skuId: skuId,
+                ratio: ratio,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String revisionId,
+                required String updatedByDevice,
+                required DateTime updatedAtUtc,
+                Value<bool> isDeleted = const Value.absent(),
+                Value<DateTime?> deletedAtUtc = const Value.absent(),
+                required String versionId,
+                required String categoryName,
+                required String ingredientName,
+                Value<String?> skuCode = const Value.absent(),
+                Value<String?> skuId = const Value.absent(),
+                required int ratio,
+                required int sortOrder,
+                Value<int> rowid = const Value.absent(),
+              }) => FormulaItemsCompanion.insert(
+                id: id,
+                revisionId: revisionId,
+                updatedByDevice: updatedByDevice,
+                updatedAtUtc: updatedAtUtc,
+                isDeleted: isDeleted,
+                deletedAtUtc: deletedAtUtc,
+                versionId: versionId,
+                categoryName: categoryName,
+                ingredientName: ingredientName,
+                skuCode: skuCode,
+                skuId: skuId,
+                ratio: ratio,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$FormulaItemsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({versionId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (versionId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.versionId,
+                                referencedTable: $$FormulaItemsTableReferences
+                                    ._versionIdTable(db),
+                                referencedColumn: $$FormulaItemsTableReferences
+                                    ._versionIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$FormulaItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FormulaItemsTable,
+      FormulaItem,
+      $$FormulaItemsTableFilterComposer,
+      $$FormulaItemsTableOrderingComposer,
+      $$FormulaItemsTableAnnotationComposer,
+      $$FormulaItemsTableCreateCompanionBuilder,
+      $$FormulaItemsTableUpdateCompanionBuilder,
+      (FormulaItem, $$FormulaItemsTableReferences),
+      FormulaItem,
+      PrefetchHooks Function({bool versionId})
+    >;
+typedef $$MixingSessionsTableCreateCompanionBuilder =
+    MixingSessionsCompanion Function({
+      required String id,
+      required String revisionId,
+      required String updatedByDevice,
+      required DateTime updatedAtUtc,
+      Value<bool> isDeleted,
+      Value<DateTime?> deletedAtUtc,
+      Value<String?> formulaId,
+      Value<String?> versionId,
+      Value<String?> customerId,
+      Value<String?> plaqueTypeId,
+      required String formulaName,
+      required String productionTypeName,
+      required int targetWeight,
+      required int finalWeight,
+      Value<String?> notes,
+      required DateTime createdAtUtc,
+      required DateTime completedAtUtc,
+      Value<int> rowid,
+    });
+typedef $$MixingSessionsTableUpdateCompanionBuilder =
+    MixingSessionsCompanion Function({
+      Value<String> id,
+      Value<String> revisionId,
+      Value<String> updatedByDevice,
+      Value<DateTime> updatedAtUtc,
+      Value<bool> isDeleted,
+      Value<DateTime?> deletedAtUtc,
+      Value<String?> formulaId,
+      Value<String?> versionId,
+      Value<String?> customerId,
+      Value<String?> plaqueTypeId,
+      Value<String> formulaName,
+      Value<String> productionTypeName,
+      Value<int> targetWeight,
+      Value<int> finalWeight,
+      Value<String?> notes,
+      Value<DateTime> createdAtUtc,
+      Value<DateTime> completedAtUtc,
+      Value<int> rowid,
+    });
+
+final class $$MixingSessionsTableReferences
+    extends BaseReferences<_$AppDatabase, $MixingSessionsTable, MixingSession> {
+  $$MixingSessionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $FormulasTable _formulaIdTable(_$AppDatabase db) =>
+      db.formulas.createAlias('mixing_sessions__formula_id__formulas__id');
+
+  $$FormulasTableProcessedTableManager? get formulaId {
+    final $_column = $_itemColumn<String>('formula_id');
+    if ($_column == null) return null;
+    final manager = $$FormulasTableTableManager(
+      $_db,
+      $_db.formulas,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_formulaIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $FormulaVersionsTable _versionIdTable(_$AppDatabase db) => db
+      .formulaVersions
+      .createAlias('mixing_sessions__version_id__formula_versions__id');
+
+  $$FormulaVersionsTableProcessedTableManager? get versionId {
+    final $_column = $_itemColumn<String>('version_id');
+    if ($_column == null) return null;
+    final manager = $$FormulaVersionsTableTableManager(
+      $_db,
+      $_db.formulaVersions,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_versionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $CustomersTable _customerIdTable(_$AppDatabase db) =>
+      db.customers.createAlias('mixing_sessions__customer_id__customers__id');
+
+  $$CustomersTableProcessedTableManager? get customerId {
+    final $_column = $_itemColumn<String>('customer_id');
+    if ($_column == null) return null;
+    final manager = $$CustomersTableTableManager(
+      $_db,
+      $_db.customers,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_customerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $PlaqueTypesTable _plaqueTypeIdTable(_$AppDatabase db) => db
+      .plaqueTypes
+      .createAlias('mixing_sessions__plaque_type_id__plaque_types__id');
+
+  $$PlaqueTypesTableProcessedTableManager? get plaqueTypeId {
+    final $_column = $_itemColumn<String>('plaque_type_id');
+    if ($_column == null) return null;
+    final manager = $$PlaqueTypesTableTableManager(
+      $_db,
+      $_db.plaqueTypes,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_plaqueTypeIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$MixingItemsTable, List<MixingItem>>
+  _mixingItemsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.mixingItems,
+    aliasName: 'mixing_sessions__id__mixing_items__session_id',
+  );
+
+  $$MixingItemsTableProcessedTableManager get mixingItemsRefs {
+    final manager = $$MixingItemsTableTableManager(
+      $_db,
+      $_db.mixingItems,
+    ).filter((f) => f.sessionId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_mixingItemsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$MixingRevisionsTable, List<MixingRevision>>
+  _mixingRevisionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.mixingRevisions,
+    aliasName: 'mixing_sessions__id__mixing_revisions__session_id',
+  );
+
+  $$MixingRevisionsTableProcessedTableManager get mixingRevisionsRefs {
+    final manager = $$MixingRevisionsTableTableManager(
+      $_db,
+      $_db.mixingRevisions,
+    ).filter((f) => f.sessionId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _mixingRevisionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$MixingSessionsTableFilterComposer
+    extends Composer<_$AppDatabase, $MixingSessionsTable> {
+  $$MixingSessionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get revisionId => $composableBuilder(
+    column: $table.revisionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get updatedByDevice => $composableBuilder(
+    column: $table.updatedByDevice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAtUtc => $composableBuilder(
+    column: $table.deletedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get formulaName => $composableBuilder(
+    column: $table.formulaName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get productionTypeName => $composableBuilder(
+    column: $table.productionTypeName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get targetWeight => $composableBuilder(
+    column: $table.targetWeight,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get finalWeight => $composableBuilder(
+    column: $table.finalWeight,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAtUtc => $composableBuilder(
+    column: $table.createdAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get completedAtUtc => $composableBuilder(
+    column: $table.completedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$FormulasTableFilterComposer get formulaId {
+    final $$FormulasTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.formulaId,
+      referencedTable: $db.formulas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulasTableFilterComposer(
+            $db: $db,
+            $table: $db.formulas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$FormulaVersionsTableFilterComposer get versionId {
+    final $$FormulaVersionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.versionId,
+      referencedTable: $db.formulaVersions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulaVersionsTableFilterComposer(
+            $db: $db,
+            $table: $db.formulaVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$CustomersTableFilterComposer get customerId {
+    final $$CustomersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.customerId,
+      referencedTable: $db.customers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CustomersTableFilterComposer(
+            $db: $db,
+            $table: $db.customers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PlaqueTypesTableFilterComposer get plaqueTypeId {
+    final $$PlaqueTypesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.plaqueTypeId,
+      referencedTable: $db.plaqueTypes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaqueTypesTableFilterComposer(
+            $db: $db,
+            $table: $db.plaqueTypes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> mixingItemsRefs(
+    Expression<bool> Function($$MixingItemsTableFilterComposer f) f,
+  ) {
+    final $$MixingItemsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.mixingItems,
+      getReferencedColumn: (t) => t.sessionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MixingItemsTableFilterComposer(
+            $db: $db,
+            $table: $db.mixingItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> mixingRevisionsRefs(
+    Expression<bool> Function($$MixingRevisionsTableFilterComposer f) f,
+  ) {
+    final $$MixingRevisionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.mixingRevisions,
+      getReferencedColumn: (t) => t.sessionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MixingRevisionsTableFilterComposer(
+            $db: $db,
+            $table: $db.mixingRevisions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$MixingSessionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $MixingSessionsTable> {
+  $$MixingSessionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get revisionId => $composableBuilder(
+    column: $table.revisionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get updatedByDevice => $composableBuilder(
+    column: $table.updatedByDevice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAtUtc => $composableBuilder(
+    column: $table.deletedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get formulaName => $composableBuilder(
+    column: $table.formulaName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get productionTypeName => $composableBuilder(
+    column: $table.productionTypeName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get targetWeight => $composableBuilder(
+    column: $table.targetWeight,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get finalWeight => $composableBuilder(
+    column: $table.finalWeight,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAtUtc => $composableBuilder(
+    column: $table.createdAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get completedAtUtc => $composableBuilder(
+    column: $table.completedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$FormulasTableOrderingComposer get formulaId {
+    final $$FormulasTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.formulaId,
+      referencedTable: $db.formulas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulasTableOrderingComposer(
+            $db: $db,
+            $table: $db.formulas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$FormulaVersionsTableOrderingComposer get versionId {
+    final $$FormulaVersionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.versionId,
+      referencedTable: $db.formulaVersions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulaVersionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.formulaVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$CustomersTableOrderingComposer get customerId {
+    final $$CustomersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.customerId,
+      referencedTable: $db.customers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CustomersTableOrderingComposer(
+            $db: $db,
+            $table: $db.customers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PlaqueTypesTableOrderingComposer get plaqueTypeId {
+    final $$PlaqueTypesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.plaqueTypeId,
+      referencedTable: $db.plaqueTypes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaqueTypesTableOrderingComposer(
+            $db: $db,
+            $table: $db.plaqueTypes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MixingSessionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MixingSessionsTable> {
+  $$MixingSessionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get revisionId => $composableBuilder(
+    column: $table.revisionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get updatedByDevice => $composableBuilder(
+    column: $table.updatedByDevice,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAtUtc => $composableBuilder(
+    column: $table.deletedAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get formulaName => $composableBuilder(
+    column: $table.formulaName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get productionTypeName => $composableBuilder(
+    column: $table.productionTypeName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get targetWeight => $composableBuilder(
+    column: $table.targetWeight,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get finalWeight => $composableBuilder(
+    column: $table.finalWeight,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAtUtc => $composableBuilder(
+    column: $table.createdAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get completedAtUtc => $composableBuilder(
+    column: $table.completedAtUtc,
+    builder: (column) => column,
+  );
+
+  $$FormulasTableAnnotationComposer get formulaId {
+    final $$FormulasTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.formulaId,
+      referencedTable: $db.formulas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulasTableAnnotationComposer(
+            $db: $db,
+            $table: $db.formulas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$FormulaVersionsTableAnnotationComposer get versionId {
+    final $$FormulaVersionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.versionId,
+      referencedTable: $db.formulaVersions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulaVersionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.formulaVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$CustomersTableAnnotationComposer get customerId {
+    final $$CustomersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.customerId,
+      referencedTable: $db.customers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CustomersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.customers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PlaqueTypesTableAnnotationComposer get plaqueTypeId {
+    final $$PlaqueTypesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.plaqueTypeId,
+      referencedTable: $db.plaqueTypes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaqueTypesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.plaqueTypes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> mixingItemsRefs<T extends Object>(
+    Expression<T> Function($$MixingItemsTableAnnotationComposer a) f,
+  ) {
+    final $$MixingItemsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.mixingItems,
+      getReferencedColumn: (t) => t.sessionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MixingItemsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.mixingItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> mixingRevisionsRefs<T extends Object>(
+    Expression<T> Function($$MixingRevisionsTableAnnotationComposer a) f,
+  ) {
+    final $$MixingRevisionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.mixingRevisions,
+      getReferencedColumn: (t) => t.sessionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MixingRevisionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.mixingRevisions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$MixingSessionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MixingSessionsTable,
+          MixingSession,
+          $$MixingSessionsTableFilterComposer,
+          $$MixingSessionsTableOrderingComposer,
+          $$MixingSessionsTableAnnotationComposer,
+          $$MixingSessionsTableCreateCompanionBuilder,
+          $$MixingSessionsTableUpdateCompanionBuilder,
+          (MixingSession, $$MixingSessionsTableReferences),
+          MixingSession,
+          PrefetchHooks Function({
+            bool formulaId,
+            bool versionId,
+            bool customerId,
+            bool plaqueTypeId,
+            bool mixingItemsRefs,
+            bool mixingRevisionsRefs,
+          })
+        > {
+  $$MixingSessionsTableTableManager(
+    _$AppDatabase db,
+    $MixingSessionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MixingSessionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MixingSessionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MixingSessionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> revisionId = const Value.absent(),
+                Value<String> updatedByDevice = const Value.absent(),
+                Value<DateTime> updatedAtUtc = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<DateTime?> deletedAtUtc = const Value.absent(),
+                Value<String?> formulaId = const Value.absent(),
+                Value<String?> versionId = const Value.absent(),
+                Value<String?> customerId = const Value.absent(),
+                Value<String?> plaqueTypeId = const Value.absent(),
+                Value<String> formulaName = const Value.absent(),
+                Value<String> productionTypeName = const Value.absent(),
+                Value<int> targetWeight = const Value.absent(),
+                Value<int> finalWeight = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAtUtc = const Value.absent(),
+                Value<DateTime> completedAtUtc = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MixingSessionsCompanion(
+                id: id,
+                revisionId: revisionId,
+                updatedByDevice: updatedByDevice,
+                updatedAtUtc: updatedAtUtc,
+                isDeleted: isDeleted,
+                deletedAtUtc: deletedAtUtc,
+                formulaId: formulaId,
+                versionId: versionId,
+                customerId: customerId,
+                plaqueTypeId: plaqueTypeId,
+                formulaName: formulaName,
+                productionTypeName: productionTypeName,
+                targetWeight: targetWeight,
+                finalWeight: finalWeight,
+                notes: notes,
+                createdAtUtc: createdAtUtc,
+                completedAtUtc: completedAtUtc,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String revisionId,
+                required String updatedByDevice,
+                required DateTime updatedAtUtc,
+                Value<bool> isDeleted = const Value.absent(),
+                Value<DateTime?> deletedAtUtc = const Value.absent(),
+                Value<String?> formulaId = const Value.absent(),
+                Value<String?> versionId = const Value.absent(),
+                Value<String?> customerId = const Value.absent(),
+                Value<String?> plaqueTypeId = const Value.absent(),
+                required String formulaName,
+                required String productionTypeName,
+                required int targetWeight,
+                required int finalWeight,
+                Value<String?> notes = const Value.absent(),
+                required DateTime createdAtUtc,
+                required DateTime completedAtUtc,
+                Value<int> rowid = const Value.absent(),
+              }) => MixingSessionsCompanion.insert(
+                id: id,
+                revisionId: revisionId,
+                updatedByDevice: updatedByDevice,
+                updatedAtUtc: updatedAtUtc,
+                isDeleted: isDeleted,
+                deletedAtUtc: deletedAtUtc,
+                formulaId: formulaId,
+                versionId: versionId,
+                customerId: customerId,
+                plaqueTypeId: plaqueTypeId,
+                formulaName: formulaName,
+                productionTypeName: productionTypeName,
+                targetWeight: targetWeight,
+                finalWeight: finalWeight,
+                notes: notes,
+                createdAtUtc: createdAtUtc,
+                completedAtUtc: completedAtUtc,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$MixingSessionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                formulaId = false,
+                versionId = false,
+                customerId = false,
+                plaqueTypeId = false,
+                mixingItemsRefs = false,
+                mixingRevisionsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (mixingItemsRefs) db.mixingItems,
+                    if (mixingRevisionsRefs) db.mixingRevisions,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (formulaId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.formulaId,
+                                    referencedTable:
+                                        $$MixingSessionsTableReferences
+                                            ._formulaIdTable(db),
+                                    referencedColumn:
+                                        $$MixingSessionsTableReferences
+                                            ._formulaIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (versionId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.versionId,
+                                    referencedTable:
+                                        $$MixingSessionsTableReferences
+                                            ._versionIdTable(db),
+                                    referencedColumn:
+                                        $$MixingSessionsTableReferences
+                                            ._versionIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (customerId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.customerId,
+                                    referencedTable:
+                                        $$MixingSessionsTableReferences
+                                            ._customerIdTable(db),
+                                    referencedColumn:
+                                        $$MixingSessionsTableReferences
+                                            ._customerIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (plaqueTypeId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.plaqueTypeId,
+                                    referencedTable:
+                                        $$MixingSessionsTableReferences
+                                            ._plaqueTypeIdTable(db),
+                                    referencedColumn:
+                                        $$MixingSessionsTableReferences
+                                            ._plaqueTypeIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (mixingItemsRefs)
+                        await $_getPrefetchedData<
+                          MixingSession,
+                          $MixingSessionsTable,
+                          MixingItem
+                        >(
+                          currentTable: table,
+                          referencedTable: $$MixingSessionsTableReferences
+                              ._mixingItemsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$MixingSessionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).mixingItemsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.sessionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (mixingRevisionsRefs)
+                        await $_getPrefetchedData<
+                          MixingSession,
+                          $MixingSessionsTable,
+                          MixingRevision
+                        >(
+                          currentTable: table,
+                          referencedTable: $$MixingSessionsTableReferences
+                              ._mixingRevisionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$MixingSessionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).mixingRevisionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.sessionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$MixingSessionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MixingSessionsTable,
+      MixingSession,
+      $$MixingSessionsTableFilterComposer,
+      $$MixingSessionsTableOrderingComposer,
+      $$MixingSessionsTableAnnotationComposer,
+      $$MixingSessionsTableCreateCompanionBuilder,
+      $$MixingSessionsTableUpdateCompanionBuilder,
+      (MixingSession, $$MixingSessionsTableReferences),
+      MixingSession,
+      PrefetchHooks Function({
+        bool formulaId,
+        bool versionId,
+        bool customerId,
+        bool plaqueTypeId,
+        bool mixingItemsRefs,
+        bool mixingRevisionsRefs,
+      })
+    >;
+typedef $$MixingItemsTableCreateCompanionBuilder =
+    MixingItemsCompanion Function({
+      required String id,
+      required String revisionId,
+      required String updatedByDevice,
+      required DateTime updatedAtUtc,
+      Value<bool> isDeleted,
+      Value<DateTime?> deletedAtUtc,
+      required String sessionId,
+      required String categoryName,
+      required String ingredientName,
+      Value<String?> skuCode,
+      Value<String?> skuId,
+      required int plannedWeight,
+      required int finalWeight,
+      required bool isManual,
+      required int finalRatio,
+      required int sortOrder,
+      Value<int> rowid,
+    });
+typedef $$MixingItemsTableUpdateCompanionBuilder =
+    MixingItemsCompanion Function({
+      Value<String> id,
+      Value<String> revisionId,
+      Value<String> updatedByDevice,
+      Value<DateTime> updatedAtUtc,
+      Value<bool> isDeleted,
+      Value<DateTime?> deletedAtUtc,
+      Value<String> sessionId,
+      Value<String> categoryName,
+      Value<String> ingredientName,
+      Value<String?> skuCode,
+      Value<String?> skuId,
+      Value<int> plannedWeight,
+      Value<int> finalWeight,
+      Value<bool> isManual,
+      Value<int> finalRatio,
+      Value<int> sortOrder,
+      Value<int> rowid,
+    });
+
+final class $$MixingItemsTableReferences
+    extends BaseReferences<_$AppDatabase, $MixingItemsTable, MixingItem> {
+  $$MixingItemsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $MixingSessionsTable _sessionIdTable(_$AppDatabase db) => db
+      .mixingSessions
+      .createAlias('mixing_items__session_id__mixing_sessions__id');
+
+  $$MixingSessionsTableProcessedTableManager get sessionId {
+    final $_column = $_itemColumn<String>('session_id')!;
+
+    final manager = $$MixingSessionsTableTableManager(
+      $_db,
+      $_db.mixingSessions,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_sessionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$MixingItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $MixingItemsTable> {
+  $$MixingItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get revisionId => $composableBuilder(
+    column: $table.revisionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get updatedByDevice => $composableBuilder(
+    column: $table.updatedByDevice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAtUtc => $composableBuilder(
+    column: $table.deletedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get categoryName => $composableBuilder(
+    column: $table.categoryName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ingredientName => $composableBuilder(
+    column: $table.ingredientName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get skuCode => $composableBuilder(
+    column: $table.skuCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get skuId => $composableBuilder(
+    column: $table.skuId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get plannedWeight => $composableBuilder(
+    column: $table.plannedWeight,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get finalWeight => $composableBuilder(
+    column: $table.finalWeight,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isManual => $composableBuilder(
+    column: $table.isManual,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get finalRatio => $composableBuilder(
+    column: $table.finalRatio,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$MixingSessionsTableFilterComposer get sessionId {
+    final $$MixingSessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.mixingSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MixingSessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.mixingSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MixingItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $MixingItemsTable> {
+  $$MixingItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get revisionId => $composableBuilder(
+    column: $table.revisionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get updatedByDevice => $composableBuilder(
+    column: $table.updatedByDevice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAtUtc => $composableBuilder(
+    column: $table.deletedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get categoryName => $composableBuilder(
+    column: $table.categoryName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ingredientName => $composableBuilder(
+    column: $table.ingredientName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get skuCode => $composableBuilder(
+    column: $table.skuCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get skuId => $composableBuilder(
+    column: $table.skuId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get plannedWeight => $composableBuilder(
+    column: $table.plannedWeight,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get finalWeight => $composableBuilder(
+    column: $table.finalWeight,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isManual => $composableBuilder(
+    column: $table.isManual,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get finalRatio => $composableBuilder(
+    column: $table.finalRatio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$MixingSessionsTableOrderingComposer get sessionId {
+    final $$MixingSessionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.mixingSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MixingSessionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.mixingSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MixingItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MixingItemsTable> {
+  $$MixingItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get revisionId => $composableBuilder(
+    column: $table.revisionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get updatedByDevice => $composableBuilder(
+    column: $table.updatedByDevice,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAtUtc => $composableBuilder(
+    column: $table.deletedAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get categoryName => $composableBuilder(
+    column: $table.categoryName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get ingredientName => $composableBuilder(
+    column: $table.ingredientName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get skuCode =>
+      $composableBuilder(column: $table.skuCode, builder: (column) => column);
+
+  GeneratedColumn<String> get skuId =>
+      $composableBuilder(column: $table.skuId, builder: (column) => column);
+
+  GeneratedColumn<int> get plannedWeight => $composableBuilder(
+    column: $table.plannedWeight,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get finalWeight => $composableBuilder(
+    column: $table.finalWeight,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isManual =>
+      $composableBuilder(column: $table.isManual, builder: (column) => column);
+
+  GeneratedColumn<int> get finalRatio => $composableBuilder(
+    column: $table.finalRatio,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  $$MixingSessionsTableAnnotationComposer get sessionId {
+    final $$MixingSessionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.mixingSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MixingSessionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.mixingSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MixingItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MixingItemsTable,
+          MixingItem,
+          $$MixingItemsTableFilterComposer,
+          $$MixingItemsTableOrderingComposer,
+          $$MixingItemsTableAnnotationComposer,
+          $$MixingItemsTableCreateCompanionBuilder,
+          $$MixingItemsTableUpdateCompanionBuilder,
+          (MixingItem, $$MixingItemsTableReferences),
+          MixingItem,
+          PrefetchHooks Function({bool sessionId})
+        > {
+  $$MixingItemsTableTableManager(_$AppDatabase db, $MixingItemsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MixingItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MixingItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MixingItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> revisionId = const Value.absent(),
+                Value<String> updatedByDevice = const Value.absent(),
+                Value<DateTime> updatedAtUtc = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<DateTime?> deletedAtUtc = const Value.absent(),
+                Value<String> sessionId = const Value.absent(),
+                Value<String> categoryName = const Value.absent(),
+                Value<String> ingredientName = const Value.absent(),
+                Value<String?> skuCode = const Value.absent(),
+                Value<String?> skuId = const Value.absent(),
+                Value<int> plannedWeight = const Value.absent(),
+                Value<int> finalWeight = const Value.absent(),
+                Value<bool> isManual = const Value.absent(),
+                Value<int> finalRatio = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MixingItemsCompanion(
+                id: id,
+                revisionId: revisionId,
+                updatedByDevice: updatedByDevice,
+                updatedAtUtc: updatedAtUtc,
+                isDeleted: isDeleted,
+                deletedAtUtc: deletedAtUtc,
+                sessionId: sessionId,
+                categoryName: categoryName,
+                ingredientName: ingredientName,
+                skuCode: skuCode,
+                skuId: skuId,
+                plannedWeight: plannedWeight,
+                finalWeight: finalWeight,
+                isManual: isManual,
+                finalRatio: finalRatio,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String revisionId,
+                required String updatedByDevice,
+                required DateTime updatedAtUtc,
+                Value<bool> isDeleted = const Value.absent(),
+                Value<DateTime?> deletedAtUtc = const Value.absent(),
+                required String sessionId,
+                required String categoryName,
+                required String ingredientName,
+                Value<String?> skuCode = const Value.absent(),
+                Value<String?> skuId = const Value.absent(),
+                required int plannedWeight,
+                required int finalWeight,
+                required bool isManual,
+                required int finalRatio,
+                required int sortOrder,
+                Value<int> rowid = const Value.absent(),
+              }) => MixingItemsCompanion.insert(
+                id: id,
+                revisionId: revisionId,
+                updatedByDevice: updatedByDevice,
+                updatedAtUtc: updatedAtUtc,
+                isDeleted: isDeleted,
+                deletedAtUtc: deletedAtUtc,
+                sessionId: sessionId,
+                categoryName: categoryName,
+                ingredientName: ingredientName,
+                skuCode: skuCode,
+                skuId: skuId,
+                plannedWeight: plannedWeight,
+                finalWeight: finalWeight,
+                isManual: isManual,
+                finalRatio: finalRatio,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$MixingItemsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({sessionId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (sessionId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.sessionId,
+                                referencedTable: $$MixingItemsTableReferences
+                                    ._sessionIdTable(db),
+                                referencedColumn: $$MixingItemsTableReferences
+                                    ._sessionIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$MixingItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MixingItemsTable,
+      MixingItem,
+      $$MixingItemsTableFilterComposer,
+      $$MixingItemsTableOrderingComposer,
+      $$MixingItemsTableAnnotationComposer,
+      $$MixingItemsTableCreateCompanionBuilder,
+      $$MixingItemsTableUpdateCompanionBuilder,
+      (MixingItem, $$MixingItemsTableReferences),
+      MixingItem,
+      PrefetchHooks Function({bool sessionId})
+    >;
+typedef $$MixingRevisionsTableCreateCompanionBuilder =
+    MixingRevisionsCompanion Function({
+      required String id,
+      required String revisionId,
+      required String updatedByDevice,
+      required DateTime updatedAtUtc,
+      Value<bool> isDeleted,
+      Value<DateTime?> deletedAtUtc,
+      required String sessionId,
+      required String previousDataJson,
+      required DateTime modifiedAtUtc,
+      required String modifiedByDevice,
+      Value<int> rowid,
+    });
+typedef $$MixingRevisionsTableUpdateCompanionBuilder =
+    MixingRevisionsCompanion Function({
+      Value<String> id,
+      Value<String> revisionId,
+      Value<String> updatedByDevice,
+      Value<DateTime> updatedAtUtc,
+      Value<bool> isDeleted,
+      Value<DateTime?> deletedAtUtc,
+      Value<String> sessionId,
+      Value<String> previousDataJson,
+      Value<DateTime> modifiedAtUtc,
+      Value<String> modifiedByDevice,
+      Value<int> rowid,
+    });
+
+final class $$MixingRevisionsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $MixingRevisionsTable, MixingRevision> {
+  $$MixingRevisionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $MixingSessionsTable _sessionIdTable(_$AppDatabase db) => db
+      .mixingSessions
+      .createAlias('mixing_revisions__session_id__mixing_sessions__id');
+
+  $$MixingSessionsTableProcessedTableManager get sessionId {
+    final $_column = $_itemColumn<String>('session_id')!;
+
+    final manager = $$MixingSessionsTableTableManager(
+      $_db,
+      $_db.mixingSessions,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_sessionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$MixingRevisionsTableFilterComposer
+    extends Composer<_$AppDatabase, $MixingRevisionsTable> {
+  $$MixingRevisionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get revisionId => $composableBuilder(
+    column: $table.revisionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get updatedByDevice => $composableBuilder(
+    column: $table.updatedByDevice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAtUtc => $composableBuilder(
+    column: $table.deletedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get previousDataJson => $composableBuilder(
+    column: $table.previousDataJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get modifiedAtUtc => $composableBuilder(
+    column: $table.modifiedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get modifiedByDevice => $composableBuilder(
+    column: $table.modifiedByDevice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$MixingSessionsTableFilterComposer get sessionId {
+    final $$MixingSessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.mixingSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MixingSessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.mixingSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MixingRevisionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $MixingRevisionsTable> {
+  $$MixingRevisionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get revisionId => $composableBuilder(
+    column: $table.revisionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get updatedByDevice => $composableBuilder(
+    column: $table.updatedByDevice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAtUtc => $composableBuilder(
+    column: $table.deletedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get previousDataJson => $composableBuilder(
+    column: $table.previousDataJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get modifiedAtUtc => $composableBuilder(
+    column: $table.modifiedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get modifiedByDevice => $composableBuilder(
+    column: $table.modifiedByDevice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$MixingSessionsTableOrderingComposer get sessionId {
+    final $$MixingSessionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.mixingSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MixingSessionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.mixingSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MixingRevisionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MixingRevisionsTable> {
+  $$MixingRevisionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get revisionId => $composableBuilder(
+    column: $table.revisionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get updatedByDevice => $composableBuilder(
+    column: $table.updatedByDevice,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAtUtc => $composableBuilder(
+    column: $table.deletedAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get previousDataJson => $composableBuilder(
+    column: $table.previousDataJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get modifiedAtUtc => $composableBuilder(
+    column: $table.modifiedAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get modifiedByDevice => $composableBuilder(
+    column: $table.modifiedByDevice,
+    builder: (column) => column,
+  );
+
+  $$MixingSessionsTableAnnotationComposer get sessionId {
+    final $$MixingSessionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.mixingSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MixingSessionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.mixingSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MixingRevisionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MixingRevisionsTable,
+          MixingRevision,
+          $$MixingRevisionsTableFilterComposer,
+          $$MixingRevisionsTableOrderingComposer,
+          $$MixingRevisionsTableAnnotationComposer,
+          $$MixingRevisionsTableCreateCompanionBuilder,
+          $$MixingRevisionsTableUpdateCompanionBuilder,
+          (MixingRevision, $$MixingRevisionsTableReferences),
+          MixingRevision,
+          PrefetchHooks Function({bool sessionId})
+        > {
+  $$MixingRevisionsTableTableManager(
+    _$AppDatabase db,
+    $MixingRevisionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MixingRevisionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MixingRevisionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MixingRevisionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> revisionId = const Value.absent(),
+                Value<String> updatedByDevice = const Value.absent(),
+                Value<DateTime> updatedAtUtc = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<DateTime?> deletedAtUtc = const Value.absent(),
+                Value<String> sessionId = const Value.absent(),
+                Value<String> previousDataJson = const Value.absent(),
+                Value<DateTime> modifiedAtUtc = const Value.absent(),
+                Value<String> modifiedByDevice = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MixingRevisionsCompanion(
+                id: id,
+                revisionId: revisionId,
+                updatedByDevice: updatedByDevice,
+                updatedAtUtc: updatedAtUtc,
+                isDeleted: isDeleted,
+                deletedAtUtc: deletedAtUtc,
+                sessionId: sessionId,
+                previousDataJson: previousDataJson,
+                modifiedAtUtc: modifiedAtUtc,
+                modifiedByDevice: modifiedByDevice,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String revisionId,
+                required String updatedByDevice,
+                required DateTime updatedAtUtc,
+                Value<bool> isDeleted = const Value.absent(),
+                Value<DateTime?> deletedAtUtc = const Value.absent(),
+                required String sessionId,
+                required String previousDataJson,
+                required DateTime modifiedAtUtc,
+                required String modifiedByDevice,
+                Value<int> rowid = const Value.absent(),
+              }) => MixingRevisionsCompanion.insert(
+                id: id,
+                revisionId: revisionId,
+                updatedByDevice: updatedByDevice,
+                updatedAtUtc: updatedAtUtc,
+                isDeleted: isDeleted,
+                deletedAtUtc: deletedAtUtc,
+                sessionId: sessionId,
+                previousDataJson: previousDataJson,
+                modifiedAtUtc: modifiedAtUtc,
+                modifiedByDevice: modifiedByDevice,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$MixingRevisionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({sessionId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (sessionId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.sessionId,
+                                referencedTable:
+                                    $$MixingRevisionsTableReferences
+                                        ._sessionIdTable(db),
+                                referencedColumn:
+                                    $$MixingRevisionsTableReferences
+                                        ._sessionIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$MixingRevisionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MixingRevisionsTable,
+      MixingRevision,
+      $$MixingRevisionsTableFilterComposer,
+      $$MixingRevisionsTableOrderingComposer,
+      $$MixingRevisionsTableAnnotationComposer,
+      $$MixingRevisionsTableCreateCompanionBuilder,
+      $$MixingRevisionsTableUpdateCompanionBuilder,
+      (MixingRevision, $$MixingRevisionsTableReferences),
+      MixingRevision,
+      PrefetchHooks Function({bool sessionId})
+    >;
 typedef $$LocalDevicesTableCreateCompanionBuilder =
     LocalDevicesCompanion Function({
       required String id,
@@ -19324,6 +30543,20 @@ class $AppDatabaseManager {
       $$AssetStatusesTableTableManager(_db, _db.assetStatuses);
   $$AssetsTableTableManager get assets =>
       $$AssetsTableTableManager(_db, _db.assets);
+  $$FormulasTableTableManager get formulas =>
+      $$FormulasTableTableManager(_db, _db.formulas);
+  $$FormulaDraftsTableTableManager get formulaDrafts =>
+      $$FormulaDraftsTableTableManager(_db, _db.formulaDrafts);
+  $$FormulaVersionsTableTableManager get formulaVersions =>
+      $$FormulaVersionsTableTableManager(_db, _db.formulaVersions);
+  $$FormulaItemsTableTableManager get formulaItems =>
+      $$FormulaItemsTableTableManager(_db, _db.formulaItems);
+  $$MixingSessionsTableTableManager get mixingSessions =>
+      $$MixingSessionsTableTableManager(_db, _db.mixingSessions);
+  $$MixingItemsTableTableManager get mixingItems =>
+      $$MixingItemsTableTableManager(_db, _db.mixingItems);
+  $$MixingRevisionsTableTableManager get mixingRevisions =>
+      $$MixingRevisionsTableTableManager(_db, _db.mixingRevisions);
   $$LocalDevicesTableTableManager get localDevices =>
       $$LocalDevicesTableTableManager(_db, _db.localDevices);
   $$SyncOperationsTableTableManager get syncOperations =>

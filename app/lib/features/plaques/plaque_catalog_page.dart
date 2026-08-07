@@ -38,15 +38,39 @@ class _PlaqueCatalogPageState extends State<PlaqueCatalogPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('香牌目录')),
+      appBar: AppBar(
+        title: const Text('香牌 / 合香珠'),
+        actions: [
+          Tooltip(
+            message: '添加香牌',
+            child: TextButton.icon(
+              onPressed: () => _edit(),
+              icon: const Icon(Icons.add, size: 17),
+              label: const Text('新建'),
+            ),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
             child: SearchBar(
               controller: _search,
               hintText: '搜索名称、规格或备注',
               leading: const Icon(Icons.search),
+              trailing: _search.text.isEmpty
+                  ? null
+                  : [
+                      IconButton(
+                        tooltip: '清空',
+                        icon: const Icon(Icons.close),
+                        onPressed: () => setState(() {
+                          _search.clear();
+                          _refresh();
+                        }),
+                      ),
+                    ],
               onChanged: (_) => setState(_refresh),
             ),
           ),
@@ -84,8 +108,10 @@ class _PlaqueCatalogPageState extends State<PlaqueCatalogPage> {
                     ),
                   );
                 }
-                return ListView.builder(
+                return ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                   itemCount: items.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
                   itemBuilder: (context, index) {
                     final item = items[index];
                     final canReorder =
@@ -95,59 +121,84 @@ class _PlaqueCatalogPageState extends State<PlaqueCatalogPage> {
                       item.notes,
                       if (item.isInactive) '已停用',
                     ].whereType<String>().join(' · ');
-                    return ListTile(
-                      leading: item.imageHash == null
-                          ? const SizedBox.square(
-                              dimension: 56,
-                              child: Icon(Icons.style_outlined),
-                            )
-                          : ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.file(
-                                widget.mediaStore.fileFor(item.imageHash!),
-                                width: 56,
-                                height: 56,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) =>
-                                    const SizedBox.square(
-                                      dimension: 56,
-                                      child: Icon(Icons.broken_image_outlined),
-                                    ),
+                    return Material(
+                      clipBehavior: Clip.antiAlias,
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(13),
+                      child: InkWell(
+                        onTap: () => _edit(item),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            AspectRatio(
+                              aspectRatio: 16 / 9,
+                              child: ColoredBox(
+                                color: const Color(0xffe6e9e7),
+                                child: item.imageHash == null
+                                    ? const Center(
+                                        child: Text(
+                                          '香牌 / 合香珠',
+                                          style: TextStyle(
+                                            color: Color(0xff415047),
+                                            fontFamily: 'serif',
+                                            fontSize: 24,
+                                          ),
+                                        ),
+                                      )
+                                    : Image.file(
+                                        widget.mediaStore.fileFor(
+                                          item.imageHash!,
+                                        ),
+                                        fit: BoxFit.contain,
+                                        errorBuilder: (_, _, _) => const Icon(
+                                          Icons.broken_image_outlined,
+                                        ),
+                                      ),
                               ),
                             ),
-                      title: Text(item.name),
-                      subtitle: details.isEmpty ? null : Text(details),
-                      onTap: () => _edit(item),
-                      trailing: PopupMenuButton<String>(
-                        tooltip: '${item.name}的更多操作',
-                        onSelected: (action) => _action(item, action),
-                        itemBuilder: (_) => [
-                          const PopupMenuItem(value: 'edit', child: Text('编辑')),
-                          if (canReorder && index > 0)
-                            const PopupMenuItem(value: 'up', child: Text('上移')),
-                          if (canReorder && index < items.length - 1)
-                            const PopupMenuItem(
-                              value: 'down',
-                              child: Text('下移'),
+                            ListTile(
+                              title: Text(item.name),
+                              subtitle: details.isEmpty ? null : Text(details),
+                              trailing: PopupMenuButton<String>(
+                                tooltip: '${item.name}的更多操作',
+                                onSelected: (action) => _action(item, action),
+                                itemBuilder: (_) => [
+                                  const PopupMenuItem(
+                                    value: 'edit',
+                                    child: Text('编辑'),
+                                  ),
+                                  if (canReorder && index > 0)
+                                    const PopupMenuItem(
+                                      value: 'up',
+                                      child: Text('上移'),
+                                    ),
+                                  if (canReorder && index < items.length - 1)
+                                    const PopupMenuItem(
+                                      value: 'down',
+                                      child: Text('下移'),
+                                    ),
+                                  const PopupMenuItem(
+                                    value: 'image',
+                                    child: Text('选择图片'),
+                                  ),
+                                  if (item.imageHash != null)
+                                    const PopupMenuItem(
+                                      value: 'removeImage',
+                                      child: Text('移除图片'),
+                                    ),
+                                  PopupMenuItem(
+                                    value: 'inactive',
+                                    child: Text(item.isInactive ? '启用' : '停用'),
+                                  ),
+                                  const PopupMenuItem(
+                                    value: 'delete',
+                                    child: Text('删除'),
+                                  ),
+                                ],
+                              ),
                             ),
-                          const PopupMenuItem(
-                            value: 'image',
-                            child: Text('选择图片'),
-                          ),
-                          if (item.imageHash != null)
-                            const PopupMenuItem(
-                              value: 'removeImage',
-                              child: Text('移除图片'),
-                            ),
-                          PopupMenuItem(
-                            value: 'inactive',
-                            child: Text(item.isInactive ? '启用' : '停用'),
-                          ),
-                          const PopupMenuItem(
-                            value: 'delete',
-                            child: Text('删除'),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -156,11 +207,6 @@ class _PlaqueCatalogPageState extends State<PlaqueCatalogPage> {
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        tooltip: '添加香牌',
-        onPressed: () => _edit(),
-        child: const Icon(Icons.add),
       ),
     );
   }
@@ -173,68 +219,14 @@ class _PlaqueCatalogPageState extends State<PlaqueCatalogPage> {
   }
 
   Future<void> _edit([PlaqueType? item]) async {
-    var name = item?.name ?? '';
-    var specification = item?.specification ?? '';
-    var notes = item?.notes ?? '';
-    final saved = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(item == null ? '添加香牌' : '编辑香牌'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                initialValue: name,
-                autofocus: true,
-                decoration: const InputDecoration(labelText: '名称 *'),
-                onChanged: (value) => name = value,
-              ),
-              TextFormField(
-                initialValue: specification,
-                decoration: const InputDecoration(labelText: '规格或说明'),
-                onChanged: (value) => specification = value,
-              ),
-              TextFormField(
-                initialValue: notes,
-                maxLines: 3,
-                decoration: const InputDecoration(labelText: '备注'),
-                onChanged: (value) => notes = value,
-              ),
-            ],
-          ),
+    final saved = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute<bool>(
+        builder: (_) => _PlaqueEditorPage(
+          database: widget.database,
+          mediaStore: widget.mediaStore,
+          item: item,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              try {
-                if (item == null) {
-                  await widget.database.createPlaqueType(
-                    name: name,
-                    specification: specification,
-                    notes: notes,
-                  );
-                } else {
-                  await widget.database.updatePlaqueType(
-                    item.id,
-                    name: name,
-                    imageHash: item.imageHash,
-                    specification: specification,
-                    notes: notes,
-                  );
-                }
-                if (context.mounted) Navigator.pop(context, true);
-              } catch (error) {
-                if (context.mounted) _message(_errorText(error), context);
-              }
-            },
-            child: const Text('保存'),
-          ),
-        ],
       ),
     );
     if (saved == true && mounted) _message('已保存');
@@ -334,6 +326,9 @@ class _PlaqueCatalogPageState extends State<PlaqueCatalogPage> {
                 const Text('删除后可在最近删除中恢复。'),
                 const SizedBox(height: 20),
                 FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xffff3b30),
+                  ),
                   onPressed: () => Navigator.pop(context, true),
                   child: const Text('确认删除'),
                 ),
@@ -352,6 +347,201 @@ class _PlaqueCatalogPageState extends State<PlaqueCatalogPage> {
     ScaffoldMessenger.of(
       target ?? context,
     ).showSnackBar(SnackBar(content: Text(text)));
+  }
+}
+
+class _PlaqueEditorPage extends StatefulWidget {
+  const _PlaqueEditorPage({
+    required this.database,
+    required this.mediaStore,
+    this.item,
+  });
+
+  final AppDatabase database;
+  final MediaStore mediaStore;
+  final PlaqueType? item;
+
+  @override
+  State<_PlaqueEditorPage> createState() => _PlaqueEditorPageState();
+}
+
+class _PlaqueEditorPageState extends State<_PlaqueEditorPage> {
+  late final _name = TextEditingController(text: widget.item?.name ?? '');
+  late final _specification = TextEditingController(
+    text: widget.item?.specification ?? '',
+  );
+  late final _notes = TextEditingController(text: widget.item?.notes ?? '');
+  late String? _imageHash = widget.item?.imageHash;
+  var _saving = false;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _specification.dispose();
+    _notes.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      title: Text(widget.item == null ? '新建香牌 / 合香珠' : '编辑香牌 / 合香珠'),
+      actions: [
+        TextButton(onPressed: _saving ? null : _save, child: const Text('保存')),
+      ],
+    ),
+    body: ListView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      children: [
+        Material(
+          color: const Color(0xffe6e9e7),
+          borderRadius: BorderRadius.circular(16),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: _pickImage,
+            child: AspectRatio(
+              aspectRatio: 4 / 3,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (_imageHash == null)
+                    const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.add_photo_alternate_outlined,
+                            size: 42,
+                            color: Color(0xff415047),
+                          ),
+                          SizedBox(height: 8),
+                          Text('添加成品图片'),
+                        ],
+                      ),
+                    )
+                  else
+                    Image.file(
+                      widget.mediaStore.fileFor(_imageHash!),
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, _, _) =>
+                          const Icon(Icons.broken_image_outlined),
+                    ),
+                  Positioned(
+                    right: 12,
+                    bottom: 12,
+                    child: FilledButton.tonalIcon(
+                      onPressed: _pickImage,
+                      icon: const Icon(Icons.photo_library_outlined),
+                      label: Text(_imageHash == null ? '选择图片' : '更换图片'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (_imageHash != null)
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => setState(() => _imageHash = null),
+              child: const Text('移除图片'),
+            ),
+          )
+        else
+          const SizedBox(height: 16),
+        TextField(
+          controller: _name,
+          autofocus: widget.item == null,
+          textInputAction: TextInputAction.next,
+          decoration: const InputDecoration(labelText: '名称 *'),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _specification,
+          textInputAction: TextInputAction.next,
+          decoration: const InputDecoration(labelText: '规格或说明'),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _notes,
+          minLines: 3,
+          maxLines: 5,
+          decoration: const InputDecoration(
+            labelText: '备注',
+            alignLabelWithHint: true,
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Future<void> _pickImage() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('拍照'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('从相册选择'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+    try {
+      final selected = await ImagePicker().pickImage(source: source);
+      if (selected == null) return;
+      final hash = await widget.mediaStore.putImage(
+        await selected.readAsBytes(),
+      );
+      if (mounted) setState(() => _imageHash = hash);
+    } catch (error) {
+      if (mounted) _message(_errorText(error));
+    }
+  }
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    try {
+      final item = widget.item;
+      if (item == null) {
+        await widget.database.createPlaqueType(
+          name: _name.text,
+          imageHash: _imageHash,
+          specification: _specification.text,
+          notes: _notes.text,
+        );
+      } else {
+        await widget.database.updatePlaqueType(
+          item.id,
+          name: _name.text,
+          imageHash: _imageHash,
+          specification: _specification.text,
+          notes: _notes.text,
+        );
+      }
+      if (mounted) Navigator.pop(context, true);
+    } catch (error) {
+      if (mounted) {
+        setState(() => _saving = false);
+        _message(_errorText(error));
+      }
+    }
+  }
+
+  void _message(String text) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
   }
 }
 

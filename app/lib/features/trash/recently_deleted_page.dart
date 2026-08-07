@@ -19,24 +19,57 @@ class RecentlyDeletedPage extends StatelessWidget {
           }
           final items = snapshot.data ?? const [];
           if (items.isEmpty) {
-            return const Center(child: Text('最近 30 天没有删除的资料'));
+            return const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.delete_outline,
+                    size: 40,
+                    color: Color(0xff636366),
+                  ),
+                  SizedBox(height: 10),
+                  Text('最近 30 天没有删除的资料'),
+                  SizedBox(height: 4),
+                  Text(
+                    '删除的资料会在这里保留 30 天',
+                    style: TextStyle(color: Color(0xff636366)),
+                  ),
+                ],
+              ),
+            );
           }
-          return ListView.builder(
+          return ListView.separated(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             itemCount: items.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
               final item = items[index];
               final date = item.deletedAtUtc.toLocal();
-              return ListTile(
-                leading: const Icon(Icons.delete_outline),
-                title: Text(item.name),
-                subtitle: Text(
-                  '${item.type.label} · '
-                  '${date.year}-${date.month.toString().padLeft(2, '0')}-'
-                  '${date.day.toString().padLeft(2, '0')}',
-                ),
-                trailing: TextButton(
-                  onPressed: () => _restore(context, item),
-                  child: const Text('恢复'),
+              return Material(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(13),
+                clipBehavior: Clip.antiAlias,
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: const Color(0xfff2f2f7),
+                    foregroundColor: const Color(0xff636366),
+                    child: Icon(
+                      item.type == TrashEntityType.ingredient
+                          ? Icons.spa_outlined
+                          : Icons.inventory_2_outlined,
+                    ),
+                  ),
+                  title: Text(item.name),
+                  subtitle: Text(
+                    '${item.type.label} · '
+                    '${date.year}-${date.month.toString().padLeft(2, '0')}-'
+                    '${date.day.toString().padLeft(2, '0')}',
+                  ),
+                  trailing: TextButton(
+                    onPressed: () => _restore(context, item),
+                    child: const Text('恢复'),
+                  ),
                 ),
               );
             },

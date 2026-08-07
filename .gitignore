@@ -5,3 +5,4 @@
 .tmp/
 .qa/
 .secrets/
+.agents/

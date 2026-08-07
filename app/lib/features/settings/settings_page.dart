@@ -12,16 +12,32 @@ class SettingsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('设置')),
       body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
-          ListTile(
-            leading: const Icon(Icons.category_outlined),
-            title: const Text('制作类型'),
-            subtitle: const Text('新增、排序、停用或删除自定义类型'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute<void>(
-                builder: (_) => _ProductionTypesPage(database: database),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(4, 0, 4, 7),
+            child: Text(
+              '资料设置',
+              style: TextStyle(fontSize: 13, color: Color(0xff636366)),
+            ),
+          ),
+          Material(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(13),
+            clipBehavior: Clip.antiAlias,
+            child: ListTile(
+              leading: const Icon(Icons.category_outlined),
+              title: const Text('制作类型'),
+              subtitle: const Text('新增、排序、停用或删除自定义类型'),
+              trailing: const Icon(
+                Icons.chevron_right,
+                color: Color(0xffc7c7cc),
+              ),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => _ProductionTypesPage(database: database),
+                ),
               ),
             ),
           ),
@@ -39,7 +55,16 @@ class _ProductionTypesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('制作类型')),
+      appBar: AppBar(
+        title: const Text('制作类型'),
+        actions: [
+          IconButton(
+            tooltip: '添加制作类型',
+            onPressed: () => _edit(context),
+            icon: const Icon(Icons.add),
+          ),
+        ],
+      ),
       body: StreamBuilder<List<ProductionType>>(
         stream: database.watchProductionTypes(),
         builder: (context, snapshot) {
@@ -47,43 +72,53 @@ class _ProductionTypesPage extends StatelessWidget {
             return Center(child: Text('读取失败：${snapshot.error}'));
           }
           final items = snapshot.data ?? const [];
-          return ListView.builder(
+          if (items.isEmpty) {
+            return const Center(
+              child: Text(
+                '还没有制作类型',
+                style: TextStyle(color: Color(0xff636366)),
+              ),
+            );
+          }
+          return ListView.separated(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
             itemCount: items.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
               final item = items[index];
               final builtIn = database.isBuiltInProductionType(item.id);
-              return ListTile(
-                title: Text(item.name),
-                subtitle: Text(
-                  [if (builtIn) '内置', if (item.isInactive) '已停用'].join(' · '),
-                ),
-                onTap: () => _edit(context, item),
-                trailing: PopupMenuButton<String>(
-                  tooltip: '${item.name}的更多操作',
-                  onSelected: (action) => _action(context, item, action),
-                  itemBuilder: (_) => [
-                    const PopupMenuItem(value: 'edit', child: Text('编辑')),
-                    if (index > 0)
-                      const PopupMenuItem(value: 'up', child: Text('上移')),
-                    if (index < items.length - 1)
-                      const PopupMenuItem(value: 'down', child: Text('下移')),
-                    PopupMenuItem(
-                      value: 'inactive',
-                      child: Text(item.isInactive ? '启用' : '停用'),
-                    ),
-                    if (!builtIn)
-                      const PopupMenuItem(value: 'delete', child: Text('删除')),
-                  ],
+              return Material(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(13),
+                clipBehavior: Clip.antiAlias,
+                child: ListTile(
+                  title: Text(item.name),
+                  subtitle: Text(
+                    [if (builtIn) '内置', if (item.isInactive) '已停用'].join(' · '),
+                  ),
+                  onTap: () => _edit(context, item),
+                  trailing: PopupMenuButton<String>(
+                    tooltip: '${item.name}的更多操作',
+                    onSelected: (action) => _action(context, item, action),
+                    itemBuilder: (_) => [
+                      const PopupMenuItem(value: 'edit', child: Text('编辑')),
+                      if (index > 0)
+                        const PopupMenuItem(value: 'up', child: Text('上移')),
+                      if (index < items.length - 1)
+                        const PopupMenuItem(value: 'down', child: Text('下移')),
+                      PopupMenuItem(
+                        value: 'inactive',
+                        child: Text(item.isInactive ? '启用' : '停用'),
+                      ),
+                      if (!builtIn)
+                        const PopupMenuItem(value: 'delete', child: Text('删除')),
+                    ],
+                  ),
                 ),
               );
             },
           );
         },
-      ),
-      floatingActionButton: FloatingActionButton(
-        tooltip: '添加制作类型',
-        onPressed: () => _edit(context),
-        child: const Icon(Icons.add),
       ),
     );
   }
@@ -174,6 +209,9 @@ Future<bool> _confirmDelete(BuildContext context, String name) async =>
               const Text('删除后可在最近删除中恢复。'),
               const SizedBox(height: 20),
               FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xffff3b30),
+                ),
                 onPressed: () => Navigator.pop(context, true),
                 child: const Text('确认删除'),
               ),

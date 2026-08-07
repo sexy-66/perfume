@@ -123,6 +123,7 @@ class RecommendationPresetDetailPage extends StatelessWidget {
                   ],
                   onChanged: (value) => setState(() => categoryId = value!),
                 ),
+                const SizedBox(height: 12),
                 TextFormField(
                   autofocus: true,
                   keyboardType: const TextInputType.numberWithOptions(
@@ -296,6 +297,7 @@ class _RecommendationItemsPage extends StatelessWidget {
                   ],
                   onChanged: (value) => setState(() => skuId = value!),
                 ),
+                const SizedBox(height: 12),
                 TextFormField(
                   autofocus: true,
                   keyboardType: const TextInputType.numberWithOptions(
@@ -383,6 +385,9 @@ Future<bool> _confirmDelete(BuildContext context, String title) async =>
               const Text('此操作无法从最近删除中恢复。'),
               const SizedBox(height: 20),
               FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xffff3b30),
+                ),
                 onPressed: () => Navigator.pop(context, true),
                 child: const Text('确认删除'),
               ),

@@ -4,7 +4,10 @@ import 'dart:math';
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import '../services/formula_calculator.dart';
+
 part 'app_database.g.dart';
+part 'm3_database.dart';
 
 class ProductionTypes extends Table {
   TextColumn get id => text()();
@@ -176,6 +179,96 @@ class Assets extends Table with SyncColumns {
   BoolColumn get isInactive => boolean().withDefault(const Constant(false))();
 }
 
+class Formulas extends Table with SyncColumns {
+  TextColumn get name => text().withLength(min: 1, max: 100)();
+  TextColumn get notes => text().nullable()();
+  TextColumn get currentVersionId => text().nullable()();
+  DateTimeColumn get lastUsedAtUtc => dateTime().nullable()();
+}
+
+class FormulaDrafts extends Table with SyncColumns {
+  TextColumn get kind => text()();
+  TextColumn get formulaId => text().nullable().references(Formulas, #id)();
+  TextColumn get sourceVersionId => text().nullable()();
+  TextColumn get customerId => text().nullable().references(Customers, #id)();
+  TextColumn get plaqueTypeId =>
+      text().nullable().references(PlaqueTypes, #id)();
+  TextColumn get formulaName => text().withDefault(const Constant(''))();
+  TextColumn get productionTypeId => text().references(ProductionTypes, #id)();
+  IntColumn get targetWeight => integer()();
+  TextColumn get notes => text().nullable()();
+  TextColumn get itemsJson => text()();
+  TextColumn get actualWeightsJson => text()();
+  TextColumn get confirmedWarningsJson =>
+      text().withDefault(const Constant('[]'))();
+  DateTimeColumn get createdAtUtc => dateTime()();
+
+  @override
+  List<String> get customConstraints => ['CHECK (target_weight > 0)'];
+}
+
+class FormulaVersions extends Table with SyncColumns {
+  TextColumn get formulaId => text().references(Formulas, #id)();
+  IntColumn get versionNumber => integer()();
+  TextColumn get sourceVersionId => text().nullable()();
+  TextColumn get productionTypeId => text().references(ProductionTypes, #id)();
+  DateTimeColumn get createdAtUtc => dateTime()();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+    {formulaId, versionNumber},
+  ];
+}
+
+class FormulaItems extends Table with SyncColumns {
+  TextColumn get versionId => text().references(FormulaVersions, #id)();
+  TextColumn get categoryName => text()();
+  TextColumn get ingredientName => text()();
+  TextColumn get skuCode => text().nullable()();
+  TextColumn get skuId => text().nullable()();
+  IntColumn get ratio => integer()();
+  IntColumn get sortOrder => integer()();
+
+  @override
+  List<String> get customConstraints => ['CHECK (ratio BETWEEN 0 AND 10000)'];
+}
+
+class MixingSessions extends Table with SyncColumns {
+  TextColumn get formulaId => text().nullable().references(Formulas, #id)();
+  TextColumn get versionId =>
+      text().nullable().references(FormulaVersions, #id)();
+  TextColumn get customerId => text().nullable().references(Customers, #id)();
+  TextColumn get plaqueTypeId =>
+      text().nullable().references(PlaqueTypes, #id)();
+  TextColumn get formulaName => text()();
+  TextColumn get productionTypeName => text()();
+  IntColumn get targetWeight => integer()();
+  IntColumn get finalWeight => integer()();
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAtUtc => dateTime()();
+  DateTimeColumn get completedAtUtc => dateTime()();
+}
+
+class MixingItems extends Table with SyncColumns {
+  TextColumn get sessionId => text().references(MixingSessions, #id)();
+  TextColumn get categoryName => text()();
+  TextColumn get ingredientName => text()();
+  TextColumn get skuCode => text().nullable()();
+  TextColumn get skuId => text().nullable()();
+  IntColumn get plannedWeight => integer()();
+  IntColumn get finalWeight => integer()();
+  BoolColumn get isManual => boolean()();
+  IntColumn get finalRatio => integer()();
+  IntColumn get sortOrder => integer()();
+}
+
+class MixingRevisions extends Table with SyncColumns {
+  TextColumn get sessionId => text().references(MixingSessions, #id)();
+  TextColumn get previousDataJson => text()();
+  DateTimeColumn get modifiedAtUtc => dateTime()();
+  TextColumn get modifiedByDevice => text()();
+}
+
 class LocalDevices extends Table {
   TextColumn get id => text()();
   IntColumn get deviceSeq => integer().withDefault(const Constant(0))();
@@ -207,10 +300,15 @@ class SyncOperations extends Table {
 }
 
 class IngredientSummary {
-  const IngredientSummary(this.ingredient, this.categoryName);
+  const IngredientSummary(
+    this.ingredient,
+    this.categoryName,
+    this.firstSkuImageHash,
+  );
 
   final Ingredient ingredient;
   final String categoryName;
+  final String? firstSkuImageHash;
 }
 
 enum RatioRangeTarget { category, ingredient, sku }
@@ -293,6 +391,7 @@ enum TrashEntityType {
   ingredient('ingredients', '香料'),
   ingredientSku('ingredient_skus', 'SKU'),
   recommendationPreset('recommendation_presets', '推荐配置'),
+  formula('formulas', '香方'),
   customer('customers', '顾客'),
   plaqueType('plaque_types', '香牌'),
   assetCategory('asset_categories', '资产分类'),
@@ -336,6 +435,13 @@ class TrashEntry {
     AssetCategories,
     AssetStatuses,
     Assets,
+    Formulas,
+    FormulaDrafts,
+    FormulaVersions,
+    FormulaItems,
+    MixingSessions,
+    MixingItems,
+    MixingRevisions,
     LocalDevices,
     SyncOperations,
   ],
@@ -357,13 +463,13 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) => m.createAll(),
     onUpgrade: (m, from, to) async {
-      if (from == 1 && to == 2) {
+      if (from == 1) {
         for (final table in <TableInfo<Table, dynamic>>[
           ingredientCategories,
           ingredients,
@@ -382,7 +488,21 @@ class AppDatabase extends _$AppDatabase {
         ]) {
           await m.createTable(table);
         }
-      } else {
+      }
+      if (from <= 2) {
+        for (final table in <TableInfo<Table, dynamic>>[
+          formulas,
+          formulaDrafts,
+          formulaVersions,
+          formulaItems,
+          mixingSessions,
+          mixingItems,
+          mixingRevisions,
+        ]) {
+          await m.createTable(table);
+        }
+      }
+      if (from < 1 || to != 3) {
         throw StateError('缺少数据库迁移：$from → $to');
       }
     },
@@ -869,6 +989,8 @@ class AppDatabase extends _$AppDatabase {
             OrderingTerm.asc(ingredientCategories.sortOrder),
             OrderingTerm.asc(ingredientCategories.name),
             OrderingTerm.asc(ingredients.name),
+            OrderingTerm.asc(ingredientSkus.skuCode),
+            OrderingTerm.asc(ingredientSkus.supplier),
           ]);
     if (!includeInactive) query.where(ingredients.isInactive.equals(false));
     if (categoryId != null) {
@@ -892,6 +1014,7 @@ class AppDatabase extends _$AppDatabase {
           () => IngredientSummary(
             ingredient,
             row.readTable(ingredientCategories).name,
+            row.readTableOrNull(ingredientSkus)?.imageHash,
           ),
         );
       }
@@ -1420,12 +1543,41 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  Future<void> deleteCustomer(String id) async {
+  Future<void> deleteCustomer(String id, {bool deleteSessions = false}) async {
     await transaction(() async {
       final current = await (select(
         customers,
       )..where((row) => row.id.equals(id))).getSingle();
       if (current.isDeleted) return;
+      final sessions =
+          await (select(mixingSessions)..where(
+                (row) =>
+                    row.customerId.equals(id) & row.isDeleted.equals(false),
+              ))
+              .get();
+      for (final session in sessions) {
+        final sessionChange = await _recordOperation(
+          entityType: 'mixing_sessions',
+          entityId: session.id,
+          baseRevisionId: session.revisionId,
+          operationKind: deleteSessions ? 'delete' : 'update',
+          payload: {'id': session.id, if (!deleteSessions) 'customerId': null},
+        );
+        await (update(
+          mixingSessions,
+        )..where((row) => row.id.equals(session.id))).write(
+          MixingSessionsCompanion(
+            revisionId: Value(sessionChange.revisionId),
+            updatedByDevice: Value(sessionChange.deviceId),
+            updatedAtUtc: Value(sessionChange.now),
+            customerId: deleteSessions
+                ? Value(session.customerId)
+                : const Value(null),
+            isDeleted: Value(deleteSessions),
+            deletedAtUtc: Value(deleteSessions ? sessionChange.now : null),
+          ),
+        );
+      }
       final change = await _recordOperation(
         entityType: 'customers',
         entityId: id,
@@ -2000,6 +2152,9 @@ class AppDatabase extends _$AppDatabase {
       SELECT 'recommendation_presets', id, name, deleted_at_utc
         FROM recommendation_presets WHERE is_deleted = 1 AND deleted_at_utc >= ?
       UNION ALL
+      SELECT 'formulas', id, name, deleted_at_utc
+        FROM formulas WHERE is_deleted = 1 AND deleted_at_utc >= ?
+      UNION ALL
       SELECT 'customers', id, COALESCE(NULLIF(name, ''), phone), deleted_at_utc
         FROM customers WHERE is_deleted = 1 AND deleted_at_utc >= ?
       UNION ALL
@@ -2016,13 +2171,14 @@ class AppDatabase extends _$AppDatabase {
         FROM assets WHERE is_deleted = 1 AND deleted_at_utc >= ?
       ORDER BY deleted_at_utc DESC
       ''',
-      variables: List.generate(10, (_) => Variable(cutoff)),
+      variables: List.generate(11, (_) => Variable(cutoff)),
       readsFrom: {
         productionTypes,
         ingredientCategories,
         ingredients,
         ingredientSkus,
         recommendationPresets,
+        formulas,
         customers,
         plaqueTypes,
         assetCategories,
@@ -2073,6 +2229,7 @@ class AppDatabase extends _$AppDatabase {
         TrashEntityType.ingredient => ingredients,
         TrashEntityType.ingredientSku => ingredientSkus,
         TrashEntityType.recommendationPreset => recommendationPresets,
+        TrashEntityType.formula => formulas,
         TrashEntityType.customer => customers,
         TrashEntityType.plaqueType => plaqueTypes,
         TrashEntityType.assetCategory => assetCategories,
@@ -2157,6 +2314,7 @@ class AppDatabase extends _$AppDatabase {
         }
       case TrashEntityType.ingredientCategory ||
           TrashEntityType.productionType ||
+          TrashEntityType.formula ||
           TrashEntityType.customer ||
           TrashEntityType.plaqueType ||
           TrashEntityType.assetCategory ||

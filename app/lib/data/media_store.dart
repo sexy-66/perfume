@@ -25,20 +25,15 @@ class MediaStore {
       var decoded = image.decodeImage(bytes);
       if (decoded == null) throw const FormatException('无法读取图片');
       decoded = image.bakeOrientation(decoded);
-      final side = decoded.width < decoded.height
+      final longest = decoded.width > decoded.height
           ? decoded.width
           : decoded.height;
-      var square = image.copyCrop(
-        decoded,
-        x: (decoded.width - side) ~/ 2,
-        y: (decoded.height - side) ~/ 2,
-        width: side,
-        height: side,
-      );
-      if (side > 1600) {
-        square = image.copyResize(square, width: 1600, height: 1600);
+      if (longest > 1600) {
+        decoded = decoded.width > decoded.height
+            ? image.copyResize(decoded, width: 1600)
+            : image.copyResize(decoded, height: 1600);
       }
-      return image.encodeJpg(square, quality: 85);
+      return image.encodeJpg(decoded, quality: 85);
     });
     return putJpeg(jpeg);
   }

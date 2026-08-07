@@ -37,7 +37,7 @@ void main() {
     expect(() => store.fileFor('../outside'), throwsArgumentError);
   });
 
-  test('center-crops, resizes and encodes imported images as JPEG', () async {
+  test('preserves aspect ratio, resizes and encodes images as JPEG', () async {
     final directory = await Directory.systemTemp.createTemp('xiang-media-');
     addTearDown(() => directory.delete(recursive: true));
     final store = MediaStore(directory);
@@ -50,6 +50,6 @@ void main() {
     final decoded = image.decodeJpg(await store.fileFor(hash).readAsBytes());
 
     expect(decoded, isNotNull);
-    expect((decoded!.width, decoded.height), (1600, 1600));
+    expect((decoded!.width, decoded.height), (1600, 1333));
   });
 }

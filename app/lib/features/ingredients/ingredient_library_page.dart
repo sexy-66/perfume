@@ -24,7 +24,6 @@ class _IngredientLibraryPageState extends State<IngredientLibraryPage> {
   late final Stream<List<IngredientCategory>> _categories;
   late Stream<List<IngredientSummary>> _ingredients;
   String? _categoryId;
-  var _includeInactive = false;
 
   @override
   void initState() {
@@ -45,8 +44,13 @@ class _IngredientLibraryPageState extends State<IngredientLibraryPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('香料库'),
+        title: const Text('香料'),
         actions: [
+          TextButton.icon(
+            onPressed: _addIngredient,
+            icon: const Icon(Icons.add, size: 17),
+            label: const Text('添加'),
+          ),
           IconButton(
             tooltip: '管理分类',
             icon: const Icon(Icons.category_outlined),
@@ -98,40 +102,45 @@ class _IngredientLibraryPageState extends State<IngredientLibraryPage> {
                   !categories.any((item) => item.id == _categoryId)) {
                 _categoryId = null;
               }
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
+              ChoiceChip categoryChip(String label, String? id) {
+                final selected = _categoryId == id;
+                return ChoiceChip(
+                  label: Text(label),
+                  selected: selected,
+                  showCheckmark: false,
+                  color: WidgetStateProperty.all(
+                    selected ? const Color(0xffdbeafe) : Colors.white,
+                  ),
+                  side: BorderSide(
+                    color: selected
+                        ? const Color(0xff007aff)
+                        : const Color(0xffc6c6c8),
+                  ),
+                  labelStyle: TextStyle(
+                    color: selected
+                        ? const Color(0xff005eb8)
+                        : const Color(0xff1c1c1e),
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                  onSelected: (_) => setState(() {
+                    _categoryId = id;
+                    _refreshIngredients();
+                  }),
+                );
+              }
+
+              return SizedBox(
+                height: 48,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
-                    Expanded(
-                      child: DropdownButton<String?>(
-                        isExpanded: true,
-                        value: _categoryId,
-                        items: [
-                          const DropdownMenuItem(
-                            value: null,
-                            child: Text('全部分类'),
-                          ),
-                          for (final category in categories)
-                            DropdownMenuItem(
-                              value: category.id,
-                              child: Text(category.name),
-                            ),
-                        ],
-                        onChanged: (value) => setState(() {
-                          _categoryId = value;
-                          _refreshIngredients();
-                        }),
+                    categoryChip('全部', null),
+                    for (final category in categories)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: categoryChip(category.name, category.id),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    FilterChip(
-                      label: const Text('含停用'),
-                      selected: _includeInactive,
-                      onSelected: (value) => setState(() {
-                        _includeInactive = value;
-                        _refreshIngredients();
-                      }),
-                    ),
                   ],
                 ),
               );
@@ -157,44 +166,143 @@ class _IngredientLibraryPageState extends State<IngredientLibraryPage> {
                     ),
                   );
                 }
-                return ListView.builder(
-                  itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    final ingredient = item.ingredient;
-                    final details = <String?>[
-                      item.categoryName,
-                      ingredient.alias,
-                      if (ingredient.isInactive) '已停用',
-                    ].whereType<String>().join(' · ');
-                    return ListTile(
-                      title: Text(ingredient.name),
-                      subtitle: Text(details),
-                      trailing: PopupMenuButton<String>(
-                        tooltip: '${ingredient.name}的更多操作',
-                        onSelected: (action) => _ingredientAction(item, action),
-                        itemBuilder: (_) => [
-                          const PopupMenuItem(value: 'edit', child: Text('编辑')),
-                          PopupMenuItem(
-                            value: 'inactive',
-                            child: Text(ingredient.isInactive ? '启用' : '停用'),
-                          ),
-                          const PopupMenuItem(
-                            value: 'delete',
-                            child: Text('删除'),
-                          ),
-                        ],
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    final columns = constraints.maxWidth >= 900
+                        ? 4
+                        : constraints.maxWidth >= 600
+                        ? 3
+                        : 2;
+                    return GridView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 112),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: columns,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 14,
+                        childAspectRatio: 0.78,
                       ),
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => IngredientDetailPage(
-                            database: widget.database,
-                            mediaStore: widget.mediaStore,
-                            ingredient: ingredient,
-                            categoryName: item.categoryName,
+                      itemCount: items.length,
+                      itemBuilder: (context, index) {
+                        final item = items[index];
+                        final ingredient = item.ingredient;
+                        final details = <String?>[
+                          item.categoryName,
+                          ingredient.alias,
+                          if (ingredient.isInactive) '已停用',
+                        ].whereType<String>().join(' · ');
+                        return Material(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => IngredientDetailPage(
+                                  database: widget.database,
+                                  mediaStore: widget.mediaStore,
+                                  ingredient: ingredient,
+                                  categoryName: item.categoryName,
+                                ),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(
+                                  child: item.firstSkuImageHash == null
+                                      ? const ColoredBox(
+                                          color: Color(0xffe6e9e7),
+                                          child: Icon(
+                                            Icons.spa_outlined,
+                                            size: 48,
+                                            color: Color(0xff566158),
+                                          ),
+                                        )
+                                      : Image.file(
+                                          widget.mediaStore.fileFor(
+                                            item.firstSkuImageHash!,
+                                          ),
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, _, _) =>
+                                              const ColoredBox(
+                                                color: Color(0xffe6e9e7),
+                                                child: Icon(
+                                                  Icons.broken_image_outlined,
+                                                  size: 48,
+                                                  color: Color(0xff566158),
+                                                ),
+                                              ),
+                                        ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    12,
+                                    10,
+                                    4,
+                                    8,
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              ingredient.name,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 3),
+                                            Text(
+                                              details,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                color: Color(0xff636366),
+                                                fontSize: 11,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      PopupMenuButton<String>(
+                                        padding: EdgeInsets.zero,
+                                        tooltip: '${ingredient.name}的更多操作',
+                                        onSelected: (action) =>
+                                            _ingredientAction(item, action),
+                                        itemBuilder: (_) => [
+                                          const PopupMenuItem(
+                                            value: 'edit',
+                                            child: Text('编辑'),
+                                          ),
+                                          PopupMenuItem(
+                                            value: 'inactive',
+                                            child: Text(
+                                              ingredient.isInactive
+                                                  ? '启用'
+                                                  : '停用',
+                                            ),
+                                          ),
+                                          const PopupMenuItem(
+                                            value: 'delete',
+                                            child: Text('删除'),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     );
                   },
                 );
@@ -217,7 +325,7 @@ class _IngredientLibraryPageState extends State<IngredientLibraryPage> {
     _ingredients = widget.database.watchIngredients(
       search: _search.text,
       categoryId: _categoryId,
-      includeInactive: _includeInactive,
+      includeInactive: false,
     );
   }
 
@@ -225,14 +333,16 @@ class _IngredientLibraryPageState extends State<IngredientLibraryPage> {
       _showIngredientForm(item: item);
 
   Future<void> _showIngredientForm({IngredientSummary? item}) async {
-    final categories = await widget.database.getActiveIngredientCategories(
+    var categories = await widget.database.getActiveIngredientCategories(
       includeId: item?.ingredient.categoryId,
     );
     if (!mounted) return;
     if (categories.isEmpty) {
-      _message('请先在“管理分类”中添加香料分类');
-      return;
+      final created = await _quickCreateCategory();
+      if (created == null) return;
+      categories = [created];
     }
+    if (!mounted) return;
     var name = item?.ingredient.name ?? '';
     var alias = item?.ingredient.alias ?? '';
     var categoryId = item?.ingredient.categoryId ?? categories.first.id;
@@ -251,14 +361,39 @@ class _IngredientLibraryPageState extends State<IngredientLibraryPage> {
                   decoration: const InputDecoration(labelText: '名称 *'),
                   onChanged: (value) => name = value,
                 ),
+                const SizedBox(height: 12),
                 TextFormField(
                   initialValue: alias,
                   decoration: const InputDecoration(labelText: '别名'),
                   onChanged: (value) => alias = value,
                 ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Text(
+                      '香料大类',
+                      style: TextStyle(color: Color(0xff636366)),
+                    ),
+                    const Spacer(),
+                    TextButton.icon(
+                      onPressed: () async {
+                        final created = await _quickCreateCategory();
+                        if (created != null) {
+                          setDialogState(() {
+                            categories = [...categories, created];
+                            categoryId = created.id;
+                          });
+                        }
+                      },
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('新建大类'),
+                    ),
+                  ],
+                ),
                 DropdownButtonFormField<String>(
                   initialValue: categoryId,
-                  decoration: const InputDecoration(labelText: '分类 *'),
+                  isExpanded: true,
+                  decoration: const InputDecoration(labelText: '选择大类 *'),
                   items: [
                     for (final category in categories)
                       DropdownMenuItem(
@@ -316,6 +451,58 @@ class _IngredientLibraryPageState extends State<IngredientLibraryPage> {
     if (saved == true && mounted) _message('已保存');
   }
 
+  Future<IngredientCategory?> _quickCreateCategory() async {
+    var name = '';
+    return showDialog<IngredientCategory>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('新建香料大类'),
+        content: TextField(
+          autofocus: true,
+          decoration: const InputDecoration(labelText: '大类名称 *'),
+          onChanged: (value) => name = value,
+          onSubmitted: (_) async {
+            try {
+              final category = await widget.database.createIngredientCategory(
+                name,
+              );
+              if (context.mounted) Navigator.pop(context, category);
+            } catch (error) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(_errorText(error))));
+              }
+            }
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              try {
+                final category = await widget.database.createIngredientCategory(
+                  name,
+                );
+                if (context.mounted) Navigator.pop(context, category);
+              } catch (error) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(_errorText(error))));
+                }
+              }
+            },
+            child: const Text('创建并选择'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _ingredientAction(IngredientSummary item, String action) async {
     try {
       if (action == 'edit') return _editIngredient(item);
@@ -354,6 +541,9 @@ class _IngredientLibraryPageState extends State<IngredientLibraryPage> {
                 const Text('删除后可在最近删除中恢复。'),
                 const SizedBox(height: 20),
                 FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xffff3b30),
+                  ),
                   onPressed: () => Navigator.pop(context, true),
                   child: const Text('确认删除'),
                 ),
@@ -533,6 +723,9 @@ class IngredientCategoriesPage extends StatelessWidget {
                   const Text('分类仍被香料使用时不会删除。'),
                   const SizedBox(height: 20),
                   FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xffff3b30),
+                    ),
                     onPressed: () => Navigator.pop(context, true),
                     child: const Text('确认删除'),
                   ),

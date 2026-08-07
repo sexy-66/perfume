@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../data/app_database.dart';
+import '../../services/formula_calculator.dart';
+import '../formulas/formulas_page.dart';
 
 class CustomersPage extends StatefulWidget {
   const CustomersPage({super.key, required this.database});
@@ -77,7 +79,15 @@ class _CustomersPageState extends State<CustomersPage> {
                       ),
                       title: Text(item.name.isEmpty ? item.phone : item.name),
                       subtitle: details.isEmpty ? null : Text(details),
-                      onTap: () => _edit(item),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) => CustomerDetailPage(
+                            database: widget.database,
+                            customer: item,
+                          ),
+                        ),
+                      ),
                       trailing: PopupMenuButton<String>(
                         tooltip:
                             '${item.name.isEmpty ? item.phone : item.name}的更多操作',
@@ -126,16 +136,21 @@ class _CustomersPageState extends State<CustomersPage> {
                 decoration: const InputDecoration(labelText: '姓名'),
                 onChanged: (value) => name = value,
               ),
+              const SizedBox(height: 12),
               TextFormField(
                 initialValue: phone,
                 keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(labelText: '电话'),
                 onChanged: (value) => phone = value,
               ),
+              const SizedBox(height: 12),
               TextFormField(
                 initialValue: notes,
                 maxLines: 3,
-                decoration: const InputDecoration(labelText: '备注'),
+                decoration: const InputDecoration(
+                  labelText: '备注',
+                  alignLabelWithHint: true,
+                ),
                 onChanged: (value) => notes = value,
               ),
             ],
@@ -177,7 +192,7 @@ class _CustomersPageState extends State<CustomersPage> {
   }
 
   Future<void> _delete(Customer customer) async {
-    final confirmed = await showModalBottomSheet<bool>(
+    final action = await showModalBottomSheet<String>(
       context: context,
       builder: (context) => SafeArea(
         child: Padding(
@@ -191,14 +206,19 @@ class _CustomersPageState extends State<CustomersPage> {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 8),
-              const Text('删除后可在最近删除中恢复。'),
+              const Text('请选择调配记录的处理方式。顾客资料可在最近删除中恢复。'),
               const SizedBox(height: 20),
               FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('确认删除'),
+                onPressed: () => Navigator.pop(context, 'keep'),
+                child: const Text('删除顾客，保留不关联的调配记录'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton(
+                onPressed: () => Navigator.pop(context, 'all'),
+                child: const Text('连同该顾客调配记录一起删除'),
               ),
               TextButton(
-                onPressed: () => Navigator.pop(context, false),
+                onPressed: () => Navigator.pop(context),
                 child: const Text('取消'),
               ),
             ],
@@ -206,9 +226,12 @@ class _CustomersPageState extends State<CustomersPage> {
         ),
       ),
     );
-    if (confirmed != true) return;
+    if (action == null) return;
     try {
-      await widget.database.deleteCustomer(customer.id);
+      await widget.database.deleteCustomer(
+        customer.id,
+        deleteSessions: action == 'all',
+      );
     } catch (error) {
       if (mounted) _message(_errorText(error));
     }
@@ -219,6 +242,167 @@ class _CustomersPageState extends State<CustomersPage> {
       target ?? context,
     ).showSnackBar(SnackBar(content: Text(text)));
   }
+}
+
+class CustomerDetailPage extends StatelessWidget {
+  const CustomerDetailPage({
+    super.key,
+    required this.database,
+    required this.customer,
+  });
+
+  final AppDatabase database;
+  final Customer customer;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      title: Text(customer.name.isEmpty ? customer.phone : customer.name),
+    ),
+    body: StreamBuilder<List<CustomerFormulaHistory>>(
+      stream: database.watchCustomerFormulaHistory(customer.id),
+      builder: (context, snapshot) {
+        final items = snapshot.data ?? const [];
+        if (items.isEmpty) {
+          return const Center(child: Text('该顾客还没有调配记录'));
+        }
+        return ListView.builder(
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            final item = items[index];
+            return ListTile(
+              title: Text(item.formulaName),
+              subtitle: Text(
+                '最后使用 ${_customerDate(item.lastUsedAtUtc)} · ${item.useCount} 次',
+              ),
+              trailing: IconButton(
+                tooltip: '按上次比例调配',
+                icon: const Icon(Icons.play_arrow),
+                onPressed: () => _repeatLast(context, item),
+              ),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => _CustomerFormulaSessionsPage(
+                    database: database,
+                    customerId: customer.id,
+                    history: item,
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    ),
+  );
+
+  Future<void> _repeatLast(
+    BuildContext context,
+    CustomerFormulaHistory history,
+  ) async {
+    var text = '';
+    final weight = await showDialog<int>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('按上次最终比例调配'),
+        content: TextField(
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(
+            labelText: '目标总克重',
+            suffixText: 'g',
+          ),
+          onChanged: (value) => text = value,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () {
+              try {
+                Navigator.pop(context, parseWeight(text));
+              } catch (error) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(_errorText(error))));
+              }
+            },
+            child: const Text('进入调配'),
+          ),
+        ],
+      ),
+    );
+    if (weight == null) return;
+    try {
+      final draft = await database.createDraftFromLastCustomerSession(
+        customerId: customer.id,
+        formulaId: history.formulaId,
+        targetWeight: weight,
+      );
+      if (context.mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) => MixingPage(database: database, draftId: draft.id),
+          ),
+        );
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(_errorText(error))));
+      }
+    }
+  }
+}
+
+class _CustomerFormulaSessionsPage extends StatelessWidget {
+  const _CustomerFormulaSessionsPage({
+    required this.database,
+    required this.customerId,
+    required this.history,
+  });
+
+  final AppDatabase database;
+  final String customerId;
+  final CustomerFormulaHistory history;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: Text(history.formulaName)),
+    body: StreamBuilder<List<MixingSession>>(
+      stream: database.watchCustomerFormulaSessions(
+        customerId,
+        history.formulaId,
+      ),
+      builder: (context, snapshot) => ListView(
+        children: [
+          for (final session in snapshot.data ?? const <MixingSession>[])
+            ListTile(
+              title: Text('${formatFixed(session.finalWeight)}g'),
+              subtitle: Text(_customerDate(session.completedAtUtc)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) =>
+                      MixingSessionPage(database: database, session: session),
+                ),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
+}
+
+String _customerDate(DateTime value) {
+  final local = value.toLocal();
+  return '${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}';
 }
 
 String _errorText(Object error) {
