@@ -137,7 +137,7 @@ Map<String, dynamic> _snapshot(String value) =>
     Map<String, dynamic>.from(jsonDecode(value) as Map);
 
 String _snapshotTitle(Map<String, dynamic> value) {
-  for (final field in const ['name', 'skuCode']) {
+  for (final field in const ['name']) {
     final text = value[field];
     if (text is String && text.trim().isNotEmpty) return text.trim();
   }
@@ -155,6 +155,5 @@ String _entityLabel(String type) => switch (type) {
   'production_types' => '制作类型冲突',
   'ingredient_categories' => '香料分类冲突',
   'ingredients' => '香料冲突',
-  'ingredient_skus' => 'SKU 冲突',
   _ => '资料冲突',
 };

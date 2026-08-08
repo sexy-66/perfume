@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../data/app_database.dart';
 import '../../data/media_store.dart';
 import '../../services/formula_calculator.dart';
+import '../../ui/single_modal.dart';
 import '../settings/sync_conflicts_page.dart';
 
 class HomePage extends StatelessWidget {
@@ -77,7 +78,7 @@ class HomePage extends StatelessWidget {
               ),
               _HomeEntryCard(
                 image: 'assets/home-entry-hexiangzhu.png',
-                title: '香牌 / 合香珠',
+                title: '合香珠 / 香牌',
                 subtitle: '成品目录与制作记录',
                 onTap: () => Navigator.push(
                   context,
@@ -292,7 +293,7 @@ class PlaqueProductionStartPage extends StatelessWidget {
         if (items.isEmpty) {
           return const Center(
             child: Text(
-              '还没有香牌 / 合香珠，请先在更多中建立',
+              '还没有合香珠 / 香牌，请先在更多中建立',
               style: TextStyle(color: Color(0xff636366)),
             ),
           );
@@ -300,7 +301,7 @@ class PlaqueProductionStartPage extends StatelessWidget {
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           children: [
-            Text('香牌 / 合香珠', style: Theme.of(context).textTheme.titleLarge),
+            Text('合香珠 / 香牌', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 4),
             const Text(
               '作为同一种成品统一选择',
@@ -398,7 +399,9 @@ class FormulaSelectionPage extends StatelessWidget {
       ],
     ),
     body: StreamBuilder<List<FormulaSummary>>(
-      stream: database.watchFormulas(),
+      stream: database.watchFormulas(
+        productionTypeId: combinedProductionTypeId,
+      ),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(child: Text('读取失败：${snapshot.error}'));
@@ -461,6 +464,7 @@ class FormulaSelectionPage extends StatelessWidget {
         builder: (_) => FormulaComposerPage(
           database: database,
           initialPlaqueTypeId: plaque.id,
+          initialProductionTypeId: combinedProductionTypeId,
         ),
       ),
     );
@@ -722,6 +726,7 @@ class FormulaComposerPage extends StatefulWidget {
     this.initialItems = const [],
     this.draftId,
     this.initialPlaqueTypeId,
+    this.initialProductionTypeId,
   });
 
   final AppDatabase database;
@@ -730,6 +735,7 @@ class FormulaComposerPage extends StatefulWidget {
   final List<FormulaDraftItemInput> initialItems;
   final String? draftId;
   final String? initialPlaqueTypeId;
+  final String? initialProductionTypeId;
 
   @override
   State<FormulaComposerPage> createState() => _FormulaComposerPageState();
@@ -741,7 +747,7 @@ class _FormulaComposerPageState extends State<FormulaComposerPage> {
   final _notes = TextEditingController();
   var _items = <FormulaDraftItemInput>[];
   List<ProductionType> _types = const [];
-  List<FormulaSkuChoice> _skus = const [];
+  List<FormulaIngredientChoice> _ingredients = const [];
   List<Customer> _customers = const [];
   List<RecommendationPresetSummary> _presets = const [];
   String? _typeId;
@@ -754,6 +760,7 @@ class _FormulaComposerPageState extends State<FormulaComposerPage> {
   Future<FormulaDraft>? _saving;
   var _dirty = false;
   var _leaving = false;
+  var _addItemOpen = false;
   late String _saveStatus;
 
   @override
@@ -781,7 +788,7 @@ class _FormulaComposerPageState extends State<FormulaComposerPage> {
       widget.database.getActiveProductionTypes(
         includeId: widget.sourceVersion?.productionTypeId,
       ),
-      widget.database.getActiveFormulaSkus(),
+      widget.database.getActiveFormulaIngredients(),
       widget.database.watchCustomers().first,
       widget.database.watchRecommendationPresets().first,
     ]);
@@ -791,12 +798,13 @@ class _FormulaComposerPageState extends State<FormulaComposerPage> {
     if (!mounted) return;
     setState(() {
       _types = values[0] as List<ProductionType>;
-      _skus = values[1] as List<FormulaSkuChoice>;
+      _ingredients = values[1] as List<FormulaIngredientChoice>;
       _customers = values[2] as List<Customer>;
       _presets = values[3] as List<RecommendationPresetSummary>;
       _typeId =
           saved?.draft.productionTypeId ??
           widget.sourceVersion?.productionTypeId ??
+          widget.initialProductionTypeId ??
           (_types.isEmpty ? null : _types.first.id);
       if (saved != null) {
         _name.text = saved.draft.formulaName;
@@ -949,7 +957,7 @@ class _FormulaComposerPageState extends State<FormulaComposerPage> {
                       '${formatFixed(_items.fold<int>(0, (sum, item) => sum + item.ratio))}%',
                     ),
                     IconButton(
-                      tooltip: '添加 SKU',
+                      tooltip: '添加香料',
                       onPressed: _addItem,
                       icon: const Icon(Icons.add),
                     ),
@@ -964,7 +972,7 @@ class _FormulaComposerPageState extends State<FormulaComposerPage> {
                     ),
                     child: const Center(
                       child: Text(
-                        '请选择具体 SKU',
+                        '请选择具体香料',
                         style: TextStyle(color: Color(0xff636366)),
                       ),
                     ),
@@ -1067,89 +1075,99 @@ class _FormulaComposerPageState extends State<FormulaComposerPage> {
   }
 
   Future<void> _addItem() async {
-    final choices = _skus
-        .where((choice) => !_items.any((item) => item.skuId == choice.id))
+    if (_addItemOpen) return;
+    _addItemOpen = true;
+    final choices = _ingredients
+        .where(
+          (choice) => !_items.any((item) => item.ingredientId == choice.id),
+        )
         .toList();
-    if (choices.isEmpty) return _message(context, '没有可添加的 SKU');
-    var skuId = choices.first.id;
+    if (choices.isEmpty) {
+      _addItemOpen = false;
+      return _message(context, '没有可添加的香料');
+    }
+    var ingredientId = choices.first.id;
     var ratio = '';
-    final saved = await showDialog<bool>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('添加 SKU'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButtonFormField<String>(
-                initialValue: skuId,
-                isExpanded: true,
-                items: [
-                  for (final choice in choices)
-                    DropdownMenuItem(
-                      value: choice.id,
-                      child: Text(choice.label),
-                    ),
-                ],
-                onChanged: (value) => setState(() => skuId = value!),
+    try {
+      final saved = await showSingleDialog<bool>(
+        context: context,
+        builder: (context) => StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: const Text('添加香料'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  initialValue: ingredientId,
+                  isExpanded: true,
+                  items: [
+                    for (final choice in choices)
+                      DropdownMenuItem(
+                        value: choice.id,
+                        child: Text(choice.label),
+                      ),
+                  ],
+                  onChanged: (value) => setState(() => ingredientId = value!),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  autofocus: true,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: '计划比例',
+                    suffixText: '%',
+                  ),
+                  onChanged: (value) => ratio = value,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('取消'),
               ),
-              const SizedBox(height: 12),
-              TextField(
-                autofocus: true,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: const InputDecoration(
-                  labelText: '计划比例',
-                  suffixText: '%',
-                ),
-                onChanged: (value) => ratio = value,
+              FilledButton(
+                onPressed: () {
+                  try {
+                    final choice = choices.singleWhere(
+                      (item) => item.id == ingredientId,
+                    );
+                    final value = parseRatio(ratio);
+                    _items.add(
+                      FormulaDraftItemInput(
+                        ingredientId: choice.id,
+                        categoryName: choice.categoryName,
+                        ingredientName: choice.ingredientName,
+                        ratio: value,
+                        sortOrder: _items.length,
+                      ),
+                    );
+                    Navigator.pop(context, true);
+                  } catch (error) {
+                    _message(context, _errorText(error));
+                  }
+                },
+                child: const Text('添加'),
               ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () {
-                try {
-                  final choice = choices.singleWhere(
-                    (item) => item.id == skuId,
-                  );
-                  final value = parseRatio(ratio);
-                  _items.add(
-                    FormulaDraftItemInput(
-                      skuId: choice.id,
-                      categoryName: choice.categoryName,
-                      ingredientName: choice.ingredientName,
-                      skuCode: choice.skuCode,
-                      ratio: value,
-                      sortOrder: _items.length,
-                    ),
-                  );
-                  Navigator.pop(context, true);
-                } catch (error) {
-                  _message(context, _errorText(error));
-                }
-              },
-              child: const Text('添加'),
-            ),
-          ],
         ),
-      ),
-    );
-    if (saved == true) {
-      setState(() {});
-      _scheduleSave();
+      );
+      if (saved == true) {
+        setState(() {});
+        _scheduleSave();
+      }
+    } finally {
+      _addItemOpen = false;
     }
   }
 
   Future<void> _createCustomer() async {
     var name = '';
     var phone = '';
-    final customer = await showDialog<Customer>(
+    final customer = await showSingleDialog<Customer>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('建立顾客'),
@@ -1220,7 +1238,7 @@ class _FormulaComposerPageState extends State<FormulaComposerPage> {
   }
 
   Future<void> _discardDraft() async {
-    final confirmed = await showModalBottomSheet<bool>(
+    final confirmed = await showSingleModalBottomSheet<bool>(
       context: context,
       builder: (context) => SafeArea(
         child: Padding(
@@ -1305,10 +1323,9 @@ class _FormulaComposerPageState extends State<FormulaComposerPage> {
     _items = [
       for (var i = 0; i < _items.length; i++)
         FormulaDraftItemInput(
-          skuId: _items[i].skuId,
+          ingredientId: _items[i].ingredientId,
           categoryName: _items[i].categoryName,
           ingredientName: _items[i].ingredientName,
-          skuCode: _items[i].skuCode,
           ratio: _items[i].ratio,
           sortOrder: i,
         ),
@@ -1333,6 +1350,7 @@ class _MixingPageState extends State<MixingPage> {
   final _pendingWeights = <int, String>{};
   final _saveTimers = <int, Timer>{};
   var _warningOpen = false;
+  var _completing = false;
 
   @override
   void dispose() {
@@ -1496,7 +1514,10 @@ class _MixingPageState extends State<MixingPage> {
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-        child: FilledButton(onPressed: _complete, child: const Text('完成调配')),
+        child: FilledButton(
+          onPressed: _completing ? null : _complete,
+          child: const Text('完成调配'),
+        ),
       ),
     ),
   );
@@ -1544,6 +1565,8 @@ class _MixingPageState extends State<MixingPage> {
   }
 
   Future<void> _complete() async {
+    if (_completing) return;
+    setState(() => _completing = true);
     try {
       await _flushWeights();
       if (!await _handleWarnings()) return;
@@ -1558,55 +1581,60 @@ class _MixingPageState extends State<MixingPage> {
       );
     } catch (error) {
       if (mounted) _message(context, _errorText(error));
+    } finally {
+      if (mounted) setState(() => _completing = false);
     }
   }
 
   Future<bool> _handleWarnings() async {
     if (_warningOpen) return true;
-    final warnings = await widget.database.getDraftRangeWarnings(
-      widget.draftId,
-    );
-    if (!mounted || warnings.isEmpty) return true;
     _warningOpen = true;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('比例超出推荐区间'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (final warning in warnings)
-                Text(
-                  '${warning.label}：${formatFixed(warning.actual)}%（推荐 ${formatFixed(warning.minimum)}%–${formatFixed(warning.maximum)}%）',
-                ),
-            ],
+    try {
+      final warnings = await widget.database.getDraftRangeWarnings(
+        widget.draftId,
+      );
+      if (!mounted || warnings.isEmpty) return true;
+      final confirmed = await showSingleDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('比例超出推荐区间'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final warning in warnings)
+                  Text(
+                    '${warning.label}：${formatFixed(warning.actual)}%（推荐 ${formatFixed(warning.minimum)}%–${formatFixed(warning.maximum)}%）',
+                  ),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('返回修改'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('继续使用'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('返回修改'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('继续使用'),
-          ),
-        ],
-      ),
-    );
-    _warningOpen = false;
-    if (confirmed != true) return false;
-    await widget.database.confirmDraftWarnings(
-      widget.draftId,
-      warnings.map((item) => item.key),
-    );
-    return true;
+      );
+      if (confirmed != true) return false;
+      await widget.database.confirmDraftWarnings(
+        widget.draftId,
+        warnings.map((item) => item.key),
+      );
+      return true;
+    } finally {
+      _warningOpen = false;
+    }
   }
 
   Future<void> _deleteDraft() async {
-    final confirmed = await showModalBottomSheet<bool>(
+    final confirmed = await showSingleModalBottomSheet<bool>(
       context: context,
       builder: (context) => SafeArea(
         child: Padding(
@@ -1843,7 +1871,7 @@ class FormulaDetailPage extends StatelessWidget {
   Future<void> _edit(BuildContext context) async {
     var name = summary.formula.name;
     var notes = summary.formula.notes ?? '';
-    final saved = await showDialog<bool>(
+    final saved = await showSingleDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('修改香方'),
@@ -2031,11 +2059,7 @@ class MixingSessionPage extends StatelessWidget {
             for (final item in items)
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                title: Text(
-                  item.skuCode == null
-                      ? item.ingredientName
-                      : '${item.ingredientName} · ${item.skuCode}',
-                ),
+                title: Text(item.ingredientName),
                 subtitle: Text(item.isManual ? '手工填写' : '系统补全'),
                 trailing: Text(
                   '${formatFixed(item.finalWeight)}g\n${formatFixed(item.finalRatio)}%',
@@ -2061,135 +2085,84 @@ class MixingSessionPage extends StatelessWidget {
   );
 
   Future<void> _edit(BuildContext context) async {
-    final items = await database.watchMixingItems(session.id).first;
-    final texts = [for (final item in items) formatFixed(item.finalWeight)];
-    if (!context.mounted) return;
-    final saved = await showDialog<bool>(
+    await runSingleModalAction<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('修改最终克重'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (var i = 0; i < items.length; i++) ...[
-                if (i > 0) const SizedBox(height: 12),
-                TextFormField(
-                  initialValue: texts[i],
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: InputDecoration(
-                    labelText: items[i].ingredientName,
-                    suffixText: 'g',
-                  ),
-                  onChanged: (value) => texts[i] = value,
-                ),
-              ],
+      action: 'mixing-session-editor',
+      body: () async {
+        final items = await database.watchMixingItems(session.id).first;
+        final texts = [for (final item in items) formatFixed(item.finalWeight)];
+        if (!context.mounted) return;
+        final saved = await showSingleDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('修改最终克重'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (var i = 0; i < items.length; i++) ...[
+                    if (i > 0) const SizedBox(height: 12),
+                    TextFormField(
+                      initialValue: texts[i],
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: items[i].ingredientName,
+                        suffixText: 'g',
+                      ),
+                      onChanged: (value) => texts[i] = value,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('取消'),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  try {
+                    await database.reviseMixingSession(session.id, [
+                      for (final text in texts) parseWeight(text),
+                    ]);
+                    if (context.mounted) Navigator.pop(context, true);
+                  } catch (error) {
+                    if (context.mounted) _message(context, _errorText(error));
+                  }
+                },
+                child: const Text('保存修改'),
+              ),
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              try {
-                await database.reviseMixingSession(session.id, [
-                  for (final text in texts) parseWeight(text),
-                ]);
-                if (context.mounted) Navigator.pop(context, true);
-              } catch (error) {
-                if (context.mounted) _message(context, _errorText(error));
-              }
-            },
-            child: const Text('保存修改'),
-          ),
-        ],
-      ),
+        );
+        if (saved == true && context.mounted) {
+          _message(context, '已保存修改');
+        }
+      },
     );
-    if (saved == true && context.mounted) _message(context, '已保存修改');
   }
 
   Future<void> _copyToCustomer(BuildContext context) async {
-    final customers = await database.watchCustomers().first;
-    if (!context.mounted) return;
-    if (customers.isEmpty) return _message(context, '请先建立顾客');
-    var customerId = customers.first.id;
-    final selected = await showDialog<String>(
+    await runSingleModalAction<void>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('复制调配记录给顾客'),
-          content: DropdownButtonFormField<String>(
-            initialValue: customerId,
-            isExpanded: true,
-            items: [
-              for (final customer in customers)
-                DropdownMenuItem(
-                  value: customer.id,
-                  child: Text(
-                    customer.name.isEmpty ? customer.phone : customer.name,
-                  ),
-                ),
-            ],
-            onChanged: (value) => setState(() => customerId = value!),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, customerId),
-              child: const Text('复制'),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (selected == null) return;
-    await database.copyMixingSessionToCustomer(session.id, selected);
-    if (context.mounted) _message(context, '已复制');
-  }
-}
-
-Future<(int, String?)?> _askMixingOptions(
-  BuildContext context,
-  AppDatabase database,
-) async {
-  final customers = await database.watchCustomers().first;
-  if (!context.mounted) return null;
-  var weight = '';
-  String? customerId;
-  return showDialog<(int, String?)>(
-    context: context,
-    builder: (context) => StatefulBuilder(
-      builder: (context, setState) => AlertDialog(
-        title: const Text('再次调配'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                autofocus: true,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: const InputDecoration(
-                  labelText: '目标总克重',
-                  suffixText: 'g',
-                ),
-                onChanged: (value) => weight = value,
-              ),
-              DropdownButtonFormField<String?>(
+      action: 'mixing-session-copy-customer',
+      body: () async {
+        final customers = await database.watchCustomers().first;
+        if (!context.mounted) return;
+        if (customers.isEmpty) return _message(context, '请先建立顾客');
+        var customerId = customers.first.id;
+        final selected = await showSingleDialog<String>(
+          context: context,
+          builder: (context) => StatefulBuilder(
+            builder: (context, setState) => AlertDialog(
+              title: const Text('复制调配记录给顾客'),
+              content: DropdownButtonFormField<String>(
                 initialValue: customerId,
                 isExpanded: true,
-                decoration: const InputDecoration(labelText: '顾客（可选）'),
                 items: [
-                  const DropdownMenuItem(value: null, child: Text('不关联顾客')),
                   for (final customer in customers)
                     DropdownMenuItem(
                       value: customer.id,
@@ -2198,29 +2171,102 @@ Future<(int, String?)?> _askMixingOptions(
                       ),
                     ),
                 ],
-                onChanged: (value) => setState(() => customerId = value),
+                onChanged: (value) => setState(() => customerId = value!),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('取消'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, customerId),
+                  child: const Text('复制'),
+                ),
+              ],
+            ),
+          ),
+        );
+        if (selected == null) return;
+        await database.copyMixingSessionToCustomer(session.id, selected);
+        if (context.mounted) _message(context, '已复制');
+      },
+    );
+  }
+}
+
+Future<(int, String?)?> _askMixingOptions(
+  BuildContext context,
+  AppDatabase database,
+) async {
+  return runSingleModalAction<(int, String?)>(
+    context: context,
+    action: 'mixing-options',
+    body: () async {
+      final customers = await database.watchCustomers().first;
+      if (!context.mounted) return null;
+      var weight = '';
+      String? customerId;
+      return showSingleDialog<(int, String?)>(
+        context: context,
+        builder: (context) => StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: const Text('再次调配'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    autofocus: true,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: '目标总克重',
+                      suffixText: 'g',
+                    ),
+                    onChanged: (value) => weight = value,
+                  ),
+                  DropdownButtonFormField<String?>(
+                    initialValue: customerId,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: '顾客（可选）'),
+                    items: [
+                      const DropdownMenuItem(value: null, child: Text('不关联顾客')),
+                      for (final customer in customers)
+                        DropdownMenuItem(
+                          value: customer.id,
+                          child: Text(
+                            customer.name.isEmpty
+                                ? customer.phone
+                                : customer.name,
+                          ),
+                        ),
+                    ],
+                    onChanged: (value) => setState(() => customerId = value),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('取消'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  try {
+                    Navigator.pop(context, (parseWeight(weight), customerId));
+                  } catch (error) {
+                    _message(context, _errorText(error));
+                  }
+                },
+                child: const Text('进入调配'),
               ),
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () {
-              try {
-                Navigator.pop(context, (parseWeight(weight), customerId));
-              } catch (error) {
-                _message(context, _errorText(error));
-              }
-            },
-            child: const Text('进入调配'),
-          ),
-        ],
-      ),
-    ),
+      );
+    },
   );
 }
 

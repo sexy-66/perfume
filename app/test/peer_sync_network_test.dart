@@ -13,7 +13,7 @@ import 'package:xiangfangbu/services/peer_identity_store.dart';
 import 'package:xiangfangbu/services/peer_sync_runtime.dart';
 
 void main() {
-  test('pairs two runtimes and replicates a SKU', () async {
+  test('pairs two runtimes and replicates ingredients with images', () async {
     final serverDatabase = AppDatabase(NativeDatabase.memory());
     final clientDatabase = AppDatabase(NativeDatabase.memory());
     final serverDirectory = await Directory.systemTemp.createTemp(
@@ -64,10 +64,6 @@ void main() {
     await client.start();
 
     final category = await clientDatabase.createIngredientCategory('木类');
-    final ingredient = await clientDatabase.createIngredient(
-      name: '沉香',
-      categoryId: category.id,
-    );
     final firstImage = Uint8List.fromList(List<int>.generate(70000, (i) => i));
     final firstHash = await clientMedia.putJpeg(firstImage);
     final batchImage2 = Uint8List.fromList(
@@ -78,19 +74,19 @@ void main() {
       List<int>.generate(90000, (i) => 255 - (i % 256)),
     );
     final batchHash3 = await clientMedia.putJpeg(batchImage3);
-    final sku = await clientDatabase.createIngredientSku(
-      ingredientId: ingredient.id,
-      skuCode: 'AG-01',
+    final ingredient = await clientDatabase.createIngredient(
+      name: '沉香',
+      categoryId: category.id,
       imageHash: firstHash,
     );
-    await clientDatabase.createIngredientSku(
-      ingredientId: ingredient.id,
-      skuCode: 'AG-02',
+    await clientDatabase.createIngredient(
+      name: '檀香',
+      categoryId: category.id,
       imageHash: batchHash2,
     );
-    await clientDatabase.createIngredientSku(
-      ingredientId: ingredient.id,
-      skuCode: 'AG-03',
+    await clientDatabase.createIngredient(
+      name: '乳香',
+      categoryId: category.id,
       imageHash: batchHash3,
     );
     final peer = PeerDiscoveryPeer(
@@ -108,9 +104,9 @@ void main() {
     await client.pair(peer, server.pairingCode!.value);
 
     final synced = await (serverDatabase.select(
-      serverDatabase.ingredientSkus,
-    )..where((row) => row.id.equals(sku.id))).getSingle();
-    expect(synced.skuCode, 'AG-01');
+      serverDatabase.ingredients,
+    )..where((row) => row.id.equals(ingredient.id))).getSingle();
+    expect(synced.name, '沉香');
     expect(await serverMedia.fileFor(firstHash).readAsBytes(), firstImage);
     expect(await serverMedia.fileFor(batchHash2).readAsBytes(), batchImage2);
     expect(await serverMedia.fileFor(batchHash3).readAsBytes(), batchImage3);
@@ -138,12 +134,12 @@ void main() {
       List<int>.generate(50000, (i) => 255 - (i % 256)),
     );
     final secondHash = await serverMedia.putJpeg(secondImage);
-    await serverDatabase.updateIngredientSku(
+    await serverDatabase.updateIngredient(
       synced.id,
-      skuCode: synced.skuCode,
+      name: synced.name,
+      categoryId: synced.categoryId,
       imageHash: secondHash,
-      supplier: synced.supplier,
-      origin: synced.origin,
+      alias: synced.alias,
       notes: synced.notes,
     );
     await client.syncAll();

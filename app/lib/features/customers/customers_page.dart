@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/app_database.dart';
+import '../../ui/single_modal.dart';
 import '../../services/formula_calculator.dart';
 import '../formulas/formulas_page.dart';
 
@@ -122,7 +123,7 @@ class _CustomersPageState extends State<CustomersPage> {
     var name = customer?.name ?? '';
     var phone = customer?.phone ?? '';
     var notes = customer?.notes ?? '';
-    final saved = await showDialog<bool>(
+    final saved = await showSingleDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(customer == null ? '添加顾客' : '编辑顾客'),
@@ -192,7 +193,7 @@ class _CustomersPageState extends State<CustomersPage> {
   }
 
   Future<void> _delete(Customer customer) async {
-    final action = await showModalBottomSheet<String>(
+    final action = await showSingleModalBottomSheet<String>(
       context: context,
       builder: (context) => SafeArea(
         child: Padding(
@@ -302,7 +303,7 @@ class CustomerDetailPage extends StatelessWidget {
     CustomerFormulaHistory history,
   ) async {
     var text = '';
-    final weight = await showDialog<int>(
+    final weight = await showSingleDialog<int>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('按上次最终比例调配'),

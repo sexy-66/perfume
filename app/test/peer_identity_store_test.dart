@@ -72,4 +72,36 @@ void main() {
 
     expect((await store.all()).keys, containsAll(['device-b', 'device-c']));
   });
+
+  test('database identity replacement resets private pairing state', () async {
+    final directory = await Directory.systemTemp.createTemp('xiang-reset-');
+    addTearDown(() => directory.delete(recursive: true));
+    final identityStore = PeerIdentityStore(
+      File('${directory.path}/identity.json'),
+    );
+    final trustStore = PeerTrustStore(File('${directory.path}/trust.json'));
+    final original = await identityStore.loadOrCreate(deviceId: 'device-a');
+    await trustStore.save(
+      PeerTrust(
+        deviceId: 'device-b',
+        deviceName: '设备 B',
+        token: PeerTrustStore.issueToken(),
+        identityPublicKey: List<int>.filled(32, 1),
+      ),
+    );
+
+    expect(await identityStore.resetIfDeviceChanged('device-b'), isTrue);
+    await trustStore.reset();
+    final replacement = await identityStore.loadOrCreate(deviceId: 'device-b');
+    final originalKey =
+        (await original.identity.signingKeyPair.extractPublicKey())
+            as SimplePublicKey;
+    final replacementKey =
+        (await replacement.identity.signingKeyPair.extractPublicKey())
+            as SimplePublicKey;
+
+    expect(replacement.identity.deviceId, 'device-b');
+    expect(await trustStore.all(), isEmpty);
+    expect(replacementKey.bytes, isNot(originalKey.bytes));
+  });
 }

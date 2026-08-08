@@ -27,9 +27,15 @@ Future<PeerSyncRuntime> _createSyncRuntime(
   MediaStore mediaStore,
 ) async {
   final device = await database.localDevice();
-  final identitySettings = await (await PeerIdentityStore.defaults())
-      .loadOrCreate(deviceId: device.id, deviceName: await _deviceName());
+  final identityStore = await PeerIdentityStore.defaults();
   final trustStore = await PeerTrustStore.defaults();
+  if (await identityStore.resetIfDeviceChanged(device.id)) {
+    await trustStore.reset();
+  }
+  final identitySettings = await identityStore.loadOrCreate(
+    deviceId: device.id,
+    deviceName: await _deviceName(),
+  );
   return PeerSyncRuntime(
     identity: identitySettings.identity,
     groupId: identitySettings.groupId,

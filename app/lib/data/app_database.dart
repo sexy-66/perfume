@@ -45,16 +45,8 @@ class IngredientCategories extends Table with SyncColumns {
 class Ingredients extends Table with SyncColumns {
   TextColumn get categoryId => text().references(IngredientCategories, #id)();
   TextColumn get name => text().withLength(min: 1, max: 100)();
-  TextColumn get alias => text().nullable()();
-  BoolColumn get isInactive => boolean().withDefault(const Constant(false))();
-}
-
-class IngredientSkus extends Table with SyncColumns {
-  TextColumn get ingredientId => text().references(Ingredients, #id)();
-  TextColumn get skuCode => text().nullable()();
   TextColumn get imageHash => text().nullable()();
-  TextColumn get supplier => text().nullable()();
-  TextColumn get origin => text().nullable()();
+  TextColumn get alias => text().nullable()();
   TextColumn get notes => text().nullable()();
   BoolColumn get isInactive => boolean().withDefault(const Constant(false))();
 }
@@ -90,15 +82,6 @@ class IngredientRatioRanges extends RatioRangeTable {
   ];
 }
 
-class SkuRatioOverrides extends RatioRangeTable {
-  TextColumn get skuId => text().references(IngredientSkus, #id)();
-
-  @override
-  List<Set<Column>> get uniqueKeys => [
-    {skuId, productionTypeId},
-  ];
-}
-
 class RecommendationPresets extends Table with SyncColumns {
   TextColumn get productionTypeId => text().references(ProductionTypes, #id)();
   TextColumn get name => text().withLength(min: 1, max: 100)();
@@ -122,14 +105,14 @@ class RecommendationGroups extends Table with SyncColumns {
 
 class RecommendationItems extends Table with SyncColumns {
   TextColumn get groupId => text().references(RecommendationGroups, #id)();
-  TextColumn get skuId => text().references(IngredientSkus, #id)();
+  TextColumn get ingredientId => text().references(Ingredients, #id)();
   IntColumn get ratio => integer().customConstraint(
     'NOT NULL CHECK (ratio BETWEEN 0 AND 10000)',
   )();
 
   @override
   List<Set<Column>> get uniqueKeys => [
-    {groupId, skuId},
+    {groupId, ingredientId},
   ];
 }
 
@@ -222,10 +205,10 @@ class FormulaVersions extends Table with SyncColumns {
 
 class FormulaItems extends Table with SyncColumns {
   TextColumn get versionId => text().references(FormulaVersions, #id)();
+  TextColumn get ingredientId =>
+      text().nullable().references(Ingredients, #id)();
   TextColumn get categoryName => text()();
   TextColumn get ingredientName => text()();
-  TextColumn get skuCode => text().nullable()();
-  TextColumn get skuId => text().nullable()();
   IntColumn get ratio => integer()();
   IntColumn get sortOrder => integer()();
 
@@ -251,10 +234,10 @@ class MixingSessions extends Table with SyncColumns {
 
 class MixingItems extends Table with SyncColumns {
   TextColumn get sessionId => text().references(MixingSessions, #id)();
+  TextColumn get ingredientId =>
+      text().nullable().references(Ingredients, #id)();
   TextColumn get categoryName => text()();
   TextColumn get ingredientName => text()();
-  TextColumn get skuCode => text().nullable()();
-  TextColumn get skuId => text().nullable()();
   IntColumn get plannedWeight => integer()();
   IntColumn get finalWeight => integer()();
   BoolColumn get isManual => boolean()();
@@ -371,18 +354,13 @@ class QuarantinedSyncOperations extends Table {
 }
 
 class IngredientSummary {
-  const IngredientSummary(
-    this.ingredient,
-    this.categoryName,
-    this.firstSkuImageHash,
-  );
+  const IngredientSummary(this.ingredient, this.categoryName);
 
   final Ingredient ingredient;
   final String categoryName;
-  final String? firstSkuImageHash;
 }
 
-enum RatioRangeTarget { category, ingredient, sku }
+enum RatioRangeTarget { category, ingredient }
 
 class RatioRangeSetting {
   const RatioRangeSetting({
@@ -428,21 +406,19 @@ class RecommendationGroupSummary {
 class RecommendationItemSummary {
   const RecommendationItemSummary({
     required this.id,
-    required this.skuId,
+    required this.ingredientId,
     required this.ingredientName,
-    required this.skuCode,
     required this.ratio,
   });
 
   final String id;
-  final String skuId;
+  final String ingredientId;
   final String ingredientName;
-  final String? skuCode;
   final int ratio;
 }
 
-class SkuChoice {
-  const SkuChoice(this.id, this.label);
+class IngredientChoice {
+  const IngredientChoice(this.id, this.label);
 
   final String id;
   final String label;
@@ -460,11 +436,10 @@ enum TrashEntityType {
   productionType('production_types', '制作类型'),
   ingredientCategory('ingredient_categories', '香料分类'),
   ingredient('ingredients', '香料'),
-  ingredientSku('ingredient_skus', 'SKU'),
   recommendationPreset('recommendation_presets', '推荐配置'),
   formula('formulas', '香方'),
   customer('customers', '顾客'),
-  plaqueType('plaque_types', '香牌'),
+  plaqueType('plaque_types', '合香珠 / 香牌'),
   assetCategory('asset_categories', '资产分类'),
   assetStatus('asset_statuses', '资产状态'),
   asset('assets', '资产');
@@ -494,10 +469,8 @@ class TrashEntry {
     ProductionTypes,
     IngredientCategories,
     Ingredients,
-    IngredientSkus,
     CategoryRatioRanges,
     IngredientRatioRanges,
-    SkuRatioOverrides,
     RecommendationPresets,
     RecommendationGroups,
     RecommendationItems,
@@ -539,60 +512,21 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) => m.createAll(),
     onUpgrade: (m, from, to) async {
-      if (from == 1) {
-        for (final table in <TableInfo<Table, dynamic>>[
-          ingredientCategories,
-          ingredients,
-          ingredientSkus,
-          categoryRatioRanges,
-          ingredientRatioRanges,
-          skuRatioOverrides,
-          recommendationPresets,
-          recommendationGroups,
-          recommendationItems,
-          customers,
-          plaqueTypes,
-          assetCategories,
-          assetStatuses,
-          assets,
-        ]) {
-          await m.createTable(table);
-        }
-      }
-      if (from <= 2) {
-        for (final table in <TableInfo<Table, dynamic>>[
-          formulas,
-          formulaDrafts,
-          formulaVersions,
-          formulaItems,
-          mixingSessions,
-          mixingItems,
-          mixingRevisions,
-        ]) {
-          await m.createTable(table);
-        }
-      }
-      if (from <= 3) await m.createTable(syncConflicts);
-      if (from <= 4) {
-        await m.createTable(peerDevices);
-        await m.createTable(quarantinedSyncOperations);
-      }
-      if (from <= 5) {
-        if (from == 5) {
-          await m.addColumn(peerDevices, peerDevices.lastSyncAtUtc);
-        }
-        await m.createTable(syncCursors);
-        await m.createTable(purgedSyncEntities);
-      }
-      if (from < 1 || to != 6) {
+      if (from < 1 || from > 6 || to != 7) {
         throw StateError('缺少数据库迁移：$from → $to');
       }
+      await customStatement('PRAGMA foreign_keys = OFF');
+      for (final table in _legacyTableNames) {
+        await customStatement('DROP TABLE IF EXISTS $table');
+      }
+      await m.createAll();
+      await customStatement('PRAGMA foreign_keys = ON');
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -743,11 +677,11 @@ class AppDatabase extends _$AppDatabase {
         for (final hash in imageCandidates) {
           final referenced = await customSelect(
             '''SELECT 1 WHERE
-                 EXISTS (SELECT 1 FROM ingredient_skus WHERE image_hash = ?)
+                 EXISTS (SELECT 1 FROM ingredients WHERE image_hash = ?)
               OR EXISTS (SELECT 1 FROM plaque_types WHERE image_hash = ?)
               OR EXISTS (SELECT 1 FROM assets WHERE image_hash = ?)''',
             variables: [Variable(hash), Variable(hash), Variable(hash)],
-            readsFrom: {ingredientSkus, plaqueTypes, assets},
+            readsFrom: {ingredients, plaqueTypes, assets},
           ).getSingleOrNull();
           if (referenced == null) orphaned.add(hash);
         }
@@ -765,7 +699,7 @@ class AppDatabase extends _$AppDatabase {
       null;
 
   bool _imageColumn(TrashEntityType type) =>
-      type == TrashEntityType.ingredientSku ||
+      type == TrashEntityType.ingredient ||
       type == TrashEntityType.plaqueType ||
       type == TrashEntityType.asset;
 
@@ -781,9 +715,7 @@ class AppDatabase extends _$AppDatabase {
       TrashEntityType.assetStatus =>
         "name = '已删除', sort_order = 0, is_inactive = 1",
       TrashEntityType.ingredient =>
-        "name = '已删除', alias = NULL, is_inactive = 1",
-      TrashEntityType.ingredientSku =>
-        'sku_code = NULL, image_hash = NULL, supplier = NULL, origin = NULL, notes = NULL, is_inactive = 1',
+        "name = '已删除', image_hash = NULL, alias = NULL, notes = NULL, is_inactive = 1",
       TrashEntityType.recommendationPreset =>
         "name = '已删除', notes = NULL, sort_order = 0, is_inactive = 1",
       TrashEntityType.formula =>
@@ -1128,10 +1060,8 @@ class AppDatabase extends _$AppDatabase {
         'production_types' => productionTypes,
         'ingredient_categories' => ingredientCategories,
         'ingredients' => ingredients,
-        'ingredient_skus' => ingredientSkus,
         'category_ratio_ranges' => categoryRatioRanges,
         'ingredient_ratio_ranges' => ingredientRatioRanges,
-        'sku_ratio_overrides' => skuRatioOverrides,
         'recommendation_presets' => recommendationPresets,
         'recommendation_groups' => recommendationGroups,
         'recommendation_items' => recommendationItems,
@@ -1154,7 +1084,7 @@ class AppDatabase extends _$AppDatabase {
 
   Future<Set<String>> referencedImageHashes() async {
     final rows = await customSelect(
-      '''SELECT image_hash FROM ingredient_skus
+      '''SELECT image_hash FROM ingredients
           WHERE image_hash IS NOT NULL AND is_deleted = 0
          UNION
          SELECT image_hash FROM plaque_types
@@ -1162,7 +1092,7 @@ class AppDatabase extends _$AppDatabase {
          UNION
          SELECT image_hash FROM assets
           WHERE image_hash IS NOT NULL AND is_deleted = 0''',
-      readsFrom: {ingredientSkus, plaqueTypes, assets},
+      readsFrom: {ingredients, plaqueTypes, assets},
     ).get();
     return {for (final row in rows) row.read<String>('image_hash')};
   }
@@ -1258,8 +1188,6 @@ class AppDatabase extends _$AppDatabase {
         await _applyRemoteIngredientCategory(operation, payload);
       case 'ingredients':
         await _applyRemoteIngredient(operation, payload);
-      case 'ingredient_skus':
-        await _applyRemoteSku(operation, payload);
       case 'sync_conflicts':
         await _applyRemoteSyncConflict(payload);
       case 'devices':
@@ -1580,9 +1508,8 @@ class AppDatabase extends _$AppDatabase {
         '''SELECT 1
              WHERE EXISTS (SELECT 1 FROM category_ratio_ranges WHERE production_type_id = ? AND is_deleted = 0)
                 OR EXISTS (SELECT 1 FROM ingredient_ratio_ranges WHERE production_type_id = ? AND is_deleted = 0)
-                OR EXISTS (SELECT 1 FROM sku_ratio_overrides WHERE production_type_id = ? AND is_deleted = 0)
                 OR EXISTS (SELECT 1 FROM recommendation_presets WHERE production_type_id = ? AND is_deleted = 0)''',
-        variables: List.generate(4, (_) => Variable(id)),
+        variables: List.generate(3, (_) => Variable(id)),
       ).getSingleOrNull();
       if (inUse != null) throw StateError('请先删除该制作类型下的推荐区间和推荐配置');
       final change = await _recordOperation(
@@ -1777,11 +1704,6 @@ class AppDatabase extends _$AppDatabase {
               ingredientCategories,
               ingredientCategories.id.equalsExp(ingredients.categoryId),
             ),
-            leftOuterJoin(
-              ingredientSkus,
-              ingredientSkus.ingredientId.equalsExp(ingredients.id) &
-                  ingredientSkus.isDeleted.equals(false),
-            ),
           ])
           ..where(
             ingredients.isDeleted.equals(false) &
@@ -1791,8 +1713,6 @@ class AppDatabase extends _$AppDatabase {
             OrderingTerm.asc(ingredientCategories.sortOrder),
             OrderingTerm.asc(ingredientCategories.name),
             OrderingTerm.asc(ingredients.name),
-            OrderingTerm.asc(ingredientSkus.skuCode),
-            OrderingTerm.asc(ingredientSkus.supplier),
           ]);
     if (!includeInactive) query.where(ingredients.isInactive.equals(false));
     if (categoryId != null) {
@@ -1802,9 +1722,7 @@ class AppDatabase extends _$AppDatabase {
       query.where(
         ingredients.name.contains(normalized) |
             ingredients.alias.contains(normalized) |
-            ingredientCategories.name.contains(normalized) |
-            ingredientSkus.skuCode.contains(normalized) |
-            ingredientSkus.supplier.contains(normalized),
+            ingredientCategories.name.contains(normalized),
       );
     }
     return query.watch().map((rows) {
@@ -1816,7 +1734,6 @@ class AppDatabase extends _$AppDatabase {
           () => IngredientSummary(
             ingredient,
             row.readTable(ingredientCategories).name,
-            row.readTableOrNull(ingredientSkus)?.imageHash,
           ),
         );
       }
@@ -1827,17 +1744,23 @@ class AppDatabase extends _$AppDatabase {
   Future<Ingredient> createIngredient({
     required String name,
     required String categoryId,
+    String? imageHash,
     String? alias,
+    String? notes,
   }) async {
     final normalized = _requiredName(name, '香料名称不能为空');
+    final normalizedImageHash = _optionalImageHash(imageHash);
     final normalizedAlias = _optionalText(alias);
+    final normalizedNotes = _optionalText(notes);
     return transaction(() async {
       await _activeCategory(categoryId);
       final id = _newId();
       final payload = {
         'id': id,
         'name': normalized,
+        'imageHash': normalizedImageHash,
         'alias': normalizedAlias,
+        'notes': normalizedNotes,
         'categoryId': categoryId,
       };
       final change = await _recordOperation(
@@ -1854,7 +1777,9 @@ class AppDatabase extends _$AppDatabase {
           updatedAtUtc: change.now,
           categoryId: categoryId,
           name: normalized,
+          imageHash: Value(normalizedImageHash),
           alias: Value(normalizedAlias),
+          notes: Value(normalizedNotes),
         ),
       );
       return (select(
@@ -1867,11 +1792,15 @@ class AppDatabase extends _$AppDatabase {
     String id, {
     required String name,
     required String categoryId,
+    required String? imageHash,
     required String? alias,
+    required String? notes,
     bool? isInactive,
   }) async {
     final normalized = _requiredName(name, '香料名称不能为空');
+    final normalizedImageHash = _optionalImageHash(imageHash);
     final normalizedAlias = _optionalText(alias);
+    final normalizedNotes = _optionalText(notes);
     await transaction(() async {
       final current = await (select(
         ingredients,
@@ -1884,7 +1813,9 @@ class AppDatabase extends _$AppDatabase {
       final payload = {
         'id': id,
         'name': normalized,
+        'imageHash': normalizedImageHash,
         'alias': normalizedAlias,
+        'notes': normalizedNotes,
         'categoryId': categoryId,
         'isInactive': isInactive ?? current.isInactive,
       };
@@ -1902,7 +1833,9 @@ class AppDatabase extends _$AppDatabase {
           updatedAtUtc: Value(change.now),
           categoryId: Value(categoryId),
           name: Value(normalized),
+          imageHash: Value(normalizedImageHash),
           alias: Value(normalizedAlias),
+          notes: Value(normalizedNotes),
           isInactive: Value(isInactive ?? current.isInactive),
         ),
       );
@@ -1915,20 +1848,20 @@ class AppDatabase extends _$AppDatabase {
         ingredients,
       )..where((row) => row.id.equals(id))).getSingle();
       if (current.isDeleted) return;
-      final sku =
-          await (select(ingredientSkus)..where(
-                (row) =>
-                    row.ingredientId.equals(id) & row.isDeleted.equals(false),
-              ))
-              .getSingleOrNull();
-      if (sku != null) throw StateError('请先删除该香料下的 SKU');
-      final range =
-          await (select(ingredientRatioRanges)..where(
-                (row) =>
-                    row.ingredientId.equals(id) & row.isDeleted.equals(false),
-              ))
-              .getSingleOrNull();
-      if (range != null) throw StateError('请先清除该香料的推荐区间');
+      final inUse = await customSelect(
+        '''SELECT 1
+             WHERE EXISTS (SELECT 1 FROM ingredient_ratio_ranges
+                            WHERE ingredient_id = ? AND is_deleted = 0)
+                OR EXISTS (
+                  SELECT 1 FROM recommendation_items ri
+                  JOIN recommendation_groups rg ON rg.id = ri.group_id
+                  JOIN recommendation_presets rp ON rp.id = rg.preset_id
+                   WHERE ri.ingredient_id = ? AND ri.is_deleted = 0
+                     AND rg.is_deleted = 0 AND rp.is_deleted = 0
+                )''',
+        variables: [Variable(id), Variable(id)],
+      ).getSingleOrNull();
+      if (inUse != null) throw StateError('请先清除该香料的推荐区间和推荐配置');
       final change = await _recordOperation(
         entityType: 'ingredients',
         entityId: id,
@@ -1948,169 +1881,29 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  Stream<List<IngredientSkusData>> watchIngredientSkus(
-    String ingredientId, {
-    bool includeInactive = true,
-  }) {
-    final query = select(ingredientSkus)
-      ..where((row) {
-        var filter =
-            row.ingredientId.equals(ingredientId) & row.isDeleted.equals(false);
-        if (!includeInactive) filter = filter & row.isInactive.equals(false);
-        return filter;
-      })
-      ..orderBy([
-        (row) => OrderingTerm.asc(row.skuCode),
-        (row) => OrderingTerm.asc(row.supplier),
-      ]);
-    return query.watch();
-  }
+  Future<void> setIngredientsInactive(Iterable<String> ids) =>
+      transaction(() async {
+        for (final id in ids.toSet()) {
+          final item = await (select(
+            ingredients,
+          )..where((row) => row.id.equals(id))).getSingle();
+          await updateIngredient(
+            id,
+            name: item.name,
+            categoryId: item.categoryId,
+            imageHash: item.imageHash,
+            alias: item.alias,
+            notes: item.notes,
+            isInactive: true,
+          );
+        }
+      });
 
-  Future<IngredientSkusData> createIngredientSku({
-    required String ingredientId,
-    String? skuCode,
-    String? imageHash,
-    String? supplier,
-    String? origin,
-    String? notes,
-  }) async {
-    return transaction(() async {
-      await _activeIngredient(ingredientId);
-      final id = _newId();
-      final normalizedSkuCode = _optionalText(skuCode);
-      final normalizedImageHash = _optionalImageHash(imageHash);
-      final normalizedSupplier = _optionalText(supplier);
-      final normalizedOrigin = _optionalText(origin);
-      final normalizedNotes = _optionalText(notes);
-      final payload = {
-        'id': id,
-        'ingredientId': ingredientId,
-        'skuCode': normalizedSkuCode,
-        'imageHash': normalizedImageHash,
-        'supplier': normalizedSupplier,
-        'origin': normalizedOrigin,
-        'notes': normalizedNotes,
-      };
-      final change = await _recordOperation(
-        entityType: 'ingredient_skus',
-        entityId: id,
-        operationKind: 'create',
-        payload: payload,
-      );
-      await into(ingredientSkus).insert(
-        IngredientSkusCompanion.insert(
-          id: id,
-          revisionId: change.revisionId,
-          updatedByDevice: change.deviceId,
-          updatedAtUtc: change.now,
-          ingredientId: ingredientId,
-          skuCode: Value(normalizedSkuCode),
-          imageHash: Value(normalizedImageHash),
-          supplier: Value(normalizedSupplier),
-          origin: Value(normalizedOrigin),
-          notes: Value(normalizedNotes),
-        ),
-      );
-      return (select(
-        ingredientSkus,
-      )..where((row) => row.id.equals(id))).getSingle();
-    });
-  }
-
-  Future<void> updateIngredientSku(
-    String id, {
-    required String? skuCode,
-    required String? imageHash,
-    required String? supplier,
-    required String? origin,
-    required String? notes,
-    bool? isInactive,
-  }) async {
-    await transaction(() async {
-      final current = await (select(
-        ingredientSkus,
-      )..where((row) => row.id.equals(id))).getSingle();
-      if (current.isDeleted) throw StateError('已删除的 SKU 不能修改');
-      await _activeIngredient(current.ingredientId, allowInactive: true);
-      final normalizedSkuCode = _optionalText(skuCode);
-      final normalizedImageHash = _optionalImageHash(imageHash);
-      final normalizedSupplier = _optionalText(supplier);
-      final normalizedOrigin = _optionalText(origin);
-      final normalizedNotes = _optionalText(notes);
-      final inactive = isInactive ?? current.isInactive;
-      final payload = {
-        'id': id,
-        'ingredientId': current.ingredientId,
-        'skuCode': normalizedSkuCode,
-        'imageHash': normalizedImageHash,
-        'supplier': normalizedSupplier,
-        'origin': normalizedOrigin,
-        'notes': normalizedNotes,
-        'isInactive': inactive,
-      };
-      final change = await _recordOperation(
-        entityType: 'ingredient_skus',
-        entityId: id,
-        baseRevisionId: current.revisionId,
-        operationKind: 'update',
-        payload: payload,
-      );
-      await (update(ingredientSkus)..where((row) => row.id.equals(id))).write(
-        IngredientSkusCompanion(
-          revisionId: Value(change.revisionId),
-          updatedByDevice: Value(change.deviceId),
-          updatedAtUtc: Value(change.now),
-          skuCode: Value(normalizedSkuCode),
-          imageHash: Value(normalizedImageHash),
-          supplier: Value(normalizedSupplier),
-          origin: Value(normalizedOrigin),
-          notes: Value(normalizedNotes),
-          isInactive: Value(inactive),
-        ),
-      );
-    });
-  }
-
-  Future<void> deleteIngredientSku(String id) async {
-    await transaction(() async {
-      final current = await (select(
-        ingredientSkus,
-      )..where((row) => row.id.equals(id))).getSingle();
-      if (current.isDeleted) return;
-      final inUse = await customSelect(
-        '''SELECT 1
-             WHERE EXISTS (SELECT 1 FROM sku_ratio_overrides
-                            WHERE sku_id = ? AND is_deleted = 0)
-                OR EXISTS (
-                  SELECT 1 FROM recommendation_items ri
-                  JOIN recommendation_groups rg ON rg.id = ri.group_id
-                  JOIN recommendation_presets rp ON rp.id = rg.preset_id
-                   WHERE ri.sku_id = ? AND ri.is_deleted = 0
-                     AND rg.is_deleted = 0 AND rp.is_deleted = 0
-                )''',
-        variables: [Variable(id), Variable(id)],
-      ).getSingleOrNull();
-      if (inUse != null) {
-        throw StateError('请先清除该 SKU 的推荐区间和推荐配置');
-      }
-      final change = await _recordOperation(
-        entityType: 'ingredient_skus',
-        entityId: id,
-        baseRevisionId: current.revisionId,
-        operationKind: 'delete',
-        payload: {'id': id},
-      );
-      await (update(ingredientSkus)..where((row) => row.id.equals(id))).write(
-        IngredientSkusCompanion(
-          revisionId: Value(change.revisionId),
-          updatedByDevice: Value(change.deviceId),
-          updatedAtUtc: Value(change.now),
-          isDeleted: const Value(true),
-          deletedAtUtc: Value(change.now),
-        ),
-      );
-    });
-  }
+  Future<void> deleteIngredients(Iterable<String> ids) => transaction(() async {
+    for (final id in ids.toSet()) {
+      await deleteIngredient(id);
+    }
+  });
 
   Stream<List<PlaqueType>> watchPlaqueTypes({
     String search = '',
@@ -2143,7 +1936,7 @@ class AppDatabase extends _$AppDatabase {
     String? specification,
     String? notes,
   }) async {
-    final normalized = _requiredName(name, '香牌名称不能为空');
+    final normalized = _requiredName(name, '合香珠 / 香牌名称不能为空');
     return transaction(() async {
       final latest =
           await (select(plaqueTypes)
@@ -2194,12 +1987,12 @@ class AppDatabase extends _$AppDatabase {
     required String? notes,
     bool? isInactive,
   }) async {
-    final normalized = _requiredName(name, '香牌名称不能为空');
+    final normalized = _requiredName(name, '合香珠 / 香牌名称不能为空');
     await transaction(() async {
       final current = await (select(
         plaqueTypes,
       )..where((row) => row.id.equals(id))).getSingle();
-      if (current.isDeleted) throw StateError('已删除的香牌不能修改');
+      if (current.isDeleted) throw StateError('已删除的合香珠 / 香牌不能修改');
       final payload = {
         'id': id,
         'name': normalized,
@@ -2948,9 +2741,6 @@ class AppDatabase extends _$AppDatabase {
       SELECT 'ingredients', id, name, deleted_at_utc
         FROM ingredients WHERE is_deleted = 1 AND deleted_at_utc >= ?
       UNION ALL
-      SELECT 'ingredient_skus', id, COALESCE(NULLIF(sku_code, ''), '未编号 SKU'), deleted_at_utc
-        FROM ingredient_skus WHERE is_deleted = 1 AND deleted_at_utc >= ?
-      UNION ALL
       SELECT 'recommendation_presets', id, name, deleted_at_utc
         FROM recommendation_presets WHERE is_deleted = 1 AND deleted_at_utc >= ?
       UNION ALL
@@ -2973,12 +2763,11 @@ class AppDatabase extends _$AppDatabase {
         FROM assets WHERE is_deleted = 1 AND deleted_at_utc >= ?
       ORDER BY deleted_at_utc DESC
       ''',
-      variables: List.generate(11, (_) => Variable(cutoff)),
+      variables: List.generate(10, (_) => Variable(cutoff)),
       readsFrom: {
         productionTypes,
         ingredientCategories,
         ingredients,
-        ingredientSkus,
         recommendationPresets,
         formulas,
         customers,
@@ -3029,7 +2818,6 @@ class AppDatabase extends _$AppDatabase {
         TrashEntityType.productionType => productionTypes,
         TrashEntityType.ingredientCategory => ingredientCategories,
         TrashEntityType.ingredient => ingredients,
-        TrashEntityType.ingredientSku => ingredientSkus,
         TrashEntityType.recommendationPreset => recommendationPresets,
         TrashEntityType.formula => formulas,
         TrashEntityType.customer => customers,
@@ -3064,14 +2852,6 @@ class AppDatabase extends _$AppDatabase {
           ingredientCategories,
         )..where((row) => row.id.equals(item.categoryId))).getSingle();
         if (parent.isDeleted) throw StateError('请先恢复所属香料分类');
-      case TrashEntityType.ingredientSku:
-        final item = await (select(
-          ingredientSkus,
-        )..where((row) => row.id.equals(entry.id))).getSingle();
-        final parent = await (select(
-          ingredients,
-        )..where((row) => row.id.equals(item.ingredientId))).getSingle();
-        if (parent.isDeleted) throw StateError('请先恢复所属香料');
       case TrashEntityType.recommendationPreset:
         final item = await (select(
           recommendationPresets,
@@ -3090,15 +2870,15 @@ class AppDatabase extends _$AppDatabase {
                ) OR EXISTS (
                  SELECT 1 FROM recommendation_items ri
                  JOIN recommendation_groups rg ON rg.id = ri.group_id
-                 JOIN ingredient_skus s ON s.id = ri.sku_id
+                 JOIN ingredients i ON i.id = ri.ingredient_id
                   WHERE rg.preset_id = ?
                     AND rg.is_deleted = 0 AND ri.is_deleted = 0
-                    AND s.is_deleted = 1
+                    AND i.is_deleted = 1
                )''',
           variables: [Variable(entry.id), Variable(entry.id)],
         ).getSingleOrNull();
         if (missingDependency != null) {
-          throw StateError('请先恢复配置使用的香料分类和 SKU');
+          throw StateError('请先恢复配置使用的香料分类和香料');
         }
       case TrashEntityType.asset:
         final item = await (select(
@@ -3135,12 +2915,10 @@ class AppDatabase extends _$AppDatabase {
         'ingredient_ratio_ranges',
         'ingredient_id',
       ),
-      RatioRangeTarget.sku => ('sku_ratio_overrides', 'sku_id'),
     };
     final Set<ResultSetImplementation> readsFrom = switch (target) {
       RatioRangeTarget.category => {productionTypes, categoryRatioRanges},
       RatioRangeTarget.ingredient => {productionTypes, ingredientRatioRanges},
-      RatioRangeTarget.sku => {productionTypes, skuRatioOverrides},
     };
     return customSelect(
       '''
@@ -3192,14 +2970,6 @@ class AppDatabase extends _$AppDatabase {
           await _activeCategory(targetId);
         case RatioRangeTarget.ingredient:
           await _activeIngredient(targetId);
-        case RatioRangeTarget.sku:
-          final sku = await (select(
-            ingredientSkus,
-          )..where((row) => row.id.equals(targetId))).getSingle();
-          if (sku.isDeleted || sku.isInactive) {
-            throw StateError('请选择可用的 SKU');
-          }
-          await _activeIngredient(sku.ingredientId);
       }
       final current = await _ratioRangeRevision(
         target,
@@ -3252,19 +3022,6 @@ class AppDatabase extends _$AppDatabase {
                 ingredientId: targetId,
               ),
             );
-          case RatioRangeTarget.sku:
-            await into(skuRatioOverrides).insert(
-              SkuRatioOverridesCompanion.insert(
-                id: id,
-                revisionId: change.revisionId,
-                updatedByDevice: change.deviceId,
-                updatedAtUtc: change.now,
-                productionTypeId: productionTypeId,
-                minRatio: minRatio,
-                maxRatio: maxRatio,
-                skuId: targetId,
-              ),
-            );
         }
       } else {
         final values = (
@@ -3294,20 +3051,6 @@ class AppDatabase extends _$AppDatabase {
               ingredientRatioRanges,
             )..where((row) => row.id.equals(id))).write(
               IngredientRatioRangesCompanion(
-                revisionId: values.revisionId,
-                updatedByDevice: values.deviceId,
-                updatedAtUtc: values.now,
-                minRatio: values.min,
-                maxRatio: values.max,
-                isDeleted: const Value(false),
-                deletedAtUtc: const Value(null),
-              ),
-            );
-          case RatioRangeTarget.sku:
-            await (update(
-              skuRatioOverrides,
-            )..where((row) => row.id.equals(id))).write(
-              SkuRatioOverridesCompanion(
                 revisionId: values.revisionId,
                 updatedByDevice: values.deviceId,
                 updatedAtUtc: values.now,
@@ -3366,18 +3109,6 @@ class AppDatabase extends _$AppDatabase {
               deletedAtUtc: Value(change.now),
             ),
           );
-        case RatioRangeTarget.sku:
-          await (update(
-            skuRatioOverrides,
-          )..where((row) => row.id.equals(current.$1))).write(
-            SkuRatioOverridesCompanion(
-              revisionId: Value(change.revisionId),
-              updatedByDevice: Value(change.deviceId),
-              updatedAtUtc: Value(change.now),
-              isDeleted: const Value(true),
-              deletedAtUtc: Value(change.now),
-            ),
-          );
       }
     });
   }
@@ -3393,7 +3124,6 @@ class AppDatabase extends _$AppDatabase {
         'ingredient_ratio_ranges',
         'ingredient_id',
       ),
-      RatioRangeTarget.sku => ('sku_ratio_overrides', 'sku_id'),
     };
     final row = await customSelect(
       '''SELECT id, revision_id, is_deleted FROM $tableName
@@ -3413,7 +3143,6 @@ class AppDatabase extends _$AppDatabase {
   String _ratioTableName(RatioRangeTarget target) => switch (target) {
     RatioRangeTarget.category => 'category_ratio_ranges',
     RatioRangeTarget.ingredient => 'ingredient_ratio_ranges',
-    RatioRangeTarget.sku => 'sku_ratio_overrides',
   };
 
   Future<List<ProductionType>> getActiveProductionTypes({String? includeId}) {
@@ -3610,7 +3339,7 @@ class AppDatabase extends _$AppDatabase {
         for (final item in items) {
           await createRecommendationItem(
             groupId: copiedGroup.id,
-            skuId: item.skuId,
+            ingredientId: item.ingredientId,
             ratio: item.ratio,
           );
         }
@@ -3688,54 +3417,45 @@ class AppDatabase extends _$AppDatabase {
       customSelect(
         '''
         SELECT ri.id,
-               ri.sku_id,
+               ri.ingredient_id,
                i.name AS ingredient_name,
-               s.sku_code,
                ri.ratio
           FROM recommendation_items ri
-          JOIN ingredient_skus s ON s.id = ri.sku_id
-          JOIN ingredients i ON i.id = s.ingredient_id
+          JOIN ingredients i ON i.id = ri.ingredient_id
          WHERE ri.group_id = ? AND ri.is_deleted = 0
-         ORDER BY i.name, s.sku_code
+         ORDER BY i.name
         ''',
         variables: [Variable(groupId)],
-        readsFrom: {recommendationItems, ingredientSkus, ingredients},
+        readsFrom: {recommendationItems, ingredients},
       ).watch().map(
         (rows) => [
           for (final row in rows)
             RecommendationItemSummary(
               id: row.read('id'),
-              skuId: row.read('sku_id'),
+              ingredientId: row.read('ingredient_id'),
               ingredientName: row.read('ingredient_name'),
-              skuCode: row.readNullable('sku_code'),
               ratio: row.read('ratio'),
             ),
         ],
       );
 
-  Future<List<SkuChoice>> getActiveSkusForCategory(String categoryId) async {
+  Future<List<IngredientChoice>> getActiveIngredientsForCategory(
+    String categoryId,
+  ) async {
     final rows = await customSelect(
       '''
-      SELECT s.id, i.name AS ingredient_name, s.sku_code
-        FROM ingredient_skus s
-        JOIN ingredients i ON i.id = s.ingredient_id
+      SELECT i.id, i.name AS ingredient_name
+        FROM ingredients i
        WHERE i.category_id = ?
          AND i.is_deleted = 0 AND i.is_inactive = 0
-         AND s.is_deleted = 0 AND s.is_inactive = 0
-       ORDER BY i.name, s.sku_code
+       ORDER BY i.name
       ''',
       variables: [Variable(categoryId)],
-      readsFrom: {ingredientSkus, ingredients},
+      readsFrom: {ingredients},
     ).get();
     return [
       for (final row in rows)
-        SkuChoice(
-          row.read('id'),
-          [
-            row.read<String>('ingredient_name'),
-            row.readNullable<String>('sku_code'),
-          ].whereType<String>().join(' · '),
-        ),
+        IngredientChoice(row.read('id'), row.read<String>('ingredient_name')),
     ];
   }
 
@@ -3821,7 +3541,7 @@ class AppDatabase extends _$AppDatabase {
       _validateFixedRatio(ratio);
       await _ensureGroupTotal(current.presetId, ratio, excludingId: id);
       final itemTotal = await _recommendationItemTotal(id);
-      if (itemTotal > ratio) throw StateError('大类比例不能低于当前 SKU 比例合计');
+      if (itemTotal > ratio) throw StateError('大类比例不能低于当前香料比例合计');
       final change = await _recordOperation(
         entityType: 'recommendation_groups',
         entityId: id,
@@ -3849,7 +3569,7 @@ class AppDatabase extends _$AppDatabase {
       )..where((row) => row.id.equals(id))).getSingle();
       if (current.isDeleted) return;
       if (await _recommendationItemTotal(id) > 0) {
-        throw StateError('请先删除该大类下的 SKU');
+        throw StateError('请先删除该大类下的香料');
       }
       await _softDeleteRecommendationGroup(current);
     });
@@ -3857,21 +3577,23 @@ class AppDatabase extends _$AppDatabase {
 
   Future<RecommendationItem> createRecommendationItem({
     required String groupId,
-    required String skuId,
+    required String ingredientId,
     required int ratio,
   }) async {
     return transaction(() async {
       final group = await _activeRecommendationGroup(groupId);
-      await _validateSkuCategory(skuId, group.categoryId);
+      await _validateIngredientCategory(ingredientId, group.categoryId);
       _validateFixedRatio(ratio);
       await _ensureItemTotal(group, ratio);
       final existing =
           await (select(recommendationItems)..where(
-                (row) => row.groupId.equals(groupId) & row.skuId.equals(skuId),
+                (row) =>
+                    row.groupId.equals(groupId) &
+                    row.ingredientId.equals(ingredientId),
               ))
               .getSingleOrNull();
       if (existing != null && !existing.isDeleted) {
-        throw StateError('该 SKU 已在大类中');
+        throw StateError('该香料已在大类中');
       }
       if (existing != null) {
         final change = await _recordOperation(
@@ -3902,7 +3624,12 @@ class AppDatabase extends _$AppDatabase {
         entityType: 'recommendation_items',
         entityId: id,
         operationKind: 'create',
-        payload: {'id': id, 'groupId': groupId, 'skuId': skuId, 'ratio': ratio},
+        payload: {
+          'id': id,
+          'groupId': groupId,
+          'ingredientId': ingredientId,
+          'ratio': ratio,
+        },
       );
       await into(recommendationItems).insert(
         RecommendationItemsCompanion.insert(
@@ -3911,7 +3638,7 @@ class AppDatabase extends _$AppDatabase {
           updatedByDevice: change.deviceId,
           updatedAtUtc: change.now,
           groupId: groupId,
-          skuId: skuId,
+          ingredientId: ingredientId,
           ratio: ratio,
         ),
       );
@@ -3926,7 +3653,7 @@ class AppDatabase extends _$AppDatabase {
       final current = await (select(
         recommendationItems,
       )..where((row) => row.id.equals(id))).getSingle();
-      if (current.isDeleted) throw StateError('已删除的 SKU 比例不能修改');
+      if (current.isDeleted) throw StateError('已删除的香料比例不能修改');
       final group = await _activeRecommendationGroup(current.groupId);
       _validateFixedRatio(ratio);
       await _ensureItemTotal(group, ratio, excludingId: id);
@@ -4005,7 +3732,7 @@ class AppDatabase extends _$AppDatabase {
     if (ingredient.isDeleted ||
         category.isDeleted ||
         (!allowInactive && (ingredient.isInactive || category.isInactive))) {
-      throw StateError('已停用或删除的香料不能新增 SKU');
+      throw StateError('请选择可用的香料');
     }
     return ingredient;
   }
@@ -4092,26 +3819,22 @@ class AppDatabase extends _$AppDatabase {
     }
     final current = await query.map((row) => row.read(total) ?? 0).getSingle();
     if (current + ratio > group.ratio) {
-      throw StateError('SKU 比例合计不能超过所属大类比例');
+      throw StateError('香料比例合计不能超过所属大类比例');
     }
   }
 
-  Future<void> _validateSkuCategory(String skuId, String categoryId) async {
+  Future<void> _validateIngredientCategory(
+    String ingredientId,
+    String categoryId,
+  ) async {
     await _activeCategory(categoryId);
-    final row = await (select(ingredientSkus).join([
-      innerJoin(
-        ingredients,
-        ingredients.id.equalsExp(ingredientSkus.ingredientId),
-      ),
-    ])..where(ingredientSkus.id.equals(skuId))).getSingle();
-    final sku = row.readTable(ingredientSkus);
-    final ingredient = row.readTable(ingredients);
-    if (sku.isDeleted ||
-        sku.isInactive ||
-        ingredient.isDeleted ||
+    final ingredient = await (select(
+      ingredients,
+    )..where((row) => row.id.equals(ingredientId))).getSingle();
+    if (ingredient.isDeleted ||
         ingredient.isInactive ||
         ingredient.categoryId != categoryId) {
-      throw StateError('请选择该大类下可用的 SKU');
+      throw StateError('请选择该大类下可用的香料');
     }
   }
 
@@ -4273,7 +3996,9 @@ class AppDatabase extends _$AppDatabase {
           updatedAtUtc: operation.createdAtUtc,
           categoryId: _syncRequiredText(payload, 'categoryId'),
           name: _syncRequiredText(payload, 'name'),
+          imageHash: Value(_syncImageHash(payload, 'imageHash')),
           alias: Value(_syncOptionalText(payload, 'alias')),
+          notes: Value(_syncOptionalText(payload, 'notes')),
           isInactive: Value(_syncBool(payload, 'isInactive', false)),
         ),
       );
@@ -4309,76 +4034,11 @@ class AppDatabase extends _$AppDatabase {
         name: payload.containsKey('name')
             ? Value(_syncRequiredText(payload, 'name'))
             : const Value.absent(),
-        alias: payload.containsKey('alias')
-            ? Value(_syncOptionalText(payload, 'alias'))
-            : const Value.absent(),
-        isInactive: payload.containsKey('isInactive')
-            ? Value(_syncBool(payload, 'isInactive', current.isInactive))
-            : const Value.absent(),
-      ),
-    );
-  }
-
-  Future<void> _applyRemoteSku(
-    SyncOperation operation,
-    Map<String, Object?> payload,
-  ) async {
-    final current = await (select(
-      ingredientSkus,
-    )..where((row) => row.id.equals(operation.entityId))).getSingleOrNull();
-    if (operation.operationKind == 'create') {
-      if (current != null) return;
-      await into(ingredientSkus).insert(
-        IngredientSkusCompanion.insert(
-          id: operation.entityId,
-          revisionId: operation.newRevisionId,
-          updatedByDevice: operation.originDeviceId,
-          updatedAtUtc: operation.createdAtUtc,
-          ingredientId: _syncRequiredText(payload, 'ingredientId'),
-          skuCode: Value(_syncOptionalText(payload, 'skuCode')),
-          imageHash: Value(_syncImageHash(payload, 'imageHash')),
-          supplier: Value(_syncOptionalText(payload, 'supplier')),
-          origin: Value(_syncOptionalText(payload, 'origin')),
-          notes: Value(_syncOptionalText(payload, 'notes')),
-          isInactive: Value(_syncBool(payload, 'isInactive', false)),
-        ),
-      );
-      return;
-    }
-    if (current == null) throw StateError('缺少远程 SKU 依赖');
-    if (!_syncRevisionMatches(current.revisionId, operation.baseRevisionId)) {
-      await _recordSyncConflict(operation, _skuSnapshot(current), payload);
-      return;
-    }
-    final deleted = switch (operation.operationKind) {
-      'delete' => true,
-      'restore' => false,
-      'update' => current.isDeleted,
-      _ => throw StateError('远程 SKU 操作无效'),
-    };
-    await (update(
-      ingredientSkus,
-    )..where((row) => row.id.equals(operation.entityId))).write(
-      IngredientSkusCompanion(
-        revisionId: Value(operation.newRevisionId),
-        updatedByDevice: Value(operation.originDeviceId),
-        updatedAtUtc: Value(operation.createdAtUtc),
-        isDeleted: Value(deleted),
-        deletedAtUtc: Value(deleted ? operation.createdAtUtc : null),
-        ingredientId: payload.containsKey('ingredientId')
-            ? Value(_syncRequiredText(payload, 'ingredientId'))
-            : const Value.absent(),
-        skuCode: payload.containsKey('skuCode')
-            ? Value(_syncOptionalText(payload, 'skuCode'))
-            : const Value.absent(),
         imageHash: payload.containsKey('imageHash')
             ? Value(_syncImageHash(payload, 'imageHash'))
             : const Value.absent(),
-        supplier: payload.containsKey('supplier')
-            ? Value(_syncOptionalText(payload, 'supplier'))
-            : const Value.absent(),
-        origin: payload.containsKey('origin')
-            ? Value(_syncOptionalText(payload, 'origin'))
+        alias: payload.containsKey('alias')
+            ? Value(_syncOptionalText(payload, 'alias'))
             : const Value.absent(),
         notes: payload.containsKey('notes')
             ? Value(_syncOptionalText(payload, 'notes'))
@@ -4740,8 +4400,6 @@ class AppDatabase extends _$AppDatabase {
         await _applyResolvedIngredientCategory(operation, snapshot);
       case 'ingredients':
         await _applyResolvedIngredient(operation, snapshot);
-      case 'ingredient_skus':
-        await _applyResolvedSku(operation, snapshot);
       default:
         await _writeGenericSnapshot(
           entityType,
@@ -4809,29 +4467,8 @@ class AppDatabase extends _$AppDatabase {
           deletedAtUtc: Value(_syncOptionalDate(snapshot, 'deletedAtUtc')),
           categoryId: Value(_syncRequiredText(snapshot, 'categoryId')),
           name: Value(_syncRequiredText(snapshot, 'name')),
-          alias: Value(_syncOptionalText(snapshot, 'alias')),
-          isInactive: Value(_syncBool(snapshot, 'isInactive', false)),
-        ),
-      );
-
-  Future<void> _applyResolvedSku(
-    SyncOperation operation,
-    Map<String, Object?> snapshot,
-  ) =>
-      (update(
-        ingredientSkus,
-      )..where((row) => row.id.equals(operation.entityId))).write(
-        IngredientSkusCompanion(
-          revisionId: Value(operation.newRevisionId),
-          updatedByDevice: Value(operation.originDeviceId),
-          updatedAtUtc: Value(operation.createdAtUtc),
-          isDeleted: Value(_syncBool(snapshot, 'isDeleted', false)),
-          deletedAtUtc: Value(_syncOptionalDate(snapshot, 'deletedAtUtc')),
-          ingredientId: Value(_syncRequiredText(snapshot, 'ingredientId')),
-          skuCode: Value(_syncOptionalText(snapshot, 'skuCode')),
           imageHash: Value(_syncImageHash(snapshot, 'imageHash')),
-          supplier: Value(_syncOptionalText(snapshot, 'supplier')),
-          origin: Value(_syncOptionalText(snapshot, 'origin')),
+          alias: Value(_syncOptionalText(snapshot, 'alias')),
           notes: Value(_syncOptionalText(snapshot, 'notes')),
           isInactive: Value(_syncBool(snapshot, 'isInactive', false)),
         ),
@@ -4863,20 +4500,8 @@ class AppDatabase extends _$AppDatabase {
     'revisionId': value.revisionId,
     'categoryId': value.categoryId,
     'name': value.name,
-    'alias': value.alias,
-    'isInactive': value.isInactive,
-    'isDeleted': value.isDeleted,
-    'deletedAtUtc': value.deletedAtUtc?.toIso8601String(),
-  };
-
-  Map<String, Object?> _skuSnapshot(IngredientSkusData value) => {
-    'id': value.id,
-    'revisionId': value.revisionId,
-    'ingredientId': value.ingredientId,
-    'skuCode': value.skuCode,
     'imageHash': value.imageHash,
-    'supplier': value.supplier,
-    'origin': value.origin,
+    'alias': value.alias,
     'notes': value.notes,
     'isInactive': value.isInactive,
     'isDeleted': value.isDeleted,
@@ -4919,10 +4544,8 @@ const syncSupportedEntityTypes = {
   'production_types',
   'ingredient_categories',
   'ingredients',
-  'ingredient_skus',
   'category_ratio_ranges',
   'ingredient_ratio_ranges',
-  'sku_ratio_overrides',
   'recommendation_presets',
   'recommendation_groups',
   'recommendation_items',
@@ -5076,11 +4699,44 @@ bool _syncBool(Map<String, Object?> payload, String field, bool defaultValue) {
 bool _syncRevisionMatches(String current, String? base) =>
     base == null || current == base;
 
+const combinedProductionTypeId = 'type-hexiangzhu-xiangpai';
+
 const _defaultTypes = [
   ('type-zhuanxiang', '篆香'),
   ('type-xianxiang', '线香'),
-  ('type-hexiangzhu', '合香珠'),
-  ('type-xiangpai', '香牌'),
+  (combinedProductionTypeId, '合香珠 / 香牌'),
+];
+
+const _legacyTableNames = [
+  'quarantined_sync_operations',
+  'sync_cursors',
+  'purged_sync_entities',
+  'sync_conflicts',
+  'sync_operations',
+  'mixing_revisions',
+  'mixing_items',
+  'mixing_sessions',
+  'formula_items',
+  'formula_versions',
+  'formula_drafts',
+  'formulas',
+  'recommendation_items',
+  'recommendation_groups',
+  'recommendation_presets',
+  'sku_ratio_overrides',
+  'ingredient_ratio_ranges',
+  'category_ratio_ranges',
+  'ingredient_skus',
+  'assets',
+  'asset_statuses',
+  'asset_categories',
+  'plaque_types',
+  'customers',
+  'ingredients',
+  'ingredient_categories',
+  'production_types',
+  'devices',
+  'local_devices',
 ];
 
 String _newId() {

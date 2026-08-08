@@ -3,10 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:xiangfangbu/data/app_database.dart';
 
 void main() {
-  test('v1 to v6 keeps existing data and creates M2/M3/M5 tables', () async {
-    final executor = NativeDatabase.memory(
-      setup: (raw) {
-        raw.execute('''
+  test(
+    'v1 to v7 resets incompatible business data and creates new schema',
+    () async {
+      final executor = NativeDatabase.memory(
+        setup: (raw) {
+          raw.execute('''
           CREATE TABLE production_types (
             id TEXT NOT NULL PRIMARY KEY,
             revision_id TEXT NOT NULL,
@@ -19,14 +21,14 @@ void main() {
             is_inactive INTEGER NOT NULL DEFAULT 0
           )
         ''');
-        raw.execute('''
+          raw.execute('''
           CREATE TABLE local_devices (
             id TEXT NOT NULL PRIMARY KEY,
             device_seq INTEGER NOT NULL DEFAULT 0,
             created_at_utc INTEGER NOT NULL
           )
         ''');
-        raw.execute('''
+          raw.execute('''
           CREATE TABLE sync_operations (
             operation_id TEXT NOT NULL PRIMARY KEY,
             origin_device_id TEXT NOT NULL,
@@ -41,54 +43,63 @@ void main() {
             UNIQUE (origin_device_id, device_seq)
           )
         ''');
-        raw.execute('''
+          raw.execute('''
           INSERT INTO production_types (
             id, revision_id, updated_by_device, updated_at_utc,
             name, sort_order
           ) VALUES ('legacy', 'revision', 'device', 0, '旧类型', 99)
         ''');
-        raw.execute('PRAGMA user_version = 1');
-      },
-    );
-    final database = AppDatabase(executor);
-    addTearDown(database.close);
+          raw.execute('PRAGMA user_version = 1');
+        },
+      );
+      final database = AppDatabase(executor);
+      addTearDown(database.close);
 
-    await database.initialize();
+      await database.initialize();
 
-    expect(
-      (await database.select(database.productionTypes).get()).any(
-        (row) => row.id == 'legacy' && row.name == '旧类型',
-      ),
-      true,
-    );
-    expect(await database.select(database.ingredientCategories).get(), isEmpty);
-    expect(await database.select(database.assets).get(), isEmpty);
-    expect(await database.select(database.formulas).get(), isEmpty);
-    expect(await database.select(database.mixingSessions).get(), isEmpty);
-    expect(await database.select(database.syncConflicts).get(), isEmpty);
-    expect(await database.select(database.peerDevices).get(), isEmpty);
-    expect(await database.select(database.syncCursors).get(), isEmpty);
-    expect(await database.select(database.purgedSyncEntities).get(), isEmpty);
-    expect(
-      await database.select(database.quarantinedSyncOperations).get(),
-      isEmpty,
-    );
-    expect(
-      (await database.customSelect('PRAGMA integrity_check').getSingle())
-          .read<String>('integrity_check'),
-      'ok',
-    );
-    expect(
-      await database.customSelect('PRAGMA foreign_key_check').get(),
-      isEmpty,
-    );
-    expect(
-      (await database
-          .customSelect(
-            "SELECT last_sync_at_utc FROM devices WHERE id = 'missing'",
-          )
-          .get()),
-      isEmpty,
-    );
-  });
+      final productionTypes = await database
+          .select(database.productionTypes)
+          .get();
+      expect(productionTypes, hasLength(3));
+      expect(productionTypes.any((row) => row.id == 'legacy'), false);
+      expect(
+        productionTypes
+            .singleWhere((row) => row.id == combinedProductionTypeId)
+            .name,
+        '合香珠 / 香牌',
+      );
+      expect(
+        await database.select(database.ingredientCategories).get(),
+        isEmpty,
+      );
+      expect(await database.select(database.assets).get(), isEmpty);
+      expect(await database.select(database.formulas).get(), isEmpty);
+      expect(await database.select(database.mixingSessions).get(), isEmpty);
+      expect(await database.select(database.syncConflicts).get(), isEmpty);
+      expect(await database.select(database.peerDevices).get(), isEmpty);
+      expect(await database.select(database.syncCursors).get(), isEmpty);
+      expect(await database.select(database.purgedSyncEntities).get(), isEmpty);
+      expect(
+        await database.select(database.quarantinedSyncOperations).get(),
+        isEmpty,
+      );
+      expect(
+        (await database.customSelect('PRAGMA integrity_check').getSingle())
+            .read<String>('integrity_check'),
+        'ok',
+      );
+      expect(
+        await database.customSelect('PRAGMA foreign_key_check').get(),
+        isEmpty,
+      );
+      expect(
+        (await database
+            .customSelect(
+              "SELECT last_sync_at_utc FROM devices WHERE id = 'missing'",
+            )
+            .get()),
+        isEmpty,
+      );
+    },
+  );
 }

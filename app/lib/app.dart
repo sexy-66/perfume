@@ -123,6 +123,14 @@ class _Shell extends StatefulWidget {
 class _ShellState extends State<_Shell> with WidgetsBindingObserver {
   var _index = 0;
   PeerSyncRuntime? _runtime;
+  Future<PeerSyncRuntime?>? _syncInitialization;
+  Object? _syncInitializationError;
+  var _syncInitializing = false;
+  var _syncRuntimeStarted = false;
+  var _openingSyncDevices = false;
+  var _exitArmed = false;
+  Timer? _exitTimer;
+  OverlayEntry? _exitHint;
 
   @override
   void initState() {
@@ -149,34 +157,76 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _exitTimer?.cancel();
+    _exitHint?.remove();
     final runtime = _runtime;
-    if (runtime != null) {
+    if (widget.syncRuntime != null || widget.syncRuntimeLoader != null) {
       WidgetsBinding.instance.removeObserver(this);
+    }
+    if (runtime != null) {
       unawaited(runtime.close());
     }
     super.dispose();
   }
 
-  Future<void> _initializeSync() async {
-    final runtime = _runtime ?? await _loadSyncRuntime();
-    if (runtime == null) return;
-    if (_runtime == null) {
-      if (!mounted) {
-        await runtime.close();
-        return;
-      }
-      setState(() => _runtime = runtime);
-    }
-    await _resumeSync(runtime);
-  }
+  Future<PeerSyncRuntime?> _initializeSync() => _syncInitialization ??=
+      _initializeSyncOnce().whenComplete(() => _syncInitialization = null);
 
-  Future<PeerSyncRuntime?> _loadSyncRuntime() async {
+  Future<PeerSyncRuntime?> _initializeSyncOnce() async {
+    final current = _runtime;
+    if (current != null) {
+      if (!_syncRuntimeStarted) {
+        await _resumeSync(current);
+        _syncRuntimeStarted = true;
+      }
+      return current;
+    }
     final loader = widget.syncRuntimeLoader;
     if (loader == null) return null;
+    if (mounted) {
+      setState(() {
+        _syncInitializing = true;
+        _syncInitializationError = null;
+      });
+    }
     try {
-      return await loader();
-    } catch (_) {
+      final runtime = await loader();
+      if (!mounted) {
+        await runtime.close();
+        return null;
+      }
+      setState(() => _runtime = runtime);
+      await _resumeSync(runtime);
+      _syncRuntimeStarted = true;
+      return runtime;
+    } catch (error, stackTrace) {
+      debugPrint('Failed to initialize sync runtime: $error\n$stackTrace');
+      if (mounted) setState(() => _syncInitializationError = error);
       return null;
+    } finally {
+      if (mounted) setState(() => _syncInitializing = false);
+    }
+  }
+
+  Future<void> _openSyncDevices() async {
+    if (_openingSyncDevices) return;
+    _openingSyncDevices = true;
+    try {
+      final runtime = await _initializeSync();
+      if (!mounted) return;
+      if (runtime == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('同步服务初始化失败，请点按重试')));
+        return;
+      }
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => SyncDevicesPage(runtime: runtime),
+        ),
+      );
+    } finally {
+      _openingSyncDevices = false;
     }
   }
 
@@ -200,16 +250,86 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver {
         database: widget.database,
         mediaStore: widget.mediaStore,
         syncRuntime: _runtime,
+        syncInitializing: _syncInitializing,
+        syncInitializationFailed: _syncInitializationError != null,
+        onOpenSync: _openSyncDevices,
       ),
     ];
-    return Scaffold(
-      extendBody: true,
-      body: IndexedStack(index: _index, children: pages),
-      bottomNavigationBar: _GlassNavigationBar(
-        index: _index,
-        onChanged: (index) => setState(() => _index = index),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _handleBack();
+      },
+      child: Scaffold(
+        body: IndexedStack(index: _index, children: pages),
+        bottomNavigationBar: _GlassNavigationBar(
+          index: _index,
+          onChanged: (index) => setState(() => _index = index),
+        ),
       ),
     );
+  }
+
+  void _handleBack() {
+    if (_exitArmed) {
+      _exitArmed = false;
+      _exitTimer?.cancel();
+      _exitTimer = null;
+      _removeExitHint();
+      unawaited(SystemNavigator.pop());
+      return;
+    }
+
+    _exitArmed = true;
+    _showExitHint();
+    _exitTimer = Timer(const Duration(seconds: 2), () {
+      _exitArmed = false;
+      _exitTimer = null;
+      _removeExitHint();
+    });
+  }
+
+  void _showExitHint() {
+    _removeExitHint();
+    final overlay = Overlay.of(context, rootOverlay: true);
+    final entry = OverlayEntry(
+      builder: (_) => IgnorePointer(
+        child: SizedBox.expand(
+          child: Center(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: const Color(0x99666666),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 12,
+                ),
+                child: Text(
+                  '再按一次退出香方簿',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    decoration: TextDecoration.none,
+                    fontSize: 15,
+                    height: 1.2,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    _exitHint = entry;
+    overlay.insert(entry);
+  }
+
+  void _removeExitHint() {
+    final hint = _exitHint;
+    if (hint == null) return;
+    _exitHint = null;
+    hint.remove();
   }
 }
 
@@ -313,12 +433,18 @@ class _MorePage extends StatelessWidget {
   const _MorePage({
     required this.database,
     required this.mediaStore,
+    required this.syncInitializing,
+    required this.syncInitializationFailed,
+    required this.onOpenSync,
     this.syncRuntime,
   });
 
   final AppDatabase database;
   final MediaStore mediaStore;
   final PeerSyncRuntime? syncRuntime;
+  final bool syncInitializing;
+  final bool syncInitializationFailed;
+  final VoidCallback onOpenSync;
 
   @override
   Widget build(BuildContext context) {
@@ -326,7 +452,10 @@ class _MorePage extends StatelessWidget {
       title: Text(item),
       subtitle: switch (item) {
         '同步与设备' when syncRuntime != null => const Text('局域网设备与配对状态'),
-        '同步与设备' || '备份与恢复' => const Text('后续里程碑'),
+        '同步与设备' when syncInitializing => const Text('正在初始化局域网同步'),
+        '同步与设备' when syncInitializationFailed => const Text('初始化失败，点按重试'),
+        '同步与设备' => const Text('局域网设备与配对状态'),
+        '备份与恢复' => const Text('后续里程碑'),
         _ => null,
       },
       trailing: switch (item) {
@@ -348,7 +477,7 @@ class _MorePage extends StatelessWidget {
             builder: (_) => RecommendationPresetsPage(database: database),
           ),
         ),
-        '香牌目录' => () => Navigator.of(context).push(
+        '合香珠 / 香牌目录' => () => Navigator.of(context).push(
           MaterialPageRoute<void>(
             builder: (_) =>
                 PlaqueCatalogPage(database: database, mediaStore: mediaStore),
@@ -375,14 +504,7 @@ class _MorePage extends StatelessWidget {
             builder: (_) => SettingsPage(database: database),
           ),
         ),
-        '同步与设备' =>
-          syncRuntime == null
-              ? null
-              : () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => SyncDevicesPage(runtime: syncRuntime!),
-                  ),
-                ),
+        '同步与设备' => onOpenSync,
         _ => null,
       },
     );
@@ -419,7 +541,7 @@ class _MorePage extends StatelessWidget {
         children: [
           Text('更多', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 22),
-          section('资料管理', const ['香料库', '香牌目录', '顾客', '推荐配置', '资产清点']),
+          section('资料管理', const ['香料库', '合香珠 / 香牌目录', '顾客', '推荐配置', '资产清点']),
           const SizedBox(height: 22),
           section('数据', const ['最近删除', '同步与设备', '备份与恢复']),
           const SizedBox(height: 22),

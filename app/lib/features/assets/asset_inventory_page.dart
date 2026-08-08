@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../data/app_database.dart';
 import '../../data/media_store.dart';
+import '../../ui/single_modal.dart';
 
 class AssetInventoryPage extends StatefulWidget {
   const AssetInventoryPage({
@@ -28,6 +29,7 @@ class _AssetInventoryPageState extends State<AssetInventoryPage> {
   String? _categoryId;
   String? _statusId;
   var _includeInactive = false;
+  var _assetEditorOpening = false;
 
   @override
   void initState() {
@@ -259,138 +261,160 @@ class _AssetInventoryPageState extends State<AssetInventoryPage> {
   }
 
   Future<void> _edit([Asset? asset]) async {
-    final categories = await widget.database.getActiveAssetCategories(
-      includeId: asset?.categoryId,
-    );
-    final statuses = await widget.database.getActiveAssetStatuses(
-      includeId: asset?.statusId,
-    );
-    if (!mounted) return;
-    if (categories.isEmpty) {
-      _message('请先添加可用的资产分类');
-      return;
-    }
-    var name = asset?.name ?? '';
-    var categoryId = asset?.categoryId ?? categories.first.id;
-    var statusId = asset?.statusId;
-    var quantity = '${asset?.quantity ?? 0}';
-    var location = asset?.location ?? '';
-    var notes = asset?.notes ?? '';
-    final saved = await showDialog<bool>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(asset == null ? '添加资产' : '编辑资产'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  initialValue: name,
-                  autofocus: true,
-                  decoration: const InputDecoration(labelText: '名称 *'),
-                  onChanged: (value) => name = value,
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  initialValue: categoryId,
-                  decoration: const InputDecoration(labelText: '分类 *'),
-                  items: [
-                    for (final item in categories)
-                      DropdownMenuItem(
-                        value: item.id,
-                        child: Text(
-                          item.isInactive ? '${item.name}（已停用）' : item.name,
-                        ),
+    if (_assetEditorOpening) return;
+    _assetEditorOpening = true;
+    try {
+      await runSingleModalAction<void>(
+        context: context,
+        action: 'asset-editor',
+        body: () async {
+          final categories = await widget.database.getActiveAssetCategories(
+            includeId: asset?.categoryId,
+          );
+          final statuses = await widget.database.getActiveAssetStatuses(
+            includeId: asset?.statusId,
+          );
+          if (!mounted) return;
+          if (categories.isEmpty) {
+            _message('请先添加可用的资产分类');
+            return;
+          }
+          var name = asset?.name ?? '';
+          var categoryId = asset?.categoryId ?? categories.first.id;
+          var statusId = asset?.statusId;
+          var quantity = '${asset?.quantity ?? 0}';
+          var location = asset?.location ?? '';
+          var notes = asset?.notes ?? '';
+          final saved = await showSingleDialog<bool>(
+            context: context,
+            builder: (context) => StatefulBuilder(
+              builder: (context, setState) => AlertDialog(
+                title: Text(asset == null ? '添加资产' : '编辑资产'),
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextFormField(
+                        initialValue: name,
+                        autofocus: true,
+                        decoration: const InputDecoration(labelText: '名称 *'),
+                        onChanged: (value) => name = value,
                       ),
-                  ],
-                  onChanged: (value) => setState(() => categoryId = value!),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String?>(
-                  initialValue: statusId,
-                  decoration: const InputDecoration(labelText: '状态'),
-                  items: [
-                    const DropdownMenuItem(value: null, child: Text('未设置')),
-                    for (final item in statuses)
-                      DropdownMenuItem(
-                        value: item.id,
-                        child: Text(
-                          item.isInactive ? '${item.name}（已停用）' : item.name,
-                        ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        initialValue: categoryId,
+                        decoration: const InputDecoration(labelText: '分类 *'),
+                        items: [
+                          for (final item in categories)
+                            DropdownMenuItem(
+                              value: item.id,
+                              child: Text(
+                                item.isInactive
+                                    ? '${item.name}（已停用）'
+                                    : item.name,
+                              ),
+                            ),
+                        ],
+                        onChanged: (value) =>
+                            setState(() => categoryId = value!),
                       ),
-                  ],
-                  onChanged: (value) => setState(() => statusId = value),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  initialValue: quantity,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: '当前数量 *'),
-                  onChanged: (value) => quantity = value,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  initialValue: location,
-                  decoration: const InputDecoration(labelText: '存放位置'),
-                  onChanged: (value) => location = value,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  initialValue: notes,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: '备注',
-                    alignLabelWithHint: true,
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String?>(
+                        initialValue: statusId,
+                        decoration: const InputDecoration(labelText: '状态'),
+                        items: [
+                          const DropdownMenuItem(
+                            value: null,
+                            child: Text('未设置'),
+                          ),
+                          for (final item in statuses)
+                            DropdownMenuItem(
+                              value: item.id,
+                              child: Text(
+                                item.isInactive
+                                    ? '${item.name}（已停用）'
+                                    : item.name,
+                              ),
+                            ),
+                        ],
+                        onChanged: (value) => setState(() => statusId = value),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        initialValue: quantity,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(labelText: '当前数量 *'),
+                        onChanged: (value) => quantity = value,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        initialValue: location,
+                        decoration: const InputDecoration(labelText: '存放位置'),
+                        onChanged: (value) => location = value,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        initialValue: notes,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          labelText: '备注',
+                          alignLabelWithHint: true,
+                        ),
+                        onChanged: (value) => notes = value,
+                      ),
+                    ],
                   ),
-                  onChanged: (value) => notes = value,
                 ),
-              ],
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('取消'),
+                  ),
+                  FilledButton(
+                    onPressed: () async {
+                      try {
+                        final parsed = int.tryParse(quantity);
+                        if (parsed == null) throw ArgumentError('数量必须是整数');
+                        if (asset == null) {
+                          await widget.database.createAsset(
+                            name: name,
+                            categoryId: categoryId,
+                            statusId: statusId,
+                            quantity: parsed,
+                            location: location,
+                            notes: notes,
+                          );
+                        } else {
+                          await widget.database.updateAsset(
+                            asset.id,
+                            name: name,
+                            categoryId: categoryId,
+                            statusId: statusId,
+                            imageHash: asset.imageHash,
+                            quantity: parsed,
+                            location: location,
+                            notes: notes,
+                          );
+                        }
+                        if (context.mounted) Navigator.pop(context, true);
+                      } catch (error) {
+                        if (context.mounted) {
+                          _message(_errorText(error), context);
+                        }
+                      }
+                    },
+                    child: const Text('保存'),
+                  ),
+                ],
+              ),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                try {
-                  final parsed = int.tryParse(quantity);
-                  if (parsed == null) throw ArgumentError('数量必须是整数');
-                  if (asset == null) {
-                    await widget.database.createAsset(
-                      name: name,
-                      categoryId: categoryId,
-                      statusId: statusId,
-                      quantity: parsed,
-                      location: location,
-                      notes: notes,
-                    );
-                  } else {
-                    await widget.database.updateAsset(
-                      asset.id,
-                      name: name,
-                      categoryId: categoryId,
-                      statusId: statusId,
-                      imageHash: asset.imageHash,
-                      quantity: parsed,
-                      location: location,
-                      notes: notes,
-                    );
-                  }
-                  if (context.mounted) Navigator.pop(context, true);
-                } catch (error) {
-                  if (context.mounted) _message(_errorText(error), context);
-                }
-              },
-              child: const Text('保存'),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (saved == true && mounted) _message('已保存');
+          );
+          if (saved == true && mounted) _message('已保存');
+        },
+      );
+    } finally {
+      _assetEditorOpening = false;
+    }
   }
 
   Future<void> _action(Asset asset, String action) async {
@@ -434,7 +458,7 @@ class _AssetInventoryPageState extends State<AssetInventoryPage> {
 
   Future<void> _count(Asset asset) async {
     var value = '${asset.quantity}';
-    final saved = await showDialog<bool>(
+    final saved = await showSingleDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('清点${asset.name}'),
@@ -470,7 +494,7 @@ class _AssetInventoryPageState extends State<AssetInventoryPage> {
   }
 
   Future<void> _pickImage(Asset asset) async {
-    final source = await showModalBottomSheet<ImageSource>(
+    final source = await showSingleModalBottomSheet<ImageSource>(
       context: context,
       builder: (context) => SafeArea(
         child: Column(
@@ -515,7 +539,7 @@ class _AssetInventoryPageState extends State<AssetInventoryPage> {
   }
 
   Future<bool> _confirmDelete(String name) async =>
-      await showModalBottomSheet<bool>(
+      await showSingleModalBottomSheet<bool>(
         context: context,
         builder: (context) => SafeArea(
           child: Padding(
@@ -659,7 +683,7 @@ class _AssetOptionsPage extends StatelessWidget {
     String name = '',
   }) async {
     var value = name;
-    await showDialog<void>(
+    await showSingleDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('${id == null ? '添加' : '编辑'}资产${category ? '分类' : '状态'}'),
@@ -753,7 +777,7 @@ class _AssetOptionsPage extends StatelessWidget {
 }
 
 Future<bool> _confirmOptionDelete(BuildContext context, String title) async =>
-    await showModalBottomSheet<bool>(
+    await showSingleModalBottomSheet<bool>(
       context: context,
       builder: (context) => SafeArea(
         child: Padding(

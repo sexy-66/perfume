@@ -91,6 +91,12 @@ class PeerTrustStore {
     await write;
   }
 
+  Future<void> reset() async {
+    await _writeTail;
+    if (await file.exists()) await file.delete();
+    _peers = {};
+  }
+
   static String issueToken() => base64Url.encode(
     List<int>.generate(32, (_) => Random.secure().nextInt(256)),
   );
@@ -181,6 +187,16 @@ class PeerIdentityStore {
       seed.fillRange(0, seed.length, 0);
     }
     return PeerIdentitySettings(identity: identity, groupId: groupId.trim());
+  }
+
+  Future<bool> resetIfDeviceChanged(String deviceId) async {
+    final expectedDeviceId = _text(deviceId, 'deviceId');
+    if (!await file.exists()) return false;
+    final json = _map(jsonDecode(await file.readAsString()));
+    if (json['version'] != 1) return false;
+    if (_text(json['deviceId'], 'deviceId') == expectedDeviceId) return false;
+    await file.delete();
+    return true;
   }
 
   Future<void> _write(Map<String, Object?> value) async {

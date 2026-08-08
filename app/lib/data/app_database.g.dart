@@ -1274,10 +1274,30 @@ class $IngredientsTable extends Ingredients
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _imageHashMeta = const VerificationMeta(
+    'imageHash',
+  );
+  @override
+  late final GeneratedColumn<String> imageHash = GeneratedColumn<String>(
+    'image_hash',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _aliasMeta = const VerificationMeta('alias');
   @override
   late final GeneratedColumn<String> alias = GeneratedColumn<String>(
     'alias',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
     aliasedName,
     true,
     type: DriftSqlType.string,
@@ -1308,7 +1328,9 @@ class $IngredientsTable extends Ingredients
     deletedAtUtc,
     categoryId,
     name,
+    imageHash,
     alias,
+    notes,
     isInactive,
   ];
   @override
@@ -1389,10 +1411,22 @@ class $IngredientsTable extends Ingredients
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
+    if (data.containsKey('image_hash')) {
+      context.handle(
+        _imageHashMeta,
+        imageHash.isAcceptableOrUnknown(data['image_hash']!, _imageHashMeta),
+      );
+    }
     if (data.containsKey('alias')) {
       context.handle(
         _aliasMeta,
         alias.isAcceptableOrUnknown(data['alias']!, _aliasMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
       );
     }
     if (data.containsKey('is_inactive')) {
@@ -1442,9 +1476,17 @@ class $IngredientsTable extends Ingredients
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       )!,
+      imageHash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_hash'],
+      ),
       alias: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}alias'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
       ),
       isInactive: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
@@ -1468,7 +1510,9 @@ class Ingredient extends DataClass implements Insertable<Ingredient> {
   final DateTime? deletedAtUtc;
   final String categoryId;
   final String name;
+  final String? imageHash;
   final String? alias;
+  final String? notes;
   final bool isInactive;
   const Ingredient({
     required this.id,
@@ -1479,7 +1523,9 @@ class Ingredient extends DataClass implements Insertable<Ingredient> {
     this.deletedAtUtc,
     required this.categoryId,
     required this.name,
+    this.imageHash,
     this.alias,
+    this.notes,
     required this.isInactive,
   });
   @override
@@ -1495,8 +1541,14 @@ class Ingredient extends DataClass implements Insertable<Ingredient> {
     }
     map['category_id'] = Variable<String>(categoryId);
     map['name'] = Variable<String>(name);
+    if (!nullToAbsent || imageHash != null) {
+      map['image_hash'] = Variable<String>(imageHash);
+    }
     if (!nullToAbsent || alias != null) {
       map['alias'] = Variable<String>(alias);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
     }
     map['is_inactive'] = Variable<bool>(isInactive);
     return map;
@@ -1514,9 +1566,15 @@ class Ingredient extends DataClass implements Insertable<Ingredient> {
           : Value(deletedAtUtc),
       categoryId: Value(categoryId),
       name: Value(name),
+      imageHash: imageHash == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imageHash),
       alias: alias == null && nullToAbsent
           ? const Value.absent()
           : Value(alias),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
       isInactive: Value(isInactive),
     );
   }
@@ -1535,7 +1593,9 @@ class Ingredient extends DataClass implements Insertable<Ingredient> {
       deletedAtUtc: serializer.fromJson<DateTime?>(json['deletedAtUtc']),
       categoryId: serializer.fromJson<String>(json['categoryId']),
       name: serializer.fromJson<String>(json['name']),
+      imageHash: serializer.fromJson<String?>(json['imageHash']),
       alias: serializer.fromJson<String?>(json['alias']),
+      notes: serializer.fromJson<String?>(json['notes']),
       isInactive: serializer.fromJson<bool>(json['isInactive']),
     );
   }
@@ -1551,7 +1611,9 @@ class Ingredient extends DataClass implements Insertable<Ingredient> {
       'deletedAtUtc': serializer.toJson<DateTime?>(deletedAtUtc),
       'categoryId': serializer.toJson<String>(categoryId),
       'name': serializer.toJson<String>(name),
+      'imageHash': serializer.toJson<String?>(imageHash),
       'alias': serializer.toJson<String?>(alias),
+      'notes': serializer.toJson<String?>(notes),
       'isInactive': serializer.toJson<bool>(isInactive),
     };
   }
@@ -1565,7 +1627,9 @@ class Ingredient extends DataClass implements Insertable<Ingredient> {
     Value<DateTime?> deletedAtUtc = const Value.absent(),
     String? categoryId,
     String? name,
+    Value<String?> imageHash = const Value.absent(),
     Value<String?> alias = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
     bool? isInactive,
   }) => Ingredient(
     id: id ?? this.id,
@@ -1576,7 +1640,9 @@ class Ingredient extends DataClass implements Insertable<Ingredient> {
     deletedAtUtc: deletedAtUtc.present ? deletedAtUtc.value : this.deletedAtUtc,
     categoryId: categoryId ?? this.categoryId,
     name: name ?? this.name,
+    imageHash: imageHash.present ? imageHash.value : this.imageHash,
     alias: alias.present ? alias.value : this.alias,
+    notes: notes.present ? notes.value : this.notes,
     isInactive: isInactive ?? this.isInactive,
   );
   Ingredient copyWithCompanion(IngredientsCompanion data) {
@@ -1599,7 +1665,9 @@ class Ingredient extends DataClass implements Insertable<Ingredient> {
           ? data.categoryId.value
           : this.categoryId,
       name: data.name.present ? data.name.value : this.name,
+      imageHash: data.imageHash.present ? data.imageHash.value : this.imageHash,
       alias: data.alias.present ? data.alias.value : this.alias,
+      notes: data.notes.present ? data.notes.value : this.notes,
       isInactive: data.isInactive.present
           ? data.isInactive.value
           : this.isInactive,
@@ -1617,7 +1685,9 @@ class Ingredient extends DataClass implements Insertable<Ingredient> {
           ..write('deletedAtUtc: $deletedAtUtc, ')
           ..write('categoryId: $categoryId, ')
           ..write('name: $name, ')
+          ..write('imageHash: $imageHash, ')
           ..write('alias: $alias, ')
+          ..write('notes: $notes, ')
           ..write('isInactive: $isInactive')
           ..write(')'))
         .toString();
@@ -1633,7 +1703,9 @@ class Ingredient extends DataClass implements Insertable<Ingredient> {
     deletedAtUtc,
     categoryId,
     name,
+    imageHash,
     alias,
+    notes,
     isInactive,
   );
   @override
@@ -1648,7 +1720,9 @@ class Ingredient extends DataClass implements Insertable<Ingredient> {
           other.deletedAtUtc == this.deletedAtUtc &&
           other.categoryId == this.categoryId &&
           other.name == this.name &&
+          other.imageHash == this.imageHash &&
           other.alias == this.alias &&
+          other.notes == this.notes &&
           other.isInactive == this.isInactive);
 }
 
@@ -1661,7 +1735,9 @@ class IngredientsCompanion extends UpdateCompanion<Ingredient> {
   final Value<DateTime?> deletedAtUtc;
   final Value<String> categoryId;
   final Value<String> name;
+  final Value<String?> imageHash;
   final Value<String?> alias;
+  final Value<String?> notes;
   final Value<bool> isInactive;
   final Value<int> rowid;
   const IngredientsCompanion({
@@ -1673,7 +1749,9 @@ class IngredientsCompanion extends UpdateCompanion<Ingredient> {
     this.deletedAtUtc = const Value.absent(),
     this.categoryId = const Value.absent(),
     this.name = const Value.absent(),
+    this.imageHash = const Value.absent(),
     this.alias = const Value.absent(),
+    this.notes = const Value.absent(),
     this.isInactive = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -1686,7 +1764,9 @@ class IngredientsCompanion extends UpdateCompanion<Ingredient> {
     this.deletedAtUtc = const Value.absent(),
     required String categoryId,
     required String name,
+    this.imageHash = const Value.absent(),
     this.alias = const Value.absent(),
+    this.notes = const Value.absent(),
     this.isInactive = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -1704,7 +1784,9 @@ class IngredientsCompanion extends UpdateCompanion<Ingredient> {
     Expression<DateTime>? deletedAtUtc,
     Expression<String>? categoryId,
     Expression<String>? name,
+    Expression<String>? imageHash,
     Expression<String>? alias,
+    Expression<String>? notes,
     Expression<bool>? isInactive,
     Expression<int>? rowid,
   }) {
@@ -1717,7 +1799,9 @@ class IngredientsCompanion extends UpdateCompanion<Ingredient> {
       if (deletedAtUtc != null) 'deleted_at_utc': deletedAtUtc,
       if (categoryId != null) 'category_id': categoryId,
       if (name != null) 'name': name,
+      if (imageHash != null) 'image_hash': imageHash,
       if (alias != null) 'alias': alias,
+      if (notes != null) 'notes': notes,
       if (isInactive != null) 'is_inactive': isInactive,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1732,7 +1816,9 @@ class IngredientsCompanion extends UpdateCompanion<Ingredient> {
     Value<DateTime?>? deletedAtUtc,
     Value<String>? categoryId,
     Value<String>? name,
+    Value<String?>? imageHash,
     Value<String?>? alias,
+    Value<String?>? notes,
     Value<bool>? isInactive,
     Value<int>? rowid,
   }) {
@@ -1745,7 +1831,9 @@ class IngredientsCompanion extends UpdateCompanion<Ingredient> {
       deletedAtUtc: deletedAtUtc ?? this.deletedAtUtc,
       categoryId: categoryId ?? this.categoryId,
       name: name ?? this.name,
+      imageHash: imageHash ?? this.imageHash,
       alias: alias ?? this.alias,
+      notes: notes ?? this.notes,
       isInactive: isInactive ?? this.isInactive,
       rowid: rowid ?? this.rowid,
     );
@@ -1778,8 +1866,14 @@ class IngredientsCompanion extends UpdateCompanion<Ingredient> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
+    if (imageHash.present) {
+      map['image_hash'] = Variable<String>(imageHash.value);
+    }
     if (alias.present) {
       map['alias'] = Variable<String>(alias.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
     }
     if (isInactive.present) {
       map['is_inactive'] = Variable<bool>(isInactive.value);
@@ -1801,790 +1895,8 @@ class IngredientsCompanion extends UpdateCompanion<Ingredient> {
           ..write('deletedAtUtc: $deletedAtUtc, ')
           ..write('categoryId: $categoryId, ')
           ..write('name: $name, ')
+          ..write('imageHash: $imageHash, ')
           ..write('alias: $alias, ')
-          ..write('isInactive: $isInactive, ')
-          ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
-class $IngredientSkusTable extends IngredientSkus
-    with TableInfo<$IngredientSkusTable, IngredientSkusData> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $IngredientSkusTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<String> id = GeneratedColumn<String>(
-    'id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _revisionIdMeta = const VerificationMeta(
-    'revisionId',
-  );
-  @override
-  late final GeneratedColumn<String> revisionId = GeneratedColumn<String>(
-    'revision_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _updatedByDeviceMeta = const VerificationMeta(
-    'updatedByDevice',
-  );
-  @override
-  late final GeneratedColumn<String> updatedByDevice = GeneratedColumn<String>(
-    'updated_by_device',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _updatedAtUtcMeta = const VerificationMeta(
-    'updatedAtUtc',
-  );
-  @override
-  late final GeneratedColumn<DateTime> updatedAtUtc = GeneratedColumn<DateTime>(
-    'updated_at_utc',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
-    'isDeleted',
-  );
-  @override
-  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
-    'is_deleted',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_deleted" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  static const VerificationMeta _deletedAtUtcMeta = const VerificationMeta(
-    'deletedAtUtc',
-  );
-  @override
-  late final GeneratedColumn<DateTime> deletedAtUtc = GeneratedColumn<DateTime>(
-    'deleted_at_utc',
-    aliasedName,
-    true,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _ingredientIdMeta = const VerificationMeta(
-    'ingredientId',
-  );
-  @override
-  late final GeneratedColumn<String> ingredientId = GeneratedColumn<String>(
-    'ingredient_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES ingredients (id)',
-    ),
-  );
-  static const VerificationMeta _skuCodeMeta = const VerificationMeta(
-    'skuCode',
-  );
-  @override
-  late final GeneratedColumn<String> skuCode = GeneratedColumn<String>(
-    'sku_code',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _imageHashMeta = const VerificationMeta(
-    'imageHash',
-  );
-  @override
-  late final GeneratedColumn<String> imageHash = GeneratedColumn<String>(
-    'image_hash',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _supplierMeta = const VerificationMeta(
-    'supplier',
-  );
-  @override
-  late final GeneratedColumn<String> supplier = GeneratedColumn<String>(
-    'supplier',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _originMeta = const VerificationMeta('origin');
-  @override
-  late final GeneratedColumn<String> origin = GeneratedColumn<String>(
-    'origin',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
-  @override
-  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
-    'notes',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _isInactiveMeta = const VerificationMeta(
-    'isInactive',
-  );
-  @override
-  late final GeneratedColumn<bool> isInactive = GeneratedColumn<bool>(
-    'is_inactive',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_inactive" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    revisionId,
-    updatedByDevice,
-    updatedAtUtc,
-    isDeleted,
-    deletedAtUtc,
-    ingredientId,
-    skuCode,
-    imageHash,
-    supplier,
-    origin,
-    notes,
-    isInactive,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'ingredient_skus';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<IngredientSkusData> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    } else if (isInserting) {
-      context.missing(_idMeta);
-    }
-    if (data.containsKey('revision_id')) {
-      context.handle(
-        _revisionIdMeta,
-        revisionId.isAcceptableOrUnknown(data['revision_id']!, _revisionIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_revisionIdMeta);
-    }
-    if (data.containsKey('updated_by_device')) {
-      context.handle(
-        _updatedByDeviceMeta,
-        updatedByDevice.isAcceptableOrUnknown(
-          data['updated_by_device']!,
-          _updatedByDeviceMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_updatedByDeviceMeta);
-    }
-    if (data.containsKey('updated_at_utc')) {
-      context.handle(
-        _updatedAtUtcMeta,
-        updatedAtUtc.isAcceptableOrUnknown(
-          data['updated_at_utc']!,
-          _updatedAtUtcMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_updatedAtUtcMeta);
-    }
-    if (data.containsKey('is_deleted')) {
-      context.handle(
-        _isDeletedMeta,
-        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
-      );
-    }
-    if (data.containsKey('deleted_at_utc')) {
-      context.handle(
-        _deletedAtUtcMeta,
-        deletedAtUtc.isAcceptableOrUnknown(
-          data['deleted_at_utc']!,
-          _deletedAtUtcMeta,
-        ),
-      );
-    }
-    if (data.containsKey('ingredient_id')) {
-      context.handle(
-        _ingredientIdMeta,
-        ingredientId.isAcceptableOrUnknown(
-          data['ingredient_id']!,
-          _ingredientIdMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_ingredientIdMeta);
-    }
-    if (data.containsKey('sku_code')) {
-      context.handle(
-        _skuCodeMeta,
-        skuCode.isAcceptableOrUnknown(data['sku_code']!, _skuCodeMeta),
-      );
-    }
-    if (data.containsKey('image_hash')) {
-      context.handle(
-        _imageHashMeta,
-        imageHash.isAcceptableOrUnknown(data['image_hash']!, _imageHashMeta),
-      );
-    }
-    if (data.containsKey('supplier')) {
-      context.handle(
-        _supplierMeta,
-        supplier.isAcceptableOrUnknown(data['supplier']!, _supplierMeta),
-      );
-    }
-    if (data.containsKey('origin')) {
-      context.handle(
-        _originMeta,
-        origin.isAcceptableOrUnknown(data['origin']!, _originMeta),
-      );
-    }
-    if (data.containsKey('notes')) {
-      context.handle(
-        _notesMeta,
-        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
-      );
-    }
-    if (data.containsKey('is_inactive')) {
-      context.handle(
-        _isInactiveMeta,
-        isInactive.isAcceptableOrUnknown(data['is_inactive']!, _isInactiveMeta),
-      );
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  IngredientSkusData map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return IngredientSkusData(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}id'],
-      )!,
-      revisionId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}revision_id'],
-      )!,
-      updatedByDevice: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}updated_by_device'],
-      )!,
-      updatedAtUtc: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}updated_at_utc'],
-      )!,
-      isDeleted: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_deleted'],
-      )!,
-      deletedAtUtc: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}deleted_at_utc'],
-      ),
-      ingredientId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}ingredient_id'],
-      )!,
-      skuCode: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}sku_code'],
-      ),
-      imageHash: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}image_hash'],
-      ),
-      supplier: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}supplier'],
-      ),
-      origin: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}origin'],
-      ),
-      notes: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}notes'],
-      ),
-      isInactive: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_inactive'],
-      )!,
-    );
-  }
-
-  @override
-  $IngredientSkusTable createAlias(String alias) {
-    return $IngredientSkusTable(attachedDatabase, alias);
-  }
-}
-
-class IngredientSkusData extends DataClass
-    implements Insertable<IngredientSkusData> {
-  final String id;
-  final String revisionId;
-  final String updatedByDevice;
-  final DateTime updatedAtUtc;
-  final bool isDeleted;
-  final DateTime? deletedAtUtc;
-  final String ingredientId;
-  final String? skuCode;
-  final String? imageHash;
-  final String? supplier;
-  final String? origin;
-  final String? notes;
-  final bool isInactive;
-  const IngredientSkusData({
-    required this.id,
-    required this.revisionId,
-    required this.updatedByDevice,
-    required this.updatedAtUtc,
-    required this.isDeleted,
-    this.deletedAtUtc,
-    required this.ingredientId,
-    this.skuCode,
-    this.imageHash,
-    this.supplier,
-    this.origin,
-    this.notes,
-    required this.isInactive,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<String>(id);
-    map['revision_id'] = Variable<String>(revisionId);
-    map['updated_by_device'] = Variable<String>(updatedByDevice);
-    map['updated_at_utc'] = Variable<DateTime>(updatedAtUtc);
-    map['is_deleted'] = Variable<bool>(isDeleted);
-    if (!nullToAbsent || deletedAtUtc != null) {
-      map['deleted_at_utc'] = Variable<DateTime>(deletedAtUtc);
-    }
-    map['ingredient_id'] = Variable<String>(ingredientId);
-    if (!nullToAbsent || skuCode != null) {
-      map['sku_code'] = Variable<String>(skuCode);
-    }
-    if (!nullToAbsent || imageHash != null) {
-      map['image_hash'] = Variable<String>(imageHash);
-    }
-    if (!nullToAbsent || supplier != null) {
-      map['supplier'] = Variable<String>(supplier);
-    }
-    if (!nullToAbsent || origin != null) {
-      map['origin'] = Variable<String>(origin);
-    }
-    if (!nullToAbsent || notes != null) {
-      map['notes'] = Variable<String>(notes);
-    }
-    map['is_inactive'] = Variable<bool>(isInactive);
-    return map;
-  }
-
-  IngredientSkusCompanion toCompanion(bool nullToAbsent) {
-    return IngredientSkusCompanion(
-      id: Value(id),
-      revisionId: Value(revisionId),
-      updatedByDevice: Value(updatedByDevice),
-      updatedAtUtc: Value(updatedAtUtc),
-      isDeleted: Value(isDeleted),
-      deletedAtUtc: deletedAtUtc == null && nullToAbsent
-          ? const Value.absent()
-          : Value(deletedAtUtc),
-      ingredientId: Value(ingredientId),
-      skuCode: skuCode == null && nullToAbsent
-          ? const Value.absent()
-          : Value(skuCode),
-      imageHash: imageHash == null && nullToAbsent
-          ? const Value.absent()
-          : Value(imageHash),
-      supplier: supplier == null && nullToAbsent
-          ? const Value.absent()
-          : Value(supplier),
-      origin: origin == null && nullToAbsent
-          ? const Value.absent()
-          : Value(origin),
-      notes: notes == null && nullToAbsent
-          ? const Value.absent()
-          : Value(notes),
-      isInactive: Value(isInactive),
-    );
-  }
-
-  factory IngredientSkusData.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return IngredientSkusData(
-      id: serializer.fromJson<String>(json['id']),
-      revisionId: serializer.fromJson<String>(json['revisionId']),
-      updatedByDevice: serializer.fromJson<String>(json['updatedByDevice']),
-      updatedAtUtc: serializer.fromJson<DateTime>(json['updatedAtUtc']),
-      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
-      deletedAtUtc: serializer.fromJson<DateTime?>(json['deletedAtUtc']),
-      ingredientId: serializer.fromJson<String>(json['ingredientId']),
-      skuCode: serializer.fromJson<String?>(json['skuCode']),
-      imageHash: serializer.fromJson<String?>(json['imageHash']),
-      supplier: serializer.fromJson<String?>(json['supplier']),
-      origin: serializer.fromJson<String?>(json['origin']),
-      notes: serializer.fromJson<String?>(json['notes']),
-      isInactive: serializer.fromJson<bool>(json['isInactive']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<String>(id),
-      'revisionId': serializer.toJson<String>(revisionId),
-      'updatedByDevice': serializer.toJson<String>(updatedByDevice),
-      'updatedAtUtc': serializer.toJson<DateTime>(updatedAtUtc),
-      'isDeleted': serializer.toJson<bool>(isDeleted),
-      'deletedAtUtc': serializer.toJson<DateTime?>(deletedAtUtc),
-      'ingredientId': serializer.toJson<String>(ingredientId),
-      'skuCode': serializer.toJson<String?>(skuCode),
-      'imageHash': serializer.toJson<String?>(imageHash),
-      'supplier': serializer.toJson<String?>(supplier),
-      'origin': serializer.toJson<String?>(origin),
-      'notes': serializer.toJson<String?>(notes),
-      'isInactive': serializer.toJson<bool>(isInactive),
-    };
-  }
-
-  IngredientSkusData copyWith({
-    String? id,
-    String? revisionId,
-    String? updatedByDevice,
-    DateTime? updatedAtUtc,
-    bool? isDeleted,
-    Value<DateTime?> deletedAtUtc = const Value.absent(),
-    String? ingredientId,
-    Value<String?> skuCode = const Value.absent(),
-    Value<String?> imageHash = const Value.absent(),
-    Value<String?> supplier = const Value.absent(),
-    Value<String?> origin = const Value.absent(),
-    Value<String?> notes = const Value.absent(),
-    bool? isInactive,
-  }) => IngredientSkusData(
-    id: id ?? this.id,
-    revisionId: revisionId ?? this.revisionId,
-    updatedByDevice: updatedByDevice ?? this.updatedByDevice,
-    updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
-    isDeleted: isDeleted ?? this.isDeleted,
-    deletedAtUtc: deletedAtUtc.present ? deletedAtUtc.value : this.deletedAtUtc,
-    ingredientId: ingredientId ?? this.ingredientId,
-    skuCode: skuCode.present ? skuCode.value : this.skuCode,
-    imageHash: imageHash.present ? imageHash.value : this.imageHash,
-    supplier: supplier.present ? supplier.value : this.supplier,
-    origin: origin.present ? origin.value : this.origin,
-    notes: notes.present ? notes.value : this.notes,
-    isInactive: isInactive ?? this.isInactive,
-  );
-  IngredientSkusData copyWithCompanion(IngredientSkusCompanion data) {
-    return IngredientSkusData(
-      id: data.id.present ? data.id.value : this.id,
-      revisionId: data.revisionId.present
-          ? data.revisionId.value
-          : this.revisionId,
-      updatedByDevice: data.updatedByDevice.present
-          ? data.updatedByDevice.value
-          : this.updatedByDevice,
-      updatedAtUtc: data.updatedAtUtc.present
-          ? data.updatedAtUtc.value
-          : this.updatedAtUtc,
-      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
-      deletedAtUtc: data.deletedAtUtc.present
-          ? data.deletedAtUtc.value
-          : this.deletedAtUtc,
-      ingredientId: data.ingredientId.present
-          ? data.ingredientId.value
-          : this.ingredientId,
-      skuCode: data.skuCode.present ? data.skuCode.value : this.skuCode,
-      imageHash: data.imageHash.present ? data.imageHash.value : this.imageHash,
-      supplier: data.supplier.present ? data.supplier.value : this.supplier,
-      origin: data.origin.present ? data.origin.value : this.origin,
-      notes: data.notes.present ? data.notes.value : this.notes,
-      isInactive: data.isInactive.present
-          ? data.isInactive.value
-          : this.isInactive,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('IngredientSkusData(')
-          ..write('id: $id, ')
-          ..write('revisionId: $revisionId, ')
-          ..write('updatedByDevice: $updatedByDevice, ')
-          ..write('updatedAtUtc: $updatedAtUtc, ')
-          ..write('isDeleted: $isDeleted, ')
-          ..write('deletedAtUtc: $deletedAtUtc, ')
-          ..write('ingredientId: $ingredientId, ')
-          ..write('skuCode: $skuCode, ')
-          ..write('imageHash: $imageHash, ')
-          ..write('supplier: $supplier, ')
-          ..write('origin: $origin, ')
-          ..write('notes: $notes, ')
-          ..write('isInactive: $isInactive')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    id,
-    revisionId,
-    updatedByDevice,
-    updatedAtUtc,
-    isDeleted,
-    deletedAtUtc,
-    ingredientId,
-    skuCode,
-    imageHash,
-    supplier,
-    origin,
-    notes,
-    isInactive,
-  );
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is IngredientSkusData &&
-          other.id == this.id &&
-          other.revisionId == this.revisionId &&
-          other.updatedByDevice == this.updatedByDevice &&
-          other.updatedAtUtc == this.updatedAtUtc &&
-          other.isDeleted == this.isDeleted &&
-          other.deletedAtUtc == this.deletedAtUtc &&
-          other.ingredientId == this.ingredientId &&
-          other.skuCode == this.skuCode &&
-          other.imageHash == this.imageHash &&
-          other.supplier == this.supplier &&
-          other.origin == this.origin &&
-          other.notes == this.notes &&
-          other.isInactive == this.isInactive);
-}
-
-class IngredientSkusCompanion extends UpdateCompanion<IngredientSkusData> {
-  final Value<String> id;
-  final Value<String> revisionId;
-  final Value<String> updatedByDevice;
-  final Value<DateTime> updatedAtUtc;
-  final Value<bool> isDeleted;
-  final Value<DateTime?> deletedAtUtc;
-  final Value<String> ingredientId;
-  final Value<String?> skuCode;
-  final Value<String?> imageHash;
-  final Value<String?> supplier;
-  final Value<String?> origin;
-  final Value<String?> notes;
-  final Value<bool> isInactive;
-  final Value<int> rowid;
-  const IngredientSkusCompanion({
-    this.id = const Value.absent(),
-    this.revisionId = const Value.absent(),
-    this.updatedByDevice = const Value.absent(),
-    this.updatedAtUtc = const Value.absent(),
-    this.isDeleted = const Value.absent(),
-    this.deletedAtUtc = const Value.absent(),
-    this.ingredientId = const Value.absent(),
-    this.skuCode = const Value.absent(),
-    this.imageHash = const Value.absent(),
-    this.supplier = const Value.absent(),
-    this.origin = const Value.absent(),
-    this.notes = const Value.absent(),
-    this.isInactive = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  IngredientSkusCompanion.insert({
-    required String id,
-    required String revisionId,
-    required String updatedByDevice,
-    required DateTime updatedAtUtc,
-    this.isDeleted = const Value.absent(),
-    this.deletedAtUtc = const Value.absent(),
-    required String ingredientId,
-    this.skuCode = const Value.absent(),
-    this.imageHash = const Value.absent(),
-    this.supplier = const Value.absent(),
-    this.origin = const Value.absent(),
-    this.notes = const Value.absent(),
-    this.isInactive = const Value.absent(),
-    this.rowid = const Value.absent(),
-  }) : id = Value(id),
-       revisionId = Value(revisionId),
-       updatedByDevice = Value(updatedByDevice),
-       updatedAtUtc = Value(updatedAtUtc),
-       ingredientId = Value(ingredientId);
-  static Insertable<IngredientSkusData> custom({
-    Expression<String>? id,
-    Expression<String>? revisionId,
-    Expression<String>? updatedByDevice,
-    Expression<DateTime>? updatedAtUtc,
-    Expression<bool>? isDeleted,
-    Expression<DateTime>? deletedAtUtc,
-    Expression<String>? ingredientId,
-    Expression<String>? skuCode,
-    Expression<String>? imageHash,
-    Expression<String>? supplier,
-    Expression<String>? origin,
-    Expression<String>? notes,
-    Expression<bool>? isInactive,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (revisionId != null) 'revision_id': revisionId,
-      if (updatedByDevice != null) 'updated_by_device': updatedByDevice,
-      if (updatedAtUtc != null) 'updated_at_utc': updatedAtUtc,
-      if (isDeleted != null) 'is_deleted': isDeleted,
-      if (deletedAtUtc != null) 'deleted_at_utc': deletedAtUtc,
-      if (ingredientId != null) 'ingredient_id': ingredientId,
-      if (skuCode != null) 'sku_code': skuCode,
-      if (imageHash != null) 'image_hash': imageHash,
-      if (supplier != null) 'supplier': supplier,
-      if (origin != null) 'origin': origin,
-      if (notes != null) 'notes': notes,
-      if (isInactive != null) 'is_inactive': isInactive,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  IngredientSkusCompanion copyWith({
-    Value<String>? id,
-    Value<String>? revisionId,
-    Value<String>? updatedByDevice,
-    Value<DateTime>? updatedAtUtc,
-    Value<bool>? isDeleted,
-    Value<DateTime?>? deletedAtUtc,
-    Value<String>? ingredientId,
-    Value<String?>? skuCode,
-    Value<String?>? imageHash,
-    Value<String?>? supplier,
-    Value<String?>? origin,
-    Value<String?>? notes,
-    Value<bool>? isInactive,
-    Value<int>? rowid,
-  }) {
-    return IngredientSkusCompanion(
-      id: id ?? this.id,
-      revisionId: revisionId ?? this.revisionId,
-      updatedByDevice: updatedByDevice ?? this.updatedByDevice,
-      updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
-      isDeleted: isDeleted ?? this.isDeleted,
-      deletedAtUtc: deletedAtUtc ?? this.deletedAtUtc,
-      ingredientId: ingredientId ?? this.ingredientId,
-      skuCode: skuCode ?? this.skuCode,
-      imageHash: imageHash ?? this.imageHash,
-      supplier: supplier ?? this.supplier,
-      origin: origin ?? this.origin,
-      notes: notes ?? this.notes,
-      isInactive: isInactive ?? this.isInactive,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<String>(id.value);
-    }
-    if (revisionId.present) {
-      map['revision_id'] = Variable<String>(revisionId.value);
-    }
-    if (updatedByDevice.present) {
-      map['updated_by_device'] = Variable<String>(updatedByDevice.value);
-    }
-    if (updatedAtUtc.present) {
-      map['updated_at_utc'] = Variable<DateTime>(updatedAtUtc.value);
-    }
-    if (isDeleted.present) {
-      map['is_deleted'] = Variable<bool>(isDeleted.value);
-    }
-    if (deletedAtUtc.present) {
-      map['deleted_at_utc'] = Variable<DateTime>(deletedAtUtc.value);
-    }
-    if (ingredientId.present) {
-      map['ingredient_id'] = Variable<String>(ingredientId.value);
-    }
-    if (skuCode.present) {
-      map['sku_code'] = Variable<String>(skuCode.value);
-    }
-    if (imageHash.present) {
-      map['image_hash'] = Variable<String>(imageHash.value);
-    }
-    if (supplier.present) {
-      map['supplier'] = Variable<String>(supplier.value);
-    }
-    if (origin.present) {
-      map['origin'] = Variable<String>(origin.value);
-    }
-    if (notes.present) {
-      map['notes'] = Variable<String>(notes.value);
-    }
-    if (isInactive.present) {
-      map['is_inactive'] = Variable<bool>(isInactive.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('IngredientSkusCompanion(')
-          ..write('id: $id, ')
-          ..write('revisionId: $revisionId, ')
-          ..write('updatedByDevice: $updatedByDevice, ')
-          ..write('updatedAtUtc: $updatedAtUtc, ')
-          ..write('isDeleted: $isDeleted, ')
-          ..write('deletedAtUtc: $deletedAtUtc, ')
-          ..write('ingredientId: $ingredientId, ')
-          ..write('skuCode: $skuCode, ')
-          ..write('imageHash: $imageHash, ')
-          ..write('supplier: $supplier, ')
-          ..write('origin: $origin, ')
           ..write('notes: $notes, ')
           ..write('isInactive: $isInactive, ')
           ..write('rowid: $rowid')
@@ -3881,647 +3193,6 @@ class IngredientRatioRangesCompanion
           ..write('isDeleted: $isDeleted, ')
           ..write('deletedAtUtc: $deletedAtUtc, ')
           ..write('ingredientId: $ingredientId, ')
-          ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
-class $SkuRatioOverridesTable extends SkuRatioOverrides
-    with TableInfo<$SkuRatioOverridesTable, SkuRatioOverride> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $SkuRatioOverridesTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _productionTypeIdMeta = const VerificationMeta(
-    'productionTypeId',
-  );
-  @override
-  late final GeneratedColumn<String> productionTypeId = GeneratedColumn<String>(
-    'production_type_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES production_types (id)',
-    ),
-  );
-  static const VerificationMeta _minRatioMeta = const VerificationMeta(
-    'minRatio',
-  );
-  @override
-  late final GeneratedColumn<int> minRatio = GeneratedColumn<int>(
-    'min_ratio',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _maxRatioMeta = const VerificationMeta(
-    'maxRatio',
-  );
-  @override
-  late final GeneratedColumn<int> maxRatio = GeneratedColumn<int>(
-    'max_ratio',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<String> id = GeneratedColumn<String>(
-    'id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _revisionIdMeta = const VerificationMeta(
-    'revisionId',
-  );
-  @override
-  late final GeneratedColumn<String> revisionId = GeneratedColumn<String>(
-    'revision_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _updatedByDeviceMeta = const VerificationMeta(
-    'updatedByDevice',
-  );
-  @override
-  late final GeneratedColumn<String> updatedByDevice = GeneratedColumn<String>(
-    'updated_by_device',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _updatedAtUtcMeta = const VerificationMeta(
-    'updatedAtUtc',
-  );
-  @override
-  late final GeneratedColumn<DateTime> updatedAtUtc = GeneratedColumn<DateTime>(
-    'updated_at_utc',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
-    'isDeleted',
-  );
-  @override
-  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
-    'is_deleted',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_deleted" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  static const VerificationMeta _deletedAtUtcMeta = const VerificationMeta(
-    'deletedAtUtc',
-  );
-  @override
-  late final GeneratedColumn<DateTime> deletedAtUtc = GeneratedColumn<DateTime>(
-    'deleted_at_utc',
-    aliasedName,
-    true,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _skuIdMeta = const VerificationMeta('skuId');
-  @override
-  late final GeneratedColumn<String> skuId = GeneratedColumn<String>(
-    'sku_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES ingredient_skus (id)',
-    ),
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    productionTypeId,
-    minRatio,
-    maxRatio,
-    id,
-    revisionId,
-    updatedByDevice,
-    updatedAtUtc,
-    isDeleted,
-    deletedAtUtc,
-    skuId,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'sku_ratio_overrides';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<SkuRatioOverride> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('production_type_id')) {
-      context.handle(
-        _productionTypeIdMeta,
-        productionTypeId.isAcceptableOrUnknown(
-          data['production_type_id']!,
-          _productionTypeIdMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_productionTypeIdMeta);
-    }
-    if (data.containsKey('min_ratio')) {
-      context.handle(
-        _minRatioMeta,
-        minRatio.isAcceptableOrUnknown(data['min_ratio']!, _minRatioMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_minRatioMeta);
-    }
-    if (data.containsKey('max_ratio')) {
-      context.handle(
-        _maxRatioMeta,
-        maxRatio.isAcceptableOrUnknown(data['max_ratio']!, _maxRatioMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_maxRatioMeta);
-    }
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    } else if (isInserting) {
-      context.missing(_idMeta);
-    }
-    if (data.containsKey('revision_id')) {
-      context.handle(
-        _revisionIdMeta,
-        revisionId.isAcceptableOrUnknown(data['revision_id']!, _revisionIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_revisionIdMeta);
-    }
-    if (data.containsKey('updated_by_device')) {
-      context.handle(
-        _updatedByDeviceMeta,
-        updatedByDevice.isAcceptableOrUnknown(
-          data['updated_by_device']!,
-          _updatedByDeviceMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_updatedByDeviceMeta);
-    }
-    if (data.containsKey('updated_at_utc')) {
-      context.handle(
-        _updatedAtUtcMeta,
-        updatedAtUtc.isAcceptableOrUnknown(
-          data['updated_at_utc']!,
-          _updatedAtUtcMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_updatedAtUtcMeta);
-    }
-    if (data.containsKey('is_deleted')) {
-      context.handle(
-        _isDeletedMeta,
-        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
-      );
-    }
-    if (data.containsKey('deleted_at_utc')) {
-      context.handle(
-        _deletedAtUtcMeta,
-        deletedAtUtc.isAcceptableOrUnknown(
-          data['deleted_at_utc']!,
-          _deletedAtUtcMeta,
-        ),
-      );
-    }
-    if (data.containsKey('sku_id')) {
-      context.handle(
-        _skuIdMeta,
-        skuId.isAcceptableOrUnknown(data['sku_id']!, _skuIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_skuIdMeta);
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  List<Set<GeneratedColumn>> get uniqueKeys => [
-    {skuId, productionTypeId},
-  ];
-  @override
-  SkuRatioOverride map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return SkuRatioOverride(
-      productionTypeId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}production_type_id'],
-      )!,
-      minRatio: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}min_ratio'],
-      )!,
-      maxRatio: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}max_ratio'],
-      )!,
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}id'],
-      )!,
-      revisionId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}revision_id'],
-      )!,
-      updatedByDevice: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}updated_by_device'],
-      )!,
-      updatedAtUtc: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}updated_at_utc'],
-      )!,
-      isDeleted: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_deleted'],
-      )!,
-      deletedAtUtc: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}deleted_at_utc'],
-      ),
-      skuId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}sku_id'],
-      )!,
-    );
-  }
-
-  @override
-  $SkuRatioOverridesTable createAlias(String alias) {
-    return $SkuRatioOverridesTable(attachedDatabase, alias);
-  }
-}
-
-class SkuRatioOverride extends DataClass
-    implements Insertable<SkuRatioOverride> {
-  final String productionTypeId;
-  final int minRatio;
-  final int maxRatio;
-  final String id;
-  final String revisionId;
-  final String updatedByDevice;
-  final DateTime updatedAtUtc;
-  final bool isDeleted;
-  final DateTime? deletedAtUtc;
-  final String skuId;
-  const SkuRatioOverride({
-    required this.productionTypeId,
-    required this.minRatio,
-    required this.maxRatio,
-    required this.id,
-    required this.revisionId,
-    required this.updatedByDevice,
-    required this.updatedAtUtc,
-    required this.isDeleted,
-    this.deletedAtUtc,
-    required this.skuId,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['production_type_id'] = Variable<String>(productionTypeId);
-    map['min_ratio'] = Variable<int>(minRatio);
-    map['max_ratio'] = Variable<int>(maxRatio);
-    map['id'] = Variable<String>(id);
-    map['revision_id'] = Variable<String>(revisionId);
-    map['updated_by_device'] = Variable<String>(updatedByDevice);
-    map['updated_at_utc'] = Variable<DateTime>(updatedAtUtc);
-    map['is_deleted'] = Variable<bool>(isDeleted);
-    if (!nullToAbsent || deletedAtUtc != null) {
-      map['deleted_at_utc'] = Variable<DateTime>(deletedAtUtc);
-    }
-    map['sku_id'] = Variable<String>(skuId);
-    return map;
-  }
-
-  SkuRatioOverridesCompanion toCompanion(bool nullToAbsent) {
-    return SkuRatioOverridesCompanion(
-      productionTypeId: Value(productionTypeId),
-      minRatio: Value(minRatio),
-      maxRatio: Value(maxRatio),
-      id: Value(id),
-      revisionId: Value(revisionId),
-      updatedByDevice: Value(updatedByDevice),
-      updatedAtUtc: Value(updatedAtUtc),
-      isDeleted: Value(isDeleted),
-      deletedAtUtc: deletedAtUtc == null && nullToAbsent
-          ? const Value.absent()
-          : Value(deletedAtUtc),
-      skuId: Value(skuId),
-    );
-  }
-
-  factory SkuRatioOverride.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return SkuRatioOverride(
-      productionTypeId: serializer.fromJson<String>(json['productionTypeId']),
-      minRatio: serializer.fromJson<int>(json['minRatio']),
-      maxRatio: serializer.fromJson<int>(json['maxRatio']),
-      id: serializer.fromJson<String>(json['id']),
-      revisionId: serializer.fromJson<String>(json['revisionId']),
-      updatedByDevice: serializer.fromJson<String>(json['updatedByDevice']),
-      updatedAtUtc: serializer.fromJson<DateTime>(json['updatedAtUtc']),
-      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
-      deletedAtUtc: serializer.fromJson<DateTime?>(json['deletedAtUtc']),
-      skuId: serializer.fromJson<String>(json['skuId']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'productionTypeId': serializer.toJson<String>(productionTypeId),
-      'minRatio': serializer.toJson<int>(minRatio),
-      'maxRatio': serializer.toJson<int>(maxRatio),
-      'id': serializer.toJson<String>(id),
-      'revisionId': serializer.toJson<String>(revisionId),
-      'updatedByDevice': serializer.toJson<String>(updatedByDevice),
-      'updatedAtUtc': serializer.toJson<DateTime>(updatedAtUtc),
-      'isDeleted': serializer.toJson<bool>(isDeleted),
-      'deletedAtUtc': serializer.toJson<DateTime?>(deletedAtUtc),
-      'skuId': serializer.toJson<String>(skuId),
-    };
-  }
-
-  SkuRatioOverride copyWith({
-    String? productionTypeId,
-    int? minRatio,
-    int? maxRatio,
-    String? id,
-    String? revisionId,
-    String? updatedByDevice,
-    DateTime? updatedAtUtc,
-    bool? isDeleted,
-    Value<DateTime?> deletedAtUtc = const Value.absent(),
-    String? skuId,
-  }) => SkuRatioOverride(
-    productionTypeId: productionTypeId ?? this.productionTypeId,
-    minRatio: minRatio ?? this.minRatio,
-    maxRatio: maxRatio ?? this.maxRatio,
-    id: id ?? this.id,
-    revisionId: revisionId ?? this.revisionId,
-    updatedByDevice: updatedByDevice ?? this.updatedByDevice,
-    updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
-    isDeleted: isDeleted ?? this.isDeleted,
-    deletedAtUtc: deletedAtUtc.present ? deletedAtUtc.value : this.deletedAtUtc,
-    skuId: skuId ?? this.skuId,
-  );
-  SkuRatioOverride copyWithCompanion(SkuRatioOverridesCompanion data) {
-    return SkuRatioOverride(
-      productionTypeId: data.productionTypeId.present
-          ? data.productionTypeId.value
-          : this.productionTypeId,
-      minRatio: data.minRatio.present ? data.minRatio.value : this.minRatio,
-      maxRatio: data.maxRatio.present ? data.maxRatio.value : this.maxRatio,
-      id: data.id.present ? data.id.value : this.id,
-      revisionId: data.revisionId.present
-          ? data.revisionId.value
-          : this.revisionId,
-      updatedByDevice: data.updatedByDevice.present
-          ? data.updatedByDevice.value
-          : this.updatedByDevice,
-      updatedAtUtc: data.updatedAtUtc.present
-          ? data.updatedAtUtc.value
-          : this.updatedAtUtc,
-      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
-      deletedAtUtc: data.deletedAtUtc.present
-          ? data.deletedAtUtc.value
-          : this.deletedAtUtc,
-      skuId: data.skuId.present ? data.skuId.value : this.skuId,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('SkuRatioOverride(')
-          ..write('productionTypeId: $productionTypeId, ')
-          ..write('minRatio: $minRatio, ')
-          ..write('maxRatio: $maxRatio, ')
-          ..write('id: $id, ')
-          ..write('revisionId: $revisionId, ')
-          ..write('updatedByDevice: $updatedByDevice, ')
-          ..write('updatedAtUtc: $updatedAtUtc, ')
-          ..write('isDeleted: $isDeleted, ')
-          ..write('deletedAtUtc: $deletedAtUtc, ')
-          ..write('skuId: $skuId')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    productionTypeId,
-    minRatio,
-    maxRatio,
-    id,
-    revisionId,
-    updatedByDevice,
-    updatedAtUtc,
-    isDeleted,
-    deletedAtUtc,
-    skuId,
-  );
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is SkuRatioOverride &&
-          other.productionTypeId == this.productionTypeId &&
-          other.minRatio == this.minRatio &&
-          other.maxRatio == this.maxRatio &&
-          other.id == this.id &&
-          other.revisionId == this.revisionId &&
-          other.updatedByDevice == this.updatedByDevice &&
-          other.updatedAtUtc == this.updatedAtUtc &&
-          other.isDeleted == this.isDeleted &&
-          other.deletedAtUtc == this.deletedAtUtc &&
-          other.skuId == this.skuId);
-}
-
-class SkuRatioOverridesCompanion extends UpdateCompanion<SkuRatioOverride> {
-  final Value<String> productionTypeId;
-  final Value<int> minRatio;
-  final Value<int> maxRatio;
-  final Value<String> id;
-  final Value<String> revisionId;
-  final Value<String> updatedByDevice;
-  final Value<DateTime> updatedAtUtc;
-  final Value<bool> isDeleted;
-  final Value<DateTime?> deletedAtUtc;
-  final Value<String> skuId;
-  final Value<int> rowid;
-  const SkuRatioOverridesCompanion({
-    this.productionTypeId = const Value.absent(),
-    this.minRatio = const Value.absent(),
-    this.maxRatio = const Value.absent(),
-    this.id = const Value.absent(),
-    this.revisionId = const Value.absent(),
-    this.updatedByDevice = const Value.absent(),
-    this.updatedAtUtc = const Value.absent(),
-    this.isDeleted = const Value.absent(),
-    this.deletedAtUtc = const Value.absent(),
-    this.skuId = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  SkuRatioOverridesCompanion.insert({
-    required String productionTypeId,
-    required int minRatio,
-    required int maxRatio,
-    required String id,
-    required String revisionId,
-    required String updatedByDevice,
-    required DateTime updatedAtUtc,
-    this.isDeleted = const Value.absent(),
-    this.deletedAtUtc = const Value.absent(),
-    required String skuId,
-    this.rowid = const Value.absent(),
-  }) : productionTypeId = Value(productionTypeId),
-       minRatio = Value(minRatio),
-       maxRatio = Value(maxRatio),
-       id = Value(id),
-       revisionId = Value(revisionId),
-       updatedByDevice = Value(updatedByDevice),
-       updatedAtUtc = Value(updatedAtUtc),
-       skuId = Value(skuId);
-  static Insertable<SkuRatioOverride> custom({
-    Expression<String>? productionTypeId,
-    Expression<int>? minRatio,
-    Expression<int>? maxRatio,
-    Expression<String>? id,
-    Expression<String>? revisionId,
-    Expression<String>? updatedByDevice,
-    Expression<DateTime>? updatedAtUtc,
-    Expression<bool>? isDeleted,
-    Expression<DateTime>? deletedAtUtc,
-    Expression<String>? skuId,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (productionTypeId != null) 'production_type_id': productionTypeId,
-      if (minRatio != null) 'min_ratio': minRatio,
-      if (maxRatio != null) 'max_ratio': maxRatio,
-      if (id != null) 'id': id,
-      if (revisionId != null) 'revision_id': revisionId,
-      if (updatedByDevice != null) 'updated_by_device': updatedByDevice,
-      if (updatedAtUtc != null) 'updated_at_utc': updatedAtUtc,
-      if (isDeleted != null) 'is_deleted': isDeleted,
-      if (deletedAtUtc != null) 'deleted_at_utc': deletedAtUtc,
-      if (skuId != null) 'sku_id': skuId,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  SkuRatioOverridesCompanion copyWith({
-    Value<String>? productionTypeId,
-    Value<int>? minRatio,
-    Value<int>? maxRatio,
-    Value<String>? id,
-    Value<String>? revisionId,
-    Value<String>? updatedByDevice,
-    Value<DateTime>? updatedAtUtc,
-    Value<bool>? isDeleted,
-    Value<DateTime?>? deletedAtUtc,
-    Value<String>? skuId,
-    Value<int>? rowid,
-  }) {
-    return SkuRatioOverridesCompanion(
-      productionTypeId: productionTypeId ?? this.productionTypeId,
-      minRatio: minRatio ?? this.minRatio,
-      maxRatio: maxRatio ?? this.maxRatio,
-      id: id ?? this.id,
-      revisionId: revisionId ?? this.revisionId,
-      updatedByDevice: updatedByDevice ?? this.updatedByDevice,
-      updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
-      isDeleted: isDeleted ?? this.isDeleted,
-      deletedAtUtc: deletedAtUtc ?? this.deletedAtUtc,
-      skuId: skuId ?? this.skuId,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (productionTypeId.present) {
-      map['production_type_id'] = Variable<String>(productionTypeId.value);
-    }
-    if (minRatio.present) {
-      map['min_ratio'] = Variable<int>(minRatio.value);
-    }
-    if (maxRatio.present) {
-      map['max_ratio'] = Variable<int>(maxRatio.value);
-    }
-    if (id.present) {
-      map['id'] = Variable<String>(id.value);
-    }
-    if (revisionId.present) {
-      map['revision_id'] = Variable<String>(revisionId.value);
-    }
-    if (updatedByDevice.present) {
-      map['updated_by_device'] = Variable<String>(updatedByDevice.value);
-    }
-    if (updatedAtUtc.present) {
-      map['updated_at_utc'] = Variable<DateTime>(updatedAtUtc.value);
-    }
-    if (isDeleted.present) {
-      map['is_deleted'] = Variable<bool>(isDeleted.value);
-    }
-    if (deletedAtUtc.present) {
-      map['deleted_at_utc'] = Variable<DateTime>(deletedAtUtc.value);
-    }
-    if (skuId.present) {
-      map['sku_id'] = Variable<String>(skuId.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('SkuRatioOverridesCompanion(')
-          ..write('productionTypeId: $productionTypeId, ')
-          ..write('minRatio: $minRatio, ')
-          ..write('maxRatio: $maxRatio, ')
-          ..write('id: $id, ')
-          ..write('revisionId: $revisionId, ')
-          ..write('updatedByDevice: $updatedByDevice, ')
-          ..write('updatedAtUtc: $updatedAtUtc, ')
-          ..write('isDeleted: $isDeleted, ')
-          ..write('deletedAtUtc: $deletedAtUtc, ')
-          ..write('skuId: $skuId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5897,16 +4568,18 @@ class $RecommendationItemsTable extends RecommendationItems
       'REFERENCES recommendation_groups (id)',
     ),
   );
-  static const VerificationMeta _skuIdMeta = const VerificationMeta('skuId');
+  static const VerificationMeta _ingredientIdMeta = const VerificationMeta(
+    'ingredientId',
+  );
   @override
-  late final GeneratedColumn<String> skuId = GeneratedColumn<String>(
-    'sku_id',
+  late final GeneratedColumn<String> ingredientId = GeneratedColumn<String>(
+    'ingredient_id',
     aliasedName,
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES ingredient_skus (id)',
+      'REFERENCES ingredients (id)',
     ),
   );
   static const VerificationMeta _ratioMeta = const VerificationMeta('ratio');
@@ -5928,7 +4601,7 @@ class $RecommendationItemsTable extends RecommendationItems
     isDeleted,
     deletedAtUtc,
     groupId,
-    skuId,
+    ingredientId,
     ratio,
   ];
   @override
@@ -6001,13 +4674,16 @@ class $RecommendationItemsTable extends RecommendationItems
     } else if (isInserting) {
       context.missing(_groupIdMeta);
     }
-    if (data.containsKey('sku_id')) {
+    if (data.containsKey('ingredient_id')) {
       context.handle(
-        _skuIdMeta,
-        skuId.isAcceptableOrUnknown(data['sku_id']!, _skuIdMeta),
+        _ingredientIdMeta,
+        ingredientId.isAcceptableOrUnknown(
+          data['ingredient_id']!,
+          _ingredientIdMeta,
+        ),
       );
     } else if (isInserting) {
-      context.missing(_skuIdMeta);
+      context.missing(_ingredientIdMeta);
     }
     if (data.containsKey('ratio')) {
       context.handle(
@@ -6024,7 +4700,7 @@ class $RecommendationItemsTable extends RecommendationItems
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
   List<Set<GeneratedColumn>> get uniqueKeys => [
-    {groupId, skuId},
+    {groupId, ingredientId},
   ];
   @override
   RecommendationItem map(Map<String, dynamic> data, {String? tablePrefix}) {
@@ -6058,9 +4734,9 @@ class $RecommendationItemsTable extends RecommendationItems
         DriftSqlType.string,
         data['${effectivePrefix}group_id'],
       )!,
-      skuId: attachedDatabase.typeMapping.read(
+      ingredientId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}sku_id'],
+        data['${effectivePrefix}ingredient_id'],
       )!,
       ratio: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
@@ -6084,7 +4760,7 @@ class RecommendationItem extends DataClass
   final bool isDeleted;
   final DateTime? deletedAtUtc;
   final String groupId;
-  final String skuId;
+  final String ingredientId;
   final int ratio;
   const RecommendationItem({
     required this.id,
@@ -6094,7 +4770,7 @@ class RecommendationItem extends DataClass
     required this.isDeleted,
     this.deletedAtUtc,
     required this.groupId,
-    required this.skuId,
+    required this.ingredientId,
     required this.ratio,
   });
   @override
@@ -6109,7 +4785,7 @@ class RecommendationItem extends DataClass
       map['deleted_at_utc'] = Variable<DateTime>(deletedAtUtc);
     }
     map['group_id'] = Variable<String>(groupId);
-    map['sku_id'] = Variable<String>(skuId);
+    map['ingredient_id'] = Variable<String>(ingredientId);
     map['ratio'] = Variable<int>(ratio);
     return map;
   }
@@ -6125,7 +4801,7 @@ class RecommendationItem extends DataClass
           ? const Value.absent()
           : Value(deletedAtUtc),
       groupId: Value(groupId),
-      skuId: Value(skuId),
+      ingredientId: Value(ingredientId),
       ratio: Value(ratio),
     );
   }
@@ -6143,7 +4819,7 @@ class RecommendationItem extends DataClass
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       deletedAtUtc: serializer.fromJson<DateTime?>(json['deletedAtUtc']),
       groupId: serializer.fromJson<String>(json['groupId']),
-      skuId: serializer.fromJson<String>(json['skuId']),
+      ingredientId: serializer.fromJson<String>(json['ingredientId']),
       ratio: serializer.fromJson<int>(json['ratio']),
     );
   }
@@ -6158,7 +4834,7 @@ class RecommendationItem extends DataClass
       'isDeleted': serializer.toJson<bool>(isDeleted),
       'deletedAtUtc': serializer.toJson<DateTime?>(deletedAtUtc),
       'groupId': serializer.toJson<String>(groupId),
-      'skuId': serializer.toJson<String>(skuId),
+      'ingredientId': serializer.toJson<String>(ingredientId),
       'ratio': serializer.toJson<int>(ratio),
     };
   }
@@ -6171,7 +4847,7 @@ class RecommendationItem extends DataClass
     bool? isDeleted,
     Value<DateTime?> deletedAtUtc = const Value.absent(),
     String? groupId,
-    String? skuId,
+    String? ingredientId,
     int? ratio,
   }) => RecommendationItem(
     id: id ?? this.id,
@@ -6181,7 +4857,7 @@ class RecommendationItem extends DataClass
     isDeleted: isDeleted ?? this.isDeleted,
     deletedAtUtc: deletedAtUtc.present ? deletedAtUtc.value : this.deletedAtUtc,
     groupId: groupId ?? this.groupId,
-    skuId: skuId ?? this.skuId,
+    ingredientId: ingredientId ?? this.ingredientId,
     ratio: ratio ?? this.ratio,
   );
   RecommendationItem copyWithCompanion(RecommendationItemsCompanion data) {
@@ -6201,7 +4877,9 @@ class RecommendationItem extends DataClass
           ? data.deletedAtUtc.value
           : this.deletedAtUtc,
       groupId: data.groupId.present ? data.groupId.value : this.groupId,
-      skuId: data.skuId.present ? data.skuId.value : this.skuId,
+      ingredientId: data.ingredientId.present
+          ? data.ingredientId.value
+          : this.ingredientId,
       ratio: data.ratio.present ? data.ratio.value : this.ratio,
     );
   }
@@ -6216,7 +4894,7 @@ class RecommendationItem extends DataClass
           ..write('isDeleted: $isDeleted, ')
           ..write('deletedAtUtc: $deletedAtUtc, ')
           ..write('groupId: $groupId, ')
-          ..write('skuId: $skuId, ')
+          ..write('ingredientId: $ingredientId, ')
           ..write('ratio: $ratio')
           ..write(')'))
         .toString();
@@ -6231,7 +4909,7 @@ class RecommendationItem extends DataClass
     isDeleted,
     deletedAtUtc,
     groupId,
-    skuId,
+    ingredientId,
     ratio,
   );
   @override
@@ -6245,7 +4923,7 @@ class RecommendationItem extends DataClass
           other.isDeleted == this.isDeleted &&
           other.deletedAtUtc == this.deletedAtUtc &&
           other.groupId == this.groupId &&
-          other.skuId == this.skuId &&
+          other.ingredientId == this.ingredientId &&
           other.ratio == this.ratio);
 }
 
@@ -6257,7 +4935,7 @@ class RecommendationItemsCompanion extends UpdateCompanion<RecommendationItem> {
   final Value<bool> isDeleted;
   final Value<DateTime?> deletedAtUtc;
   final Value<String> groupId;
-  final Value<String> skuId;
+  final Value<String> ingredientId;
   final Value<int> ratio;
   final Value<int> rowid;
   const RecommendationItemsCompanion({
@@ -6268,7 +4946,7 @@ class RecommendationItemsCompanion extends UpdateCompanion<RecommendationItem> {
     this.isDeleted = const Value.absent(),
     this.deletedAtUtc = const Value.absent(),
     this.groupId = const Value.absent(),
-    this.skuId = const Value.absent(),
+    this.ingredientId = const Value.absent(),
     this.ratio = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -6280,7 +4958,7 @@ class RecommendationItemsCompanion extends UpdateCompanion<RecommendationItem> {
     this.isDeleted = const Value.absent(),
     this.deletedAtUtc = const Value.absent(),
     required String groupId,
-    required String skuId,
+    required String ingredientId,
     required int ratio,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -6288,7 +4966,7 @@ class RecommendationItemsCompanion extends UpdateCompanion<RecommendationItem> {
        updatedByDevice = Value(updatedByDevice),
        updatedAtUtc = Value(updatedAtUtc),
        groupId = Value(groupId),
-       skuId = Value(skuId),
+       ingredientId = Value(ingredientId),
        ratio = Value(ratio);
   static Insertable<RecommendationItem> custom({
     Expression<String>? id,
@@ -6298,7 +4976,7 @@ class RecommendationItemsCompanion extends UpdateCompanion<RecommendationItem> {
     Expression<bool>? isDeleted,
     Expression<DateTime>? deletedAtUtc,
     Expression<String>? groupId,
-    Expression<String>? skuId,
+    Expression<String>? ingredientId,
     Expression<int>? ratio,
     Expression<int>? rowid,
   }) {
@@ -6310,7 +4988,7 @@ class RecommendationItemsCompanion extends UpdateCompanion<RecommendationItem> {
       if (isDeleted != null) 'is_deleted': isDeleted,
       if (deletedAtUtc != null) 'deleted_at_utc': deletedAtUtc,
       if (groupId != null) 'group_id': groupId,
-      if (skuId != null) 'sku_id': skuId,
+      if (ingredientId != null) 'ingredient_id': ingredientId,
       if (ratio != null) 'ratio': ratio,
       if (rowid != null) 'rowid': rowid,
     });
@@ -6324,7 +5002,7 @@ class RecommendationItemsCompanion extends UpdateCompanion<RecommendationItem> {
     Value<bool>? isDeleted,
     Value<DateTime?>? deletedAtUtc,
     Value<String>? groupId,
-    Value<String>? skuId,
+    Value<String>? ingredientId,
     Value<int>? ratio,
     Value<int>? rowid,
   }) {
@@ -6336,7 +5014,7 @@ class RecommendationItemsCompanion extends UpdateCompanion<RecommendationItem> {
       isDeleted: isDeleted ?? this.isDeleted,
       deletedAtUtc: deletedAtUtc ?? this.deletedAtUtc,
       groupId: groupId ?? this.groupId,
-      skuId: skuId ?? this.skuId,
+      ingredientId: ingredientId ?? this.ingredientId,
       ratio: ratio ?? this.ratio,
       rowid: rowid ?? this.rowid,
     );
@@ -6366,8 +5044,8 @@ class RecommendationItemsCompanion extends UpdateCompanion<RecommendationItem> {
     if (groupId.present) {
       map['group_id'] = Variable<String>(groupId.value);
     }
-    if (skuId.present) {
-      map['sku_id'] = Variable<String>(skuId.value);
+    if (ingredientId.present) {
+      map['ingredient_id'] = Variable<String>(ingredientId.value);
     }
     if (ratio.present) {
       map['ratio'] = Variable<int>(ratio.value);
@@ -6388,7 +5066,7 @@ class RecommendationItemsCompanion extends UpdateCompanion<RecommendationItem> {
           ..write('isDeleted: $isDeleted, ')
           ..write('deletedAtUtc: $deletedAtUtc, ')
           ..write('groupId: $groupId, ')
-          ..write('skuId: $skuId, ')
+          ..write('ingredientId: $ingredientId, ')
           ..write('ratio: $ratio, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -12375,6 +11053,20 @@ class $FormulaItemsTable extends FormulaItems
       'REFERENCES formula_versions (id)',
     ),
   );
+  static const VerificationMeta _ingredientIdMeta = const VerificationMeta(
+    'ingredientId',
+  );
+  @override
+  late final GeneratedColumn<String> ingredientId = GeneratedColumn<String>(
+    'ingredient_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES ingredients (id)',
+    ),
+  );
   static const VerificationMeta _categoryNameMeta = const VerificationMeta(
     'categoryName',
   );
@@ -12396,26 +11088,6 @@ class $FormulaItemsTable extends FormulaItems
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
-  );
-  static const VerificationMeta _skuCodeMeta = const VerificationMeta(
-    'skuCode',
-  );
-  @override
-  late final GeneratedColumn<String> skuCode = GeneratedColumn<String>(
-    'sku_code',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _skuIdMeta = const VerificationMeta('skuId');
-  @override
-  late final GeneratedColumn<String> skuId = GeneratedColumn<String>(
-    'sku_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
   );
   static const VerificationMeta _ratioMeta = const VerificationMeta('ratio');
   @override
@@ -12446,10 +11118,9 @@ class $FormulaItemsTable extends FormulaItems
     isDeleted,
     deletedAtUtc,
     versionId,
+    ingredientId,
     categoryName,
     ingredientName,
-    skuCode,
-    skuId,
     ratio,
     sortOrder,
   ];
@@ -12523,6 +11194,15 @@ class $FormulaItemsTable extends FormulaItems
     } else if (isInserting) {
       context.missing(_versionIdMeta);
     }
+    if (data.containsKey('ingredient_id')) {
+      context.handle(
+        _ingredientIdMeta,
+        ingredientId.isAcceptableOrUnknown(
+          data['ingredient_id']!,
+          _ingredientIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('category_name')) {
       context.handle(
         _categoryNameMeta,
@@ -12544,18 +11224,6 @@ class $FormulaItemsTable extends FormulaItems
       );
     } else if (isInserting) {
       context.missing(_ingredientNameMeta);
-    }
-    if (data.containsKey('sku_code')) {
-      context.handle(
-        _skuCodeMeta,
-        skuCode.isAcceptableOrUnknown(data['sku_code']!, _skuCodeMeta),
-      );
-    }
-    if (data.containsKey('sku_id')) {
-      context.handle(
-        _skuIdMeta,
-        skuId.isAcceptableOrUnknown(data['sku_id']!, _skuIdMeta),
-      );
     }
     if (data.containsKey('ratio')) {
       context.handle(
@@ -12610,6 +11278,10 @@ class $FormulaItemsTable extends FormulaItems
         DriftSqlType.string,
         data['${effectivePrefix}version_id'],
       )!,
+      ingredientId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ingredient_id'],
+      ),
       categoryName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}category_name'],
@@ -12618,14 +11290,6 @@ class $FormulaItemsTable extends FormulaItems
         DriftSqlType.string,
         data['${effectivePrefix}ingredient_name'],
       )!,
-      skuCode: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}sku_code'],
-      ),
-      skuId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}sku_id'],
-      ),
       ratio: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}ratio'],
@@ -12651,10 +11315,9 @@ class FormulaItem extends DataClass implements Insertable<FormulaItem> {
   final bool isDeleted;
   final DateTime? deletedAtUtc;
   final String versionId;
+  final String? ingredientId;
   final String categoryName;
   final String ingredientName;
-  final String? skuCode;
-  final String? skuId;
   final int ratio;
   final int sortOrder;
   const FormulaItem({
@@ -12665,10 +11328,9 @@ class FormulaItem extends DataClass implements Insertable<FormulaItem> {
     required this.isDeleted,
     this.deletedAtUtc,
     required this.versionId,
+    this.ingredientId,
     required this.categoryName,
     required this.ingredientName,
-    this.skuCode,
-    this.skuId,
     required this.ratio,
     required this.sortOrder,
   });
@@ -12684,14 +11346,11 @@ class FormulaItem extends DataClass implements Insertable<FormulaItem> {
       map['deleted_at_utc'] = Variable<DateTime>(deletedAtUtc);
     }
     map['version_id'] = Variable<String>(versionId);
+    if (!nullToAbsent || ingredientId != null) {
+      map['ingredient_id'] = Variable<String>(ingredientId);
+    }
     map['category_name'] = Variable<String>(categoryName);
     map['ingredient_name'] = Variable<String>(ingredientName);
-    if (!nullToAbsent || skuCode != null) {
-      map['sku_code'] = Variable<String>(skuCode);
-    }
-    if (!nullToAbsent || skuId != null) {
-      map['sku_id'] = Variable<String>(skuId);
-    }
     map['ratio'] = Variable<int>(ratio);
     map['sort_order'] = Variable<int>(sortOrder);
     return map;
@@ -12708,14 +11367,11 @@ class FormulaItem extends DataClass implements Insertable<FormulaItem> {
           ? const Value.absent()
           : Value(deletedAtUtc),
       versionId: Value(versionId),
+      ingredientId: ingredientId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ingredientId),
       categoryName: Value(categoryName),
       ingredientName: Value(ingredientName),
-      skuCode: skuCode == null && nullToAbsent
-          ? const Value.absent()
-          : Value(skuCode),
-      skuId: skuId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(skuId),
       ratio: Value(ratio),
       sortOrder: Value(sortOrder),
     );
@@ -12734,10 +11390,9 @@ class FormulaItem extends DataClass implements Insertable<FormulaItem> {
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       deletedAtUtc: serializer.fromJson<DateTime?>(json['deletedAtUtc']),
       versionId: serializer.fromJson<String>(json['versionId']),
+      ingredientId: serializer.fromJson<String?>(json['ingredientId']),
       categoryName: serializer.fromJson<String>(json['categoryName']),
       ingredientName: serializer.fromJson<String>(json['ingredientName']),
-      skuCode: serializer.fromJson<String?>(json['skuCode']),
-      skuId: serializer.fromJson<String?>(json['skuId']),
       ratio: serializer.fromJson<int>(json['ratio']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
     );
@@ -12753,10 +11408,9 @@ class FormulaItem extends DataClass implements Insertable<FormulaItem> {
       'isDeleted': serializer.toJson<bool>(isDeleted),
       'deletedAtUtc': serializer.toJson<DateTime?>(deletedAtUtc),
       'versionId': serializer.toJson<String>(versionId),
+      'ingredientId': serializer.toJson<String?>(ingredientId),
       'categoryName': serializer.toJson<String>(categoryName),
       'ingredientName': serializer.toJson<String>(ingredientName),
-      'skuCode': serializer.toJson<String?>(skuCode),
-      'skuId': serializer.toJson<String?>(skuId),
       'ratio': serializer.toJson<int>(ratio),
       'sortOrder': serializer.toJson<int>(sortOrder),
     };
@@ -12770,10 +11424,9 @@ class FormulaItem extends DataClass implements Insertable<FormulaItem> {
     bool? isDeleted,
     Value<DateTime?> deletedAtUtc = const Value.absent(),
     String? versionId,
+    Value<String?> ingredientId = const Value.absent(),
     String? categoryName,
     String? ingredientName,
-    Value<String?> skuCode = const Value.absent(),
-    Value<String?> skuId = const Value.absent(),
     int? ratio,
     int? sortOrder,
   }) => FormulaItem(
@@ -12784,10 +11437,9 @@ class FormulaItem extends DataClass implements Insertable<FormulaItem> {
     isDeleted: isDeleted ?? this.isDeleted,
     deletedAtUtc: deletedAtUtc.present ? deletedAtUtc.value : this.deletedAtUtc,
     versionId: versionId ?? this.versionId,
+    ingredientId: ingredientId.present ? ingredientId.value : this.ingredientId,
     categoryName: categoryName ?? this.categoryName,
     ingredientName: ingredientName ?? this.ingredientName,
-    skuCode: skuCode.present ? skuCode.value : this.skuCode,
-    skuId: skuId.present ? skuId.value : this.skuId,
     ratio: ratio ?? this.ratio,
     sortOrder: sortOrder ?? this.sortOrder,
   );
@@ -12808,14 +11460,15 @@ class FormulaItem extends DataClass implements Insertable<FormulaItem> {
           ? data.deletedAtUtc.value
           : this.deletedAtUtc,
       versionId: data.versionId.present ? data.versionId.value : this.versionId,
+      ingredientId: data.ingredientId.present
+          ? data.ingredientId.value
+          : this.ingredientId,
       categoryName: data.categoryName.present
           ? data.categoryName.value
           : this.categoryName,
       ingredientName: data.ingredientName.present
           ? data.ingredientName.value
           : this.ingredientName,
-      skuCode: data.skuCode.present ? data.skuCode.value : this.skuCode,
-      skuId: data.skuId.present ? data.skuId.value : this.skuId,
       ratio: data.ratio.present ? data.ratio.value : this.ratio,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
     );
@@ -12831,10 +11484,9 @@ class FormulaItem extends DataClass implements Insertable<FormulaItem> {
           ..write('isDeleted: $isDeleted, ')
           ..write('deletedAtUtc: $deletedAtUtc, ')
           ..write('versionId: $versionId, ')
+          ..write('ingredientId: $ingredientId, ')
           ..write('categoryName: $categoryName, ')
           ..write('ingredientName: $ingredientName, ')
-          ..write('skuCode: $skuCode, ')
-          ..write('skuId: $skuId, ')
           ..write('ratio: $ratio, ')
           ..write('sortOrder: $sortOrder')
           ..write(')'))
@@ -12850,10 +11502,9 @@ class FormulaItem extends DataClass implements Insertable<FormulaItem> {
     isDeleted,
     deletedAtUtc,
     versionId,
+    ingredientId,
     categoryName,
     ingredientName,
-    skuCode,
-    skuId,
     ratio,
     sortOrder,
   );
@@ -12868,10 +11519,9 @@ class FormulaItem extends DataClass implements Insertable<FormulaItem> {
           other.isDeleted == this.isDeleted &&
           other.deletedAtUtc == this.deletedAtUtc &&
           other.versionId == this.versionId &&
+          other.ingredientId == this.ingredientId &&
           other.categoryName == this.categoryName &&
           other.ingredientName == this.ingredientName &&
-          other.skuCode == this.skuCode &&
-          other.skuId == this.skuId &&
           other.ratio == this.ratio &&
           other.sortOrder == this.sortOrder);
 }
@@ -12884,10 +11534,9 @@ class FormulaItemsCompanion extends UpdateCompanion<FormulaItem> {
   final Value<bool> isDeleted;
   final Value<DateTime?> deletedAtUtc;
   final Value<String> versionId;
+  final Value<String?> ingredientId;
   final Value<String> categoryName;
   final Value<String> ingredientName;
-  final Value<String?> skuCode;
-  final Value<String?> skuId;
   final Value<int> ratio;
   final Value<int> sortOrder;
   final Value<int> rowid;
@@ -12899,10 +11548,9 @@ class FormulaItemsCompanion extends UpdateCompanion<FormulaItem> {
     this.isDeleted = const Value.absent(),
     this.deletedAtUtc = const Value.absent(),
     this.versionId = const Value.absent(),
+    this.ingredientId = const Value.absent(),
     this.categoryName = const Value.absent(),
     this.ingredientName = const Value.absent(),
-    this.skuCode = const Value.absent(),
-    this.skuId = const Value.absent(),
     this.ratio = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -12915,10 +11563,9 @@ class FormulaItemsCompanion extends UpdateCompanion<FormulaItem> {
     this.isDeleted = const Value.absent(),
     this.deletedAtUtc = const Value.absent(),
     required String versionId,
+    this.ingredientId = const Value.absent(),
     required String categoryName,
     required String ingredientName,
-    this.skuCode = const Value.absent(),
-    this.skuId = const Value.absent(),
     required int ratio,
     required int sortOrder,
     this.rowid = const Value.absent(),
@@ -12939,10 +11586,9 @@ class FormulaItemsCompanion extends UpdateCompanion<FormulaItem> {
     Expression<bool>? isDeleted,
     Expression<DateTime>? deletedAtUtc,
     Expression<String>? versionId,
+    Expression<String>? ingredientId,
     Expression<String>? categoryName,
     Expression<String>? ingredientName,
-    Expression<String>? skuCode,
-    Expression<String>? skuId,
     Expression<int>? ratio,
     Expression<int>? sortOrder,
     Expression<int>? rowid,
@@ -12955,10 +11601,9 @@ class FormulaItemsCompanion extends UpdateCompanion<FormulaItem> {
       if (isDeleted != null) 'is_deleted': isDeleted,
       if (deletedAtUtc != null) 'deleted_at_utc': deletedAtUtc,
       if (versionId != null) 'version_id': versionId,
+      if (ingredientId != null) 'ingredient_id': ingredientId,
       if (categoryName != null) 'category_name': categoryName,
       if (ingredientName != null) 'ingredient_name': ingredientName,
-      if (skuCode != null) 'sku_code': skuCode,
-      if (skuId != null) 'sku_id': skuId,
       if (ratio != null) 'ratio': ratio,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (rowid != null) 'rowid': rowid,
@@ -12973,10 +11618,9 @@ class FormulaItemsCompanion extends UpdateCompanion<FormulaItem> {
     Value<bool>? isDeleted,
     Value<DateTime?>? deletedAtUtc,
     Value<String>? versionId,
+    Value<String?>? ingredientId,
     Value<String>? categoryName,
     Value<String>? ingredientName,
-    Value<String?>? skuCode,
-    Value<String?>? skuId,
     Value<int>? ratio,
     Value<int>? sortOrder,
     Value<int>? rowid,
@@ -12989,10 +11633,9 @@ class FormulaItemsCompanion extends UpdateCompanion<FormulaItem> {
       isDeleted: isDeleted ?? this.isDeleted,
       deletedAtUtc: deletedAtUtc ?? this.deletedAtUtc,
       versionId: versionId ?? this.versionId,
+      ingredientId: ingredientId ?? this.ingredientId,
       categoryName: categoryName ?? this.categoryName,
       ingredientName: ingredientName ?? this.ingredientName,
-      skuCode: skuCode ?? this.skuCode,
-      skuId: skuId ?? this.skuId,
       ratio: ratio ?? this.ratio,
       sortOrder: sortOrder ?? this.sortOrder,
       rowid: rowid ?? this.rowid,
@@ -13023,17 +11666,14 @@ class FormulaItemsCompanion extends UpdateCompanion<FormulaItem> {
     if (versionId.present) {
       map['version_id'] = Variable<String>(versionId.value);
     }
+    if (ingredientId.present) {
+      map['ingredient_id'] = Variable<String>(ingredientId.value);
+    }
     if (categoryName.present) {
       map['category_name'] = Variable<String>(categoryName.value);
     }
     if (ingredientName.present) {
       map['ingredient_name'] = Variable<String>(ingredientName.value);
-    }
-    if (skuCode.present) {
-      map['sku_code'] = Variable<String>(skuCode.value);
-    }
-    if (skuId.present) {
-      map['sku_id'] = Variable<String>(skuId.value);
     }
     if (ratio.present) {
       map['ratio'] = Variable<int>(ratio.value);
@@ -13057,10 +11697,9 @@ class FormulaItemsCompanion extends UpdateCompanion<FormulaItem> {
           ..write('isDeleted: $isDeleted, ')
           ..write('deletedAtUtc: $deletedAtUtc, ')
           ..write('versionId: $versionId, ')
+          ..write('ingredientId: $ingredientId, ')
           ..write('categoryName: $categoryName, ')
           ..write('ingredientName: $ingredientName, ')
-          ..write('skuCode: $skuCode, ')
-          ..write('skuId: $skuId, ')
           ..write('ratio: $ratio, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('rowid: $rowid')
@@ -14176,6 +12815,20 @@ class $MixingItemsTable extends MixingItems
       'REFERENCES mixing_sessions (id)',
     ),
   );
+  static const VerificationMeta _ingredientIdMeta = const VerificationMeta(
+    'ingredientId',
+  );
+  @override
+  late final GeneratedColumn<String> ingredientId = GeneratedColumn<String>(
+    'ingredient_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES ingredients (id)',
+    ),
+  );
   static const VerificationMeta _categoryNameMeta = const VerificationMeta(
     'categoryName',
   );
@@ -14197,26 +12850,6 @@ class $MixingItemsTable extends MixingItems
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
-  );
-  static const VerificationMeta _skuCodeMeta = const VerificationMeta(
-    'skuCode',
-  );
-  @override
-  late final GeneratedColumn<String> skuCode = GeneratedColumn<String>(
-    'sku_code',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _skuIdMeta = const VerificationMeta('skuId');
-  @override
-  late final GeneratedColumn<String> skuId = GeneratedColumn<String>(
-    'sku_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
   );
   static const VerificationMeta _plannedWeightMeta = const VerificationMeta(
     'plannedWeight',
@@ -14285,10 +12918,9 @@ class $MixingItemsTable extends MixingItems
     isDeleted,
     deletedAtUtc,
     sessionId,
+    ingredientId,
     categoryName,
     ingredientName,
-    skuCode,
-    skuId,
     plannedWeight,
     finalWeight,
     isManual,
@@ -14365,6 +12997,15 @@ class $MixingItemsTable extends MixingItems
     } else if (isInserting) {
       context.missing(_sessionIdMeta);
     }
+    if (data.containsKey('ingredient_id')) {
+      context.handle(
+        _ingredientIdMeta,
+        ingredientId.isAcceptableOrUnknown(
+          data['ingredient_id']!,
+          _ingredientIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('category_name')) {
       context.handle(
         _categoryNameMeta,
@@ -14386,18 +13027,6 @@ class $MixingItemsTable extends MixingItems
       );
     } else if (isInserting) {
       context.missing(_ingredientNameMeta);
-    }
-    if (data.containsKey('sku_code')) {
-      context.handle(
-        _skuCodeMeta,
-        skuCode.isAcceptableOrUnknown(data['sku_code']!, _skuCodeMeta),
-      );
-    }
-    if (data.containsKey('sku_id')) {
-      context.handle(
-        _skuIdMeta,
-        skuId.isAcceptableOrUnknown(data['sku_id']!, _skuIdMeta),
-      );
     }
     if (data.containsKey('planned_weight')) {
       context.handle(
@@ -14482,6 +13111,10 @@ class $MixingItemsTable extends MixingItems
         DriftSqlType.string,
         data['${effectivePrefix}session_id'],
       )!,
+      ingredientId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ingredient_id'],
+      ),
       categoryName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}category_name'],
@@ -14490,14 +13123,6 @@ class $MixingItemsTable extends MixingItems
         DriftSqlType.string,
         data['${effectivePrefix}ingredient_name'],
       )!,
-      skuCode: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}sku_code'],
-      ),
-      skuId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}sku_id'],
-      ),
       plannedWeight: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}planned_weight'],
@@ -14535,10 +13160,9 @@ class MixingItem extends DataClass implements Insertable<MixingItem> {
   final bool isDeleted;
   final DateTime? deletedAtUtc;
   final String sessionId;
+  final String? ingredientId;
   final String categoryName;
   final String ingredientName;
-  final String? skuCode;
-  final String? skuId;
   final int plannedWeight;
   final int finalWeight;
   final bool isManual;
@@ -14552,10 +13176,9 @@ class MixingItem extends DataClass implements Insertable<MixingItem> {
     required this.isDeleted,
     this.deletedAtUtc,
     required this.sessionId,
+    this.ingredientId,
     required this.categoryName,
     required this.ingredientName,
-    this.skuCode,
-    this.skuId,
     required this.plannedWeight,
     required this.finalWeight,
     required this.isManual,
@@ -14574,14 +13197,11 @@ class MixingItem extends DataClass implements Insertable<MixingItem> {
       map['deleted_at_utc'] = Variable<DateTime>(deletedAtUtc);
     }
     map['session_id'] = Variable<String>(sessionId);
+    if (!nullToAbsent || ingredientId != null) {
+      map['ingredient_id'] = Variable<String>(ingredientId);
+    }
     map['category_name'] = Variable<String>(categoryName);
     map['ingredient_name'] = Variable<String>(ingredientName);
-    if (!nullToAbsent || skuCode != null) {
-      map['sku_code'] = Variable<String>(skuCode);
-    }
-    if (!nullToAbsent || skuId != null) {
-      map['sku_id'] = Variable<String>(skuId);
-    }
     map['planned_weight'] = Variable<int>(plannedWeight);
     map['final_weight'] = Variable<int>(finalWeight);
     map['is_manual'] = Variable<bool>(isManual);
@@ -14601,14 +13221,11 @@ class MixingItem extends DataClass implements Insertable<MixingItem> {
           ? const Value.absent()
           : Value(deletedAtUtc),
       sessionId: Value(sessionId),
+      ingredientId: ingredientId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ingredientId),
       categoryName: Value(categoryName),
       ingredientName: Value(ingredientName),
-      skuCode: skuCode == null && nullToAbsent
-          ? const Value.absent()
-          : Value(skuCode),
-      skuId: skuId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(skuId),
       plannedWeight: Value(plannedWeight),
       finalWeight: Value(finalWeight),
       isManual: Value(isManual),
@@ -14630,10 +13247,9 @@ class MixingItem extends DataClass implements Insertable<MixingItem> {
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       deletedAtUtc: serializer.fromJson<DateTime?>(json['deletedAtUtc']),
       sessionId: serializer.fromJson<String>(json['sessionId']),
+      ingredientId: serializer.fromJson<String?>(json['ingredientId']),
       categoryName: serializer.fromJson<String>(json['categoryName']),
       ingredientName: serializer.fromJson<String>(json['ingredientName']),
-      skuCode: serializer.fromJson<String?>(json['skuCode']),
-      skuId: serializer.fromJson<String?>(json['skuId']),
       plannedWeight: serializer.fromJson<int>(json['plannedWeight']),
       finalWeight: serializer.fromJson<int>(json['finalWeight']),
       isManual: serializer.fromJson<bool>(json['isManual']),
@@ -14652,10 +13268,9 @@ class MixingItem extends DataClass implements Insertable<MixingItem> {
       'isDeleted': serializer.toJson<bool>(isDeleted),
       'deletedAtUtc': serializer.toJson<DateTime?>(deletedAtUtc),
       'sessionId': serializer.toJson<String>(sessionId),
+      'ingredientId': serializer.toJson<String?>(ingredientId),
       'categoryName': serializer.toJson<String>(categoryName),
       'ingredientName': serializer.toJson<String>(ingredientName),
-      'skuCode': serializer.toJson<String?>(skuCode),
-      'skuId': serializer.toJson<String?>(skuId),
       'plannedWeight': serializer.toJson<int>(plannedWeight),
       'finalWeight': serializer.toJson<int>(finalWeight),
       'isManual': serializer.toJson<bool>(isManual),
@@ -14672,10 +13287,9 @@ class MixingItem extends DataClass implements Insertable<MixingItem> {
     bool? isDeleted,
     Value<DateTime?> deletedAtUtc = const Value.absent(),
     String? sessionId,
+    Value<String?> ingredientId = const Value.absent(),
     String? categoryName,
     String? ingredientName,
-    Value<String?> skuCode = const Value.absent(),
-    Value<String?> skuId = const Value.absent(),
     int? plannedWeight,
     int? finalWeight,
     bool? isManual,
@@ -14689,10 +13303,9 @@ class MixingItem extends DataClass implements Insertable<MixingItem> {
     isDeleted: isDeleted ?? this.isDeleted,
     deletedAtUtc: deletedAtUtc.present ? deletedAtUtc.value : this.deletedAtUtc,
     sessionId: sessionId ?? this.sessionId,
+    ingredientId: ingredientId.present ? ingredientId.value : this.ingredientId,
     categoryName: categoryName ?? this.categoryName,
     ingredientName: ingredientName ?? this.ingredientName,
-    skuCode: skuCode.present ? skuCode.value : this.skuCode,
-    skuId: skuId.present ? skuId.value : this.skuId,
     plannedWeight: plannedWeight ?? this.plannedWeight,
     finalWeight: finalWeight ?? this.finalWeight,
     isManual: isManual ?? this.isManual,
@@ -14716,14 +13329,15 @@ class MixingItem extends DataClass implements Insertable<MixingItem> {
           ? data.deletedAtUtc.value
           : this.deletedAtUtc,
       sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      ingredientId: data.ingredientId.present
+          ? data.ingredientId.value
+          : this.ingredientId,
       categoryName: data.categoryName.present
           ? data.categoryName.value
           : this.categoryName,
       ingredientName: data.ingredientName.present
           ? data.ingredientName.value
           : this.ingredientName,
-      skuCode: data.skuCode.present ? data.skuCode.value : this.skuCode,
-      skuId: data.skuId.present ? data.skuId.value : this.skuId,
       plannedWeight: data.plannedWeight.present
           ? data.plannedWeight.value
           : this.plannedWeight,
@@ -14748,10 +13362,9 @@ class MixingItem extends DataClass implements Insertable<MixingItem> {
           ..write('isDeleted: $isDeleted, ')
           ..write('deletedAtUtc: $deletedAtUtc, ')
           ..write('sessionId: $sessionId, ')
+          ..write('ingredientId: $ingredientId, ')
           ..write('categoryName: $categoryName, ')
           ..write('ingredientName: $ingredientName, ')
-          ..write('skuCode: $skuCode, ')
-          ..write('skuId: $skuId, ')
           ..write('plannedWeight: $plannedWeight, ')
           ..write('finalWeight: $finalWeight, ')
           ..write('isManual: $isManual, ')
@@ -14770,10 +13383,9 @@ class MixingItem extends DataClass implements Insertable<MixingItem> {
     isDeleted,
     deletedAtUtc,
     sessionId,
+    ingredientId,
     categoryName,
     ingredientName,
-    skuCode,
-    skuId,
     plannedWeight,
     finalWeight,
     isManual,
@@ -14791,10 +13403,9 @@ class MixingItem extends DataClass implements Insertable<MixingItem> {
           other.isDeleted == this.isDeleted &&
           other.deletedAtUtc == this.deletedAtUtc &&
           other.sessionId == this.sessionId &&
+          other.ingredientId == this.ingredientId &&
           other.categoryName == this.categoryName &&
           other.ingredientName == this.ingredientName &&
-          other.skuCode == this.skuCode &&
-          other.skuId == this.skuId &&
           other.plannedWeight == this.plannedWeight &&
           other.finalWeight == this.finalWeight &&
           other.isManual == this.isManual &&
@@ -14810,10 +13421,9 @@ class MixingItemsCompanion extends UpdateCompanion<MixingItem> {
   final Value<bool> isDeleted;
   final Value<DateTime?> deletedAtUtc;
   final Value<String> sessionId;
+  final Value<String?> ingredientId;
   final Value<String> categoryName;
   final Value<String> ingredientName;
-  final Value<String?> skuCode;
-  final Value<String?> skuId;
   final Value<int> plannedWeight;
   final Value<int> finalWeight;
   final Value<bool> isManual;
@@ -14828,10 +13438,9 @@ class MixingItemsCompanion extends UpdateCompanion<MixingItem> {
     this.isDeleted = const Value.absent(),
     this.deletedAtUtc = const Value.absent(),
     this.sessionId = const Value.absent(),
+    this.ingredientId = const Value.absent(),
     this.categoryName = const Value.absent(),
     this.ingredientName = const Value.absent(),
-    this.skuCode = const Value.absent(),
-    this.skuId = const Value.absent(),
     this.plannedWeight = const Value.absent(),
     this.finalWeight = const Value.absent(),
     this.isManual = const Value.absent(),
@@ -14847,10 +13456,9 @@ class MixingItemsCompanion extends UpdateCompanion<MixingItem> {
     this.isDeleted = const Value.absent(),
     this.deletedAtUtc = const Value.absent(),
     required String sessionId,
+    this.ingredientId = const Value.absent(),
     required String categoryName,
     required String ingredientName,
-    this.skuCode = const Value.absent(),
-    this.skuId = const Value.absent(),
     required int plannedWeight,
     required int finalWeight,
     required bool isManual,
@@ -14877,10 +13485,9 @@ class MixingItemsCompanion extends UpdateCompanion<MixingItem> {
     Expression<bool>? isDeleted,
     Expression<DateTime>? deletedAtUtc,
     Expression<String>? sessionId,
+    Expression<String>? ingredientId,
     Expression<String>? categoryName,
     Expression<String>? ingredientName,
-    Expression<String>? skuCode,
-    Expression<String>? skuId,
     Expression<int>? plannedWeight,
     Expression<int>? finalWeight,
     Expression<bool>? isManual,
@@ -14896,10 +13503,9 @@ class MixingItemsCompanion extends UpdateCompanion<MixingItem> {
       if (isDeleted != null) 'is_deleted': isDeleted,
       if (deletedAtUtc != null) 'deleted_at_utc': deletedAtUtc,
       if (sessionId != null) 'session_id': sessionId,
+      if (ingredientId != null) 'ingredient_id': ingredientId,
       if (categoryName != null) 'category_name': categoryName,
       if (ingredientName != null) 'ingredient_name': ingredientName,
-      if (skuCode != null) 'sku_code': skuCode,
-      if (skuId != null) 'sku_id': skuId,
       if (plannedWeight != null) 'planned_weight': plannedWeight,
       if (finalWeight != null) 'final_weight': finalWeight,
       if (isManual != null) 'is_manual': isManual,
@@ -14917,10 +13523,9 @@ class MixingItemsCompanion extends UpdateCompanion<MixingItem> {
     Value<bool>? isDeleted,
     Value<DateTime?>? deletedAtUtc,
     Value<String>? sessionId,
+    Value<String?>? ingredientId,
     Value<String>? categoryName,
     Value<String>? ingredientName,
-    Value<String?>? skuCode,
-    Value<String?>? skuId,
     Value<int>? plannedWeight,
     Value<int>? finalWeight,
     Value<bool>? isManual,
@@ -14936,10 +13541,9 @@ class MixingItemsCompanion extends UpdateCompanion<MixingItem> {
       isDeleted: isDeleted ?? this.isDeleted,
       deletedAtUtc: deletedAtUtc ?? this.deletedAtUtc,
       sessionId: sessionId ?? this.sessionId,
+      ingredientId: ingredientId ?? this.ingredientId,
       categoryName: categoryName ?? this.categoryName,
       ingredientName: ingredientName ?? this.ingredientName,
-      skuCode: skuCode ?? this.skuCode,
-      skuId: skuId ?? this.skuId,
       plannedWeight: plannedWeight ?? this.plannedWeight,
       finalWeight: finalWeight ?? this.finalWeight,
       isManual: isManual ?? this.isManual,
@@ -14973,17 +13577,14 @@ class MixingItemsCompanion extends UpdateCompanion<MixingItem> {
     if (sessionId.present) {
       map['session_id'] = Variable<String>(sessionId.value);
     }
+    if (ingredientId.present) {
+      map['ingredient_id'] = Variable<String>(ingredientId.value);
+    }
     if (categoryName.present) {
       map['category_name'] = Variable<String>(categoryName.value);
     }
     if (ingredientName.present) {
       map['ingredient_name'] = Variable<String>(ingredientName.value);
-    }
-    if (skuCode.present) {
-      map['sku_code'] = Variable<String>(skuCode.value);
-    }
-    if (skuId.present) {
-      map['sku_id'] = Variable<String>(skuId.value);
     }
     if (plannedWeight.present) {
       map['planned_weight'] = Variable<int>(plannedWeight.value);
@@ -15016,10 +13617,9 @@ class MixingItemsCompanion extends UpdateCompanion<MixingItem> {
           ..write('isDeleted: $isDeleted, ')
           ..write('deletedAtUtc: $deletedAtUtc, ')
           ..write('sessionId: $sessionId, ')
+          ..write('ingredientId: $ingredientId, ')
           ..write('categoryName: $categoryName, ')
           ..write('ingredientName: $ingredientName, ')
-          ..write('skuCode: $skuCode, ')
-          ..write('skuId: $skuId, ')
           ..write('plannedWeight: $plannedWeight, ')
           ..write('finalWeight: $finalWeight, ')
           ..write('isManual: $isManual, ')
@@ -19411,13 +18011,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $IngredientCategoriesTable ingredientCategories =
       $IngredientCategoriesTable(this);
   late final $IngredientsTable ingredients = $IngredientsTable(this);
-  late final $IngredientSkusTable ingredientSkus = $IngredientSkusTable(this);
   late final $CategoryRatioRangesTable categoryRatioRanges =
       $CategoryRatioRangesTable(this);
   late final $IngredientRatioRangesTable ingredientRatioRanges =
       $IngredientRatioRangesTable(this);
-  late final $SkuRatioOverridesTable skuRatioOverrides =
-      $SkuRatioOverridesTable(this);
   late final $RecommendationPresetsTable recommendationPresets =
       $RecommendationPresetsTable(this);
   late final $RecommendationGroupsTable recommendationGroups =
@@ -19459,10 +18056,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     productionTypes,
     ingredientCategories,
     ingredients,
-    ingredientSkus,
     categoryRatioRanges,
     ingredientRatioRanges,
-    skuRatioOverrides,
     recommendationPresets,
     recommendationGroups,
     recommendationItems,
@@ -19575,31 +18170,6 @@ final class $$ProductionTypesTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _ingredientRatioRangesRefsTable($_db),
-    );
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
-  static MultiTypedResultKey<$SkuRatioOverridesTable, List<SkuRatioOverride>>
-  _skuRatioOverridesRefsTable(_$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.skuRatioOverrides,
-        aliasName:
-            'production_types__id__sku_ratio_overrides__production_type_id',
-      );
-
-  $$SkuRatioOverridesTableProcessedTableManager get skuRatioOverridesRefs {
-    final manager =
-        $$SkuRatioOverridesTableTableManager(
-          $_db,
-          $_db.skuRatioOverrides,
-        ).filter(
-          (f) => f.productionTypeId.id.sqlEquals($_itemColumn<String>('id')!),
-        );
-
-    final cache = $_typedResult.readTableOrNull(
-      _skuRatioOverridesRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -19776,31 +18346,6 @@ class $$ProductionTypesTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
-    return f(composer);
-  }
-
-  Expression<bool> skuRatioOverridesRefs(
-    Expression<bool> Function($$SkuRatioOverridesTableFilterComposer f) f,
-  ) {
-    final $$SkuRatioOverridesTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.skuRatioOverrides,
-      getReferencedColumn: (t) => t.productionTypeId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$SkuRatioOverridesTableFilterComposer(
-            $db: $db,
-            $table: $db.skuRatioOverrides,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
     return f(composer);
   }
 
@@ -20034,32 +18579,6 @@ class $$ProductionTypesTableAnnotationComposer
     return f(composer);
   }
 
-  Expression<T> skuRatioOverridesRefs<T extends Object>(
-    Expression<T> Function($$SkuRatioOverridesTableAnnotationComposer a) f,
-  ) {
-    final $$SkuRatioOverridesTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.skuRatioOverrides,
-          getReferencedColumn: (t) => t.productionTypeId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkuRatioOverridesTableAnnotationComposer(
-                $db: $db,
-                $table: $db.skuRatioOverrides,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return f(composer);
-  }
-
   Expression<T> recommendationPresetsRefs<T extends Object>(
     Expression<T> Function($$RecommendationPresetsTableAnnotationComposer a) f,
   ) {
@@ -20153,7 +18672,6 @@ class $$ProductionTypesTableTableManager
           PrefetchHooks Function({
             bool categoryRatioRangesRefs,
             bool ingredientRatioRangesRefs,
-            bool skuRatioOverridesRefs,
             bool recommendationPresetsRefs,
             bool formulaDraftsRefs,
             bool formulaVersionsRefs,
@@ -20232,7 +18750,6 @@ class $$ProductionTypesTableTableManager
               ({
                 categoryRatioRangesRefs = false,
                 ingredientRatioRangesRefs = false,
-                skuRatioOverridesRefs = false,
                 recommendationPresetsRefs = false,
                 formulaDraftsRefs = false,
                 formulaVersionsRefs = false,
@@ -20242,7 +18759,6 @@ class $$ProductionTypesTableTableManager
                   explicitlyWatchedTables: [
                     if (categoryRatioRangesRefs) db.categoryRatioRanges,
                     if (ingredientRatioRangesRefs) db.ingredientRatioRanges,
-                    if (skuRatioOverridesRefs) db.skuRatioOverrides,
                     if (recommendationPresetsRefs) db.recommendationPresets,
                     if (formulaDraftsRefs) db.formulaDrafts,
                     if (formulaVersionsRefs) db.formulaVersions,
@@ -20286,27 +18802,6 @@ class $$ProductionTypesTableTableManager
                                 table,
                                 p0,
                               ).ingredientRatioRangesRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.productionTypeId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                      if (skuRatioOverridesRefs)
-                        await $_getPrefetchedData<
-                          ProductionType,
-                          $ProductionTypesTable,
-                          SkuRatioOverride
-                        >(
-                          currentTable: table,
-                          referencedTable: $$ProductionTypesTableReferences
-                              ._skuRatioOverridesRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$ProductionTypesTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).skuRatioOverridesRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.productionTypeId == item.id,
@@ -20399,7 +18894,6 @@ typedef $$ProductionTypesTableProcessedTableManager =
       PrefetchHooks Function({
         bool categoryRatioRangesRefs,
         bool ingredientRatioRangesRefs,
-        bool skuRatioOverridesRefs,
         bool recommendationPresetsRefs,
         bool formulaDraftsRefs,
         bool formulaVersionsRefs,
@@ -21033,7 +19527,9 @@ typedef $$IngredientsTableCreateCompanionBuilder =
       Value<DateTime?> deletedAtUtc,
       required String categoryId,
       required String name,
+      Value<String?> imageHash,
       Value<String?> alias,
+      Value<String?> notes,
       Value<bool> isInactive,
       Value<int> rowid,
     });
@@ -21047,7 +19543,9 @@ typedef $$IngredientsTableUpdateCompanionBuilder =
       Value<DateTime?> deletedAtUtc,
       Value<String> categoryId,
       Value<String> name,
+      Value<String?> imageHash,
       Value<String?> alias,
+      Value<String?> notes,
       Value<bool> isInactive,
       Value<int> rowid,
     });
@@ -21074,24 +19572,6 @@ final class $$IngredientsTableReferences
     );
   }
 
-  static MultiTypedResultKey<$IngredientSkusTable, List<IngredientSkusData>>
-  _ingredientSkusRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
-    db.ingredientSkus,
-    aliasName: 'ingredients__id__ingredient_skus__ingredient_id',
-  );
-
-  $$IngredientSkusTableProcessedTableManager get ingredientSkusRefs {
-    final manager = $$IngredientSkusTableTableManager(
-      $_db,
-      $_db.ingredientSkus,
-    ).filter((f) => f.ingredientId.id.sqlEquals($_itemColumn<String>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(_ingredientSkusRefsTable($_db));
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
   static MultiTypedResultKey<
     $IngredientRatioRangesTable,
     List<IngredientRatioRange>
@@ -21112,6 +19592,66 @@ final class $$IngredientsTableReferences
     final cache = $_typedResult.readTableOrNull(
       _ingredientRatioRangesRefsTable($_db),
     );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $RecommendationItemsTable,
+    List<RecommendationItem>
+  >
+  _recommendationItemsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.recommendationItems,
+        aliasName: 'ingredients__id__recommendation_items__ingredient_id',
+      );
+
+  $$RecommendationItemsTableProcessedTableManager get recommendationItemsRefs {
+    final manager = $$RecommendationItemsTableTableManager(
+      $_db,
+      $_db.recommendationItems,
+    ).filter((f) => f.ingredientId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _recommendationItemsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$FormulaItemsTable, List<FormulaItem>>
+  _formulaItemsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.formulaItems,
+    aliasName: 'ingredients__id__formula_items__ingredient_id',
+  );
+
+  $$FormulaItemsTableProcessedTableManager get formulaItemsRefs {
+    final manager = $$FormulaItemsTableTableManager(
+      $_db,
+      $_db.formulaItems,
+    ).filter((f) => f.ingredientId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_formulaItemsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$MixingItemsTable, List<MixingItem>>
+  _mixingItemsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.mixingItems,
+    aliasName: 'ingredients__id__mixing_items__ingredient_id',
+  );
+
+  $$MixingItemsTableProcessedTableManager get mixingItemsRefs {
+    final manager = $$MixingItemsTableTableManager(
+      $_db,
+      $_db.mixingItems,
+    ).filter((f) => f.ingredientId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_mixingItemsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -21162,8 +19702,18 @@ class $$IngredientsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get imageHash => $composableBuilder(
+    column: $table.imageHash,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get alias => $composableBuilder(
     column: $table.alias,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -21195,31 +19745,6 @@ class $$IngredientsTableFilterComposer
     return composer;
   }
 
-  Expression<bool> ingredientSkusRefs(
-    Expression<bool> Function($$IngredientSkusTableFilterComposer f) f,
-  ) {
-    final $$IngredientSkusTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.ingredientSkus,
-      getReferencedColumn: (t) => t.ingredientId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$IngredientSkusTableFilterComposer(
-            $db: $db,
-            $table: $db.ingredientSkus,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
   Expression<bool> ingredientRatioRangesRefs(
     Expression<bool> Function($$IngredientRatioRangesTableFilterComposer f) f,
   ) {
@@ -21243,6 +19768,81 @@ class $$IngredientsTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
+    return f(composer);
+  }
+
+  Expression<bool> recommendationItemsRefs(
+    Expression<bool> Function($$RecommendationItemsTableFilterComposer f) f,
+  ) {
+    final $$RecommendationItemsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.recommendationItems,
+      getReferencedColumn: (t) => t.ingredientId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecommendationItemsTableFilterComposer(
+            $db: $db,
+            $table: $db.recommendationItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> formulaItemsRefs(
+    Expression<bool> Function($$FormulaItemsTableFilterComposer f) f,
+  ) {
+    final $$FormulaItemsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.formulaItems,
+      getReferencedColumn: (t) => t.ingredientId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulaItemsTableFilterComposer(
+            $db: $db,
+            $table: $db.formulaItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> mixingItemsRefs(
+    Expression<bool> Function($$MixingItemsTableFilterComposer f) f,
+  ) {
+    final $$MixingItemsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.mixingItems,
+      getReferencedColumn: (t) => t.ingredientId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MixingItemsTableFilterComposer(
+            $db: $db,
+            $table: $db.mixingItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
     return f(composer);
   }
 }
@@ -21291,8 +19891,18 @@ class $$IngredientsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get imageHash => $composableBuilder(
+    column: $table.imageHash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get alias => $composableBuilder(
     column: $table.alias,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -21364,8 +19974,14 @@ class $$IngredientsTableAnnotationComposer
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
 
+  GeneratedColumn<String> get imageHash =>
+      $composableBuilder(column: $table.imageHash, builder: (column) => column);
+
   GeneratedColumn<String> get alias =>
       $composableBuilder(column: $table.alias, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
 
   GeneratedColumn<bool> get isInactive => $composableBuilder(
     column: $table.isInactive,
@@ -21396,31 +20012,6 @@ class $$IngredientsTableAnnotationComposer
     return composer;
   }
 
-  Expression<T> ingredientSkusRefs<T extends Object>(
-    Expression<T> Function($$IngredientSkusTableAnnotationComposer a) f,
-  ) {
-    final $$IngredientSkusTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.ingredientSkus,
-      getReferencedColumn: (t) => t.ingredientId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$IngredientSkusTableAnnotationComposer(
-            $db: $db,
-            $table: $db.ingredientSkus,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
   Expression<T> ingredientRatioRangesRefs<T extends Object>(
     Expression<T> Function($$IngredientRatioRangesTableAnnotationComposer a) f,
   ) {
@@ -21446,6 +20037,82 @@ class $$IngredientsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> recommendationItemsRefs<T extends Object>(
+    Expression<T> Function($$RecommendationItemsTableAnnotationComposer a) f,
+  ) {
+    final $$RecommendationItemsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.recommendationItems,
+          getReferencedColumn: (t) => t.ingredientId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$RecommendationItemsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.recommendationItems,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> formulaItemsRefs<T extends Object>(
+    Expression<T> Function($$FormulaItemsTableAnnotationComposer a) f,
+  ) {
+    final $$FormulaItemsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.formulaItems,
+      getReferencedColumn: (t) => t.ingredientId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FormulaItemsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.formulaItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> mixingItemsRefs<T extends Object>(
+    Expression<T> Function($$MixingItemsTableAnnotationComposer a) f,
+  ) {
+    final $$MixingItemsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.mixingItems,
+      getReferencedColumn: (t) => t.ingredientId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MixingItemsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.mixingItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$IngredientsTableTableManager
@@ -21463,8 +20130,10 @@ class $$IngredientsTableTableManager
           Ingredient,
           PrefetchHooks Function({
             bool categoryId,
-            bool ingredientSkusRefs,
             bool ingredientRatioRangesRefs,
+            bool recommendationItemsRefs,
+            bool formulaItemsRefs,
+            bool mixingItemsRefs,
           })
         > {
   $$IngredientsTableTableManager(_$AppDatabase db, $IngredientsTable table)
@@ -21488,7 +20157,9 @@ class $$IngredientsTableTableManager
                 Value<DateTime?> deletedAtUtc = const Value.absent(),
                 Value<String> categoryId = const Value.absent(),
                 Value<String> name = const Value.absent(),
+                Value<String?> imageHash = const Value.absent(),
                 Value<String?> alias = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
                 Value<bool> isInactive = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => IngredientsCompanion(
@@ -21500,7 +20171,9 @@ class $$IngredientsTableTableManager
                 deletedAtUtc: deletedAtUtc,
                 categoryId: categoryId,
                 name: name,
+                imageHash: imageHash,
                 alias: alias,
+                notes: notes,
                 isInactive: isInactive,
                 rowid: rowid,
               ),
@@ -21514,7 +20187,9 @@ class $$IngredientsTableTableManager
                 Value<DateTime?> deletedAtUtc = const Value.absent(),
                 required String categoryId,
                 required String name,
+                Value<String?> imageHash = const Value.absent(),
                 Value<String?> alias = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
                 Value<bool> isInactive = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => IngredientsCompanion.insert(
@@ -21526,7 +20201,9 @@ class $$IngredientsTableTableManager
                 deletedAtUtc: deletedAtUtc,
                 categoryId: categoryId,
                 name: name,
+                imageHash: imageHash,
                 alias: alias,
+                notes: notes,
                 isInactive: isInactive,
                 rowid: rowid,
               ),
@@ -21541,14 +20218,18 @@ class $$IngredientsTableTableManager
           prefetchHooksCallback:
               ({
                 categoryId = false,
-                ingredientSkusRefs = false,
                 ingredientRatioRangesRefs = false,
+                recommendationItemsRefs = false,
+                formulaItemsRefs = false,
+                mixingItemsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
-                    if (ingredientSkusRefs) db.ingredientSkus,
                     if (ingredientRatioRangesRefs) db.ingredientRatioRanges,
+                    if (recommendationItemsRefs) db.recommendationItems,
+                    if (formulaItemsRefs) db.formulaItems,
+                    if (mixingItemsRefs) db.mixingItems,
                   ],
                   addJoins:
                       <
@@ -21586,27 +20267,6 @@ class $$IngredientsTableTableManager
                       },
                   getPrefetchedDataCallback: (items) async {
                     return [
-                      if (ingredientSkusRefs)
-                        await $_getPrefetchedData<
-                          Ingredient,
-                          $IngredientsTable,
-                          IngredientSkusData
-                        >(
-                          currentTable: table,
-                          referencedTable: $$IngredientsTableReferences
-                              ._ingredientSkusRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$IngredientsTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).ingredientSkusRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.ingredientId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
                       if (ingredientRatioRangesRefs)
                         await $_getPrefetchedData<
                           Ingredient,
@@ -21622,6 +20282,69 @@ class $$IngredientsTableTableManager
                                 table,
                                 p0,
                               ).ingredientRatioRangesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ingredientId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (recommendationItemsRefs)
+                        await $_getPrefetchedData<
+                          Ingredient,
+                          $IngredientsTable,
+                          RecommendationItem
+                        >(
+                          currentTable: table,
+                          referencedTable: $$IngredientsTableReferences
+                              ._recommendationItemsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$IngredientsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).recommendationItemsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ingredientId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (formulaItemsRefs)
+                        await $_getPrefetchedData<
+                          Ingredient,
+                          $IngredientsTable,
+                          FormulaItem
+                        >(
+                          currentTable: table,
+                          referencedTable: $$IngredientsTableReferences
+                              ._formulaItemsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$IngredientsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).formulaItemsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ingredientId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (mixingItemsRefs)
+                        await $_getPrefetchedData<
+                          Ingredient,
+                          $IngredientsTable,
+                          MixingItem
+                        >(
+                          currentTable: table,
+                          referencedTable: $$IngredientsTableReferences
+                              ._mixingItemsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$IngredientsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).mixingItemsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.ingredientId == item.id,
@@ -21650,707 +20373,10 @@ typedef $$IngredientsTableProcessedTableManager =
       Ingredient,
       PrefetchHooks Function({
         bool categoryId,
-        bool ingredientSkusRefs,
         bool ingredientRatioRangesRefs,
-      })
-    >;
-typedef $$IngredientSkusTableCreateCompanionBuilder =
-    IngredientSkusCompanion Function({
-      required String id,
-      required String revisionId,
-      required String updatedByDevice,
-      required DateTime updatedAtUtc,
-      Value<bool> isDeleted,
-      Value<DateTime?> deletedAtUtc,
-      required String ingredientId,
-      Value<String?> skuCode,
-      Value<String?> imageHash,
-      Value<String?> supplier,
-      Value<String?> origin,
-      Value<String?> notes,
-      Value<bool> isInactive,
-      Value<int> rowid,
-    });
-typedef $$IngredientSkusTableUpdateCompanionBuilder =
-    IngredientSkusCompanion Function({
-      Value<String> id,
-      Value<String> revisionId,
-      Value<String> updatedByDevice,
-      Value<DateTime> updatedAtUtc,
-      Value<bool> isDeleted,
-      Value<DateTime?> deletedAtUtc,
-      Value<String> ingredientId,
-      Value<String?> skuCode,
-      Value<String?> imageHash,
-      Value<String?> supplier,
-      Value<String?> origin,
-      Value<String?> notes,
-      Value<bool> isInactive,
-      Value<int> rowid,
-    });
-
-final class $$IngredientSkusTableReferences
-    extends
-        BaseReferences<
-          _$AppDatabase,
-          $IngredientSkusTable,
-          IngredientSkusData
-        > {
-  $$IngredientSkusTableReferences(
-    super.$_db,
-    super.$_table,
-    super.$_typedResult,
-  );
-
-  static $IngredientsTable _ingredientIdTable(_$AppDatabase db) => db
-      .ingredients
-      .createAlias('ingredient_skus__ingredient_id__ingredients__id');
-
-  $$IngredientsTableProcessedTableManager get ingredientId {
-    final $_column = $_itemColumn<String>('ingredient_id')!;
-
-    final manager = $$IngredientsTableTableManager(
-      $_db,
-      $_db.ingredients,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_ingredientIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-
-  static MultiTypedResultKey<$SkuRatioOverridesTable, List<SkuRatioOverride>>
-  _skuRatioOverridesRefsTable(_$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.skuRatioOverrides,
-        aliasName: 'ingredient_skus__id__sku_ratio_overrides__sku_id',
-      );
-
-  $$SkuRatioOverridesTableProcessedTableManager get skuRatioOverridesRefs {
-    final manager = $$SkuRatioOverridesTableTableManager(
-      $_db,
-      $_db.skuRatioOverrides,
-    ).filter((f) => f.skuId.id.sqlEquals($_itemColumn<String>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(
-      _skuRatioOverridesRefsTable($_db),
-    );
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
-  static MultiTypedResultKey<
-    $RecommendationItemsTable,
-    List<RecommendationItem>
-  >
-  _recommendationItemsRefsTable(_$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.recommendationItems,
-        aliasName: 'ingredient_skus__id__recommendation_items__sku_id',
-      );
-
-  $$RecommendationItemsTableProcessedTableManager get recommendationItemsRefs {
-    final manager = $$RecommendationItemsTableTableManager(
-      $_db,
-      $_db.recommendationItems,
-    ).filter((f) => f.skuId.id.sqlEquals($_itemColumn<String>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(
-      _recommendationItemsRefsTable($_db),
-    );
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-}
-
-class $$IngredientSkusTableFilterComposer
-    extends Composer<_$AppDatabase, $IngredientSkusTable> {
-  $$IngredientSkusTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get revisionId => $composableBuilder(
-    column: $table.revisionId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get updatedByDevice => $composableBuilder(
-    column: $table.updatedByDevice,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get updatedAtUtc => $composableBuilder(
-    column: $table.updatedAtUtc,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isDeleted => $composableBuilder(
-    column: $table.isDeleted,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get deletedAtUtc => $composableBuilder(
-    column: $table.deletedAtUtc,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get skuCode => $composableBuilder(
-    column: $table.skuCode,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get imageHash => $composableBuilder(
-    column: $table.imageHash,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get supplier => $composableBuilder(
-    column: $table.supplier,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get origin => $composableBuilder(
-    column: $table.origin,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get notes => $composableBuilder(
-    column: $table.notes,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isInactive => $composableBuilder(
-    column: $table.isInactive,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  $$IngredientsTableFilterComposer get ingredientId {
-    final $$IngredientsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.ingredientId,
-      referencedTable: $db.ingredients,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$IngredientsTableFilterComposer(
-            $db: $db,
-            $table: $db.ingredients,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  Expression<bool> skuRatioOverridesRefs(
-    Expression<bool> Function($$SkuRatioOverridesTableFilterComposer f) f,
-  ) {
-    final $$SkuRatioOverridesTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.skuRatioOverrides,
-      getReferencedColumn: (t) => t.skuId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$SkuRatioOverridesTableFilterComposer(
-            $db: $db,
-            $table: $db.skuRatioOverrides,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
-  Expression<bool> recommendationItemsRefs(
-    Expression<bool> Function($$RecommendationItemsTableFilterComposer f) f,
-  ) {
-    final $$RecommendationItemsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.recommendationItems,
-      getReferencedColumn: (t) => t.skuId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$RecommendationItemsTableFilterComposer(
-            $db: $db,
-            $table: $db.recommendationItems,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-}
-
-class $$IngredientSkusTableOrderingComposer
-    extends Composer<_$AppDatabase, $IngredientSkusTable> {
-  $$IngredientSkusTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get revisionId => $composableBuilder(
-    column: $table.revisionId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get updatedByDevice => $composableBuilder(
-    column: $table.updatedByDevice,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get updatedAtUtc => $composableBuilder(
-    column: $table.updatedAtUtc,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isDeleted => $composableBuilder(
-    column: $table.isDeleted,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get deletedAtUtc => $composableBuilder(
-    column: $table.deletedAtUtc,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get skuCode => $composableBuilder(
-    column: $table.skuCode,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get imageHash => $composableBuilder(
-    column: $table.imageHash,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get supplier => $composableBuilder(
-    column: $table.supplier,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get origin => $composableBuilder(
-    column: $table.origin,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get notes => $composableBuilder(
-    column: $table.notes,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isInactive => $composableBuilder(
-    column: $table.isInactive,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  $$IngredientsTableOrderingComposer get ingredientId {
-    final $$IngredientsTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.ingredientId,
-      referencedTable: $db.ingredients,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$IngredientsTableOrderingComposer(
-            $db: $db,
-            $table: $db.ingredients,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$IngredientSkusTableAnnotationComposer
-    extends Composer<_$AppDatabase, $IngredientSkusTable> {
-  $$IngredientSkusTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<String> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get revisionId => $composableBuilder(
-    column: $table.revisionId,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get updatedByDevice => $composableBuilder(
-    column: $table.updatedByDevice,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<DateTime> get updatedAtUtc => $composableBuilder(
-    column: $table.updatedAtUtc,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get isDeleted =>
-      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get deletedAtUtc => $composableBuilder(
-    column: $table.deletedAtUtc,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get skuCode =>
-      $composableBuilder(column: $table.skuCode, builder: (column) => column);
-
-  GeneratedColumn<String> get imageHash =>
-      $composableBuilder(column: $table.imageHash, builder: (column) => column);
-
-  GeneratedColumn<String> get supplier =>
-      $composableBuilder(column: $table.supplier, builder: (column) => column);
-
-  GeneratedColumn<String> get origin =>
-      $composableBuilder(column: $table.origin, builder: (column) => column);
-
-  GeneratedColumn<String> get notes =>
-      $composableBuilder(column: $table.notes, builder: (column) => column);
-
-  GeneratedColumn<bool> get isInactive => $composableBuilder(
-    column: $table.isInactive,
-    builder: (column) => column,
-  );
-
-  $$IngredientsTableAnnotationComposer get ingredientId {
-    final $$IngredientsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.ingredientId,
-      referencedTable: $db.ingredients,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$IngredientsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.ingredients,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  Expression<T> skuRatioOverridesRefs<T extends Object>(
-    Expression<T> Function($$SkuRatioOverridesTableAnnotationComposer a) f,
-  ) {
-    final $$SkuRatioOverridesTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.skuRatioOverrides,
-          getReferencedColumn: (t) => t.skuId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkuRatioOverridesTableAnnotationComposer(
-                $db: $db,
-                $table: $db.skuRatioOverrides,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return f(composer);
-  }
-
-  Expression<T> recommendationItemsRefs<T extends Object>(
-    Expression<T> Function($$RecommendationItemsTableAnnotationComposer a) f,
-  ) {
-    final $$RecommendationItemsTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.recommendationItems,
-          getReferencedColumn: (t) => t.skuId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$RecommendationItemsTableAnnotationComposer(
-                $db: $db,
-                $table: $db.recommendationItems,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return f(composer);
-  }
-}
-
-class $$IngredientSkusTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $IngredientSkusTable,
-          IngredientSkusData,
-          $$IngredientSkusTableFilterComposer,
-          $$IngredientSkusTableOrderingComposer,
-          $$IngredientSkusTableAnnotationComposer,
-          $$IngredientSkusTableCreateCompanionBuilder,
-          $$IngredientSkusTableUpdateCompanionBuilder,
-          (IngredientSkusData, $$IngredientSkusTableReferences),
-          IngredientSkusData,
-          PrefetchHooks Function({
-            bool ingredientId,
-            bool skuRatioOverridesRefs,
-            bool recommendationItemsRefs,
-          })
-        > {
-  $$IngredientSkusTableTableManager(
-    _$AppDatabase db,
-    $IngredientSkusTable table,
-  ) : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$IngredientSkusTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$IngredientSkusTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$IngredientSkusTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<String> id = const Value.absent(),
-                Value<String> revisionId = const Value.absent(),
-                Value<String> updatedByDevice = const Value.absent(),
-                Value<DateTime> updatedAtUtc = const Value.absent(),
-                Value<bool> isDeleted = const Value.absent(),
-                Value<DateTime?> deletedAtUtc = const Value.absent(),
-                Value<String> ingredientId = const Value.absent(),
-                Value<String?> skuCode = const Value.absent(),
-                Value<String?> imageHash = const Value.absent(),
-                Value<String?> supplier = const Value.absent(),
-                Value<String?> origin = const Value.absent(),
-                Value<String?> notes = const Value.absent(),
-                Value<bool> isInactive = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => IngredientSkusCompanion(
-                id: id,
-                revisionId: revisionId,
-                updatedByDevice: updatedByDevice,
-                updatedAtUtc: updatedAtUtc,
-                isDeleted: isDeleted,
-                deletedAtUtc: deletedAtUtc,
-                ingredientId: ingredientId,
-                skuCode: skuCode,
-                imageHash: imageHash,
-                supplier: supplier,
-                origin: origin,
-                notes: notes,
-                isInactive: isInactive,
-                rowid: rowid,
-              ),
-          createCompanionCallback:
-              ({
-                required String id,
-                required String revisionId,
-                required String updatedByDevice,
-                required DateTime updatedAtUtc,
-                Value<bool> isDeleted = const Value.absent(),
-                Value<DateTime?> deletedAtUtc = const Value.absent(),
-                required String ingredientId,
-                Value<String?> skuCode = const Value.absent(),
-                Value<String?> imageHash = const Value.absent(),
-                Value<String?> supplier = const Value.absent(),
-                Value<String?> origin = const Value.absent(),
-                Value<String?> notes = const Value.absent(),
-                Value<bool> isInactive = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => IngredientSkusCompanion.insert(
-                id: id,
-                revisionId: revisionId,
-                updatedByDevice: updatedByDevice,
-                updatedAtUtc: updatedAtUtc,
-                isDeleted: isDeleted,
-                deletedAtUtc: deletedAtUtc,
-                ingredientId: ingredientId,
-                skuCode: skuCode,
-                imageHash: imageHash,
-                supplier: supplier,
-                origin: origin,
-                notes: notes,
-                isInactive: isInactive,
-                rowid: rowid,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable(table),
-                  $$IngredientSkusTableReferences(db, table, e),
-                ),
-              )
-              .toList(),
-          prefetchHooksCallback:
-              ({
-                ingredientId = false,
-                skuRatioOverridesRefs = false,
-                recommendationItemsRefs = false,
-              }) {
-                return PrefetchHooks(
-                  db: db,
-                  explicitlyWatchedTables: [
-                    if (skuRatioOverridesRefs) db.skuRatioOverrides,
-                    if (recommendationItemsRefs) db.recommendationItems,
-                  ],
-                  addJoins:
-                      <
-                        T extends TableManagerState<
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic
-                        >
-                      >(state) {
-                        if (ingredientId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.ingredientId,
-                                    referencedTable:
-                                        $$IngredientSkusTableReferences
-                                            ._ingredientIdTable(db),
-                                    referencedColumn:
-                                        $$IngredientSkusTableReferences
-                                            ._ingredientIdTable(db)
-                                            .id,
-                                  )
-                                  as T;
-                        }
-
-                        return state;
-                      },
-                  getPrefetchedDataCallback: (items) async {
-                    return [
-                      if (skuRatioOverridesRefs)
-                        await $_getPrefetchedData<
-                          IngredientSkusData,
-                          $IngredientSkusTable,
-                          SkuRatioOverride
-                        >(
-                          currentTable: table,
-                          referencedTable: $$IngredientSkusTableReferences
-                              ._skuRatioOverridesRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$IngredientSkusTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).skuRatioOverridesRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.skuId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                      if (recommendationItemsRefs)
-                        await $_getPrefetchedData<
-                          IngredientSkusData,
-                          $IngredientSkusTable,
-                          RecommendationItem
-                        >(
-                          currentTable: table,
-                          referencedTable: $$IngredientSkusTableReferences
-                              ._recommendationItemsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$IngredientSkusTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).recommendationItemsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.skuId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                    ];
-                  },
-                );
-              },
-        ),
-      );
-}
-
-typedef $$IngredientSkusTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $IngredientSkusTable,
-      IngredientSkusData,
-      $$IngredientSkusTableFilterComposer,
-      $$IngredientSkusTableOrderingComposer,
-      $$IngredientSkusTableAnnotationComposer,
-      $$IngredientSkusTableCreateCompanionBuilder,
-      $$IngredientSkusTableUpdateCompanionBuilder,
-      (IngredientSkusData, $$IngredientSkusTableReferences),
-      IngredientSkusData,
-      PrefetchHooks Function({
-        bool ingredientId,
-        bool skuRatioOverridesRefs,
         bool recommendationItemsRefs,
+        bool formulaItemsRefs,
+        bool mixingItemsRefs,
       })
     >;
 typedef $$CategoryRatioRangesTableCreateCompanionBuilder =
@@ -23420,532 +21446,6 @@ typedef $$IngredientRatioRangesTableProcessedTableManager =
       (IngredientRatioRange, $$IngredientRatioRangesTableReferences),
       IngredientRatioRange,
       PrefetchHooks Function({bool productionTypeId, bool ingredientId})
-    >;
-typedef $$SkuRatioOverridesTableCreateCompanionBuilder =
-    SkuRatioOverridesCompanion Function({
-      required String productionTypeId,
-      required int minRatio,
-      required int maxRatio,
-      required String id,
-      required String revisionId,
-      required String updatedByDevice,
-      required DateTime updatedAtUtc,
-      Value<bool> isDeleted,
-      Value<DateTime?> deletedAtUtc,
-      required String skuId,
-      Value<int> rowid,
-    });
-typedef $$SkuRatioOverridesTableUpdateCompanionBuilder =
-    SkuRatioOverridesCompanion Function({
-      Value<String> productionTypeId,
-      Value<int> minRatio,
-      Value<int> maxRatio,
-      Value<String> id,
-      Value<String> revisionId,
-      Value<String> updatedByDevice,
-      Value<DateTime> updatedAtUtc,
-      Value<bool> isDeleted,
-      Value<DateTime?> deletedAtUtc,
-      Value<String> skuId,
-      Value<int> rowid,
-    });
-
-final class $$SkuRatioOverridesTableReferences
-    extends
-        BaseReferences<
-          _$AppDatabase,
-          $SkuRatioOverridesTable,
-          SkuRatioOverride
-        > {
-  $$SkuRatioOverridesTableReferences(
-    super.$_db,
-    super.$_table,
-    super.$_typedResult,
-  );
-
-  static $ProductionTypesTable _productionTypeIdTable(_$AppDatabase db) =>
-      db.productionTypes.createAlias(
-        'sku_ratio_overrides__production_type_id__production_types__id',
-      );
-
-  $$ProductionTypesTableProcessedTableManager get productionTypeId {
-    final $_column = $_itemColumn<String>('production_type_id')!;
-
-    final manager = $$ProductionTypesTableTableManager(
-      $_db,
-      $_db.productionTypes,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_productionTypeIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-
-  static $IngredientSkusTable _skuIdTable(_$AppDatabase db) => db.ingredientSkus
-      .createAlias('sku_ratio_overrides__sku_id__ingredient_skus__id');
-
-  $$IngredientSkusTableProcessedTableManager get skuId {
-    final $_column = $_itemColumn<String>('sku_id')!;
-
-    final manager = $$IngredientSkusTableTableManager(
-      $_db,
-      $_db.ingredientSkus,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_skuIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-}
-
-class $$SkuRatioOverridesTableFilterComposer
-    extends Composer<_$AppDatabase, $SkuRatioOverridesTable> {
-  $$SkuRatioOverridesTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<int> get minRatio => $composableBuilder(
-    column: $table.minRatio,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get maxRatio => $composableBuilder(
-    column: $table.maxRatio,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get revisionId => $composableBuilder(
-    column: $table.revisionId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get updatedByDevice => $composableBuilder(
-    column: $table.updatedByDevice,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get updatedAtUtc => $composableBuilder(
-    column: $table.updatedAtUtc,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isDeleted => $composableBuilder(
-    column: $table.isDeleted,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get deletedAtUtc => $composableBuilder(
-    column: $table.deletedAtUtc,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  $$ProductionTypesTableFilterComposer get productionTypeId {
-    final $$ProductionTypesTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.productionTypeId,
-      referencedTable: $db.productionTypes,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$ProductionTypesTableFilterComposer(
-            $db: $db,
-            $table: $db.productionTypes,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$IngredientSkusTableFilterComposer get skuId {
-    final $$IngredientSkusTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.skuId,
-      referencedTable: $db.ingredientSkus,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$IngredientSkusTableFilterComposer(
-            $db: $db,
-            $table: $db.ingredientSkus,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$SkuRatioOverridesTableOrderingComposer
-    extends Composer<_$AppDatabase, $SkuRatioOverridesTable> {
-  $$SkuRatioOverridesTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<int> get minRatio => $composableBuilder(
-    column: $table.minRatio,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get maxRatio => $composableBuilder(
-    column: $table.maxRatio,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get revisionId => $composableBuilder(
-    column: $table.revisionId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get updatedByDevice => $composableBuilder(
-    column: $table.updatedByDevice,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get updatedAtUtc => $composableBuilder(
-    column: $table.updatedAtUtc,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isDeleted => $composableBuilder(
-    column: $table.isDeleted,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get deletedAtUtc => $composableBuilder(
-    column: $table.deletedAtUtc,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  $$ProductionTypesTableOrderingComposer get productionTypeId {
-    final $$ProductionTypesTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.productionTypeId,
-      referencedTable: $db.productionTypes,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$ProductionTypesTableOrderingComposer(
-            $db: $db,
-            $table: $db.productionTypes,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$IngredientSkusTableOrderingComposer get skuId {
-    final $$IngredientSkusTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.skuId,
-      referencedTable: $db.ingredientSkus,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$IngredientSkusTableOrderingComposer(
-            $db: $db,
-            $table: $db.ingredientSkus,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$SkuRatioOverridesTableAnnotationComposer
-    extends Composer<_$AppDatabase, $SkuRatioOverridesTable> {
-  $$SkuRatioOverridesTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<int> get minRatio =>
-      $composableBuilder(column: $table.minRatio, builder: (column) => column);
-
-  GeneratedColumn<int> get maxRatio =>
-      $composableBuilder(column: $table.maxRatio, builder: (column) => column);
-
-  GeneratedColumn<String> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get revisionId => $composableBuilder(
-    column: $table.revisionId,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get updatedByDevice => $composableBuilder(
-    column: $table.updatedByDevice,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<DateTime> get updatedAtUtc => $composableBuilder(
-    column: $table.updatedAtUtc,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get isDeleted =>
-      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get deletedAtUtc => $composableBuilder(
-    column: $table.deletedAtUtc,
-    builder: (column) => column,
-  );
-
-  $$ProductionTypesTableAnnotationComposer get productionTypeId {
-    final $$ProductionTypesTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.productionTypeId,
-      referencedTable: $db.productionTypes,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$ProductionTypesTableAnnotationComposer(
-            $db: $db,
-            $table: $db.productionTypes,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$IngredientSkusTableAnnotationComposer get skuId {
-    final $$IngredientSkusTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.skuId,
-      referencedTable: $db.ingredientSkus,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$IngredientSkusTableAnnotationComposer(
-            $db: $db,
-            $table: $db.ingredientSkus,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$SkuRatioOverridesTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $SkuRatioOverridesTable,
-          SkuRatioOverride,
-          $$SkuRatioOverridesTableFilterComposer,
-          $$SkuRatioOverridesTableOrderingComposer,
-          $$SkuRatioOverridesTableAnnotationComposer,
-          $$SkuRatioOverridesTableCreateCompanionBuilder,
-          $$SkuRatioOverridesTableUpdateCompanionBuilder,
-          (SkuRatioOverride, $$SkuRatioOverridesTableReferences),
-          SkuRatioOverride,
-          PrefetchHooks Function({bool productionTypeId, bool skuId})
-        > {
-  $$SkuRatioOverridesTableTableManager(
-    _$AppDatabase db,
-    $SkuRatioOverridesTable table,
-  ) : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$SkuRatioOverridesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$SkuRatioOverridesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$SkuRatioOverridesTableAnnotationComposer(
-                $db: db,
-                $table: table,
-              ),
-          updateCompanionCallback:
-              ({
-                Value<String> productionTypeId = const Value.absent(),
-                Value<int> minRatio = const Value.absent(),
-                Value<int> maxRatio = const Value.absent(),
-                Value<String> id = const Value.absent(),
-                Value<String> revisionId = const Value.absent(),
-                Value<String> updatedByDevice = const Value.absent(),
-                Value<DateTime> updatedAtUtc = const Value.absent(),
-                Value<bool> isDeleted = const Value.absent(),
-                Value<DateTime?> deletedAtUtc = const Value.absent(),
-                Value<String> skuId = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => SkuRatioOverridesCompanion(
-                productionTypeId: productionTypeId,
-                minRatio: minRatio,
-                maxRatio: maxRatio,
-                id: id,
-                revisionId: revisionId,
-                updatedByDevice: updatedByDevice,
-                updatedAtUtc: updatedAtUtc,
-                isDeleted: isDeleted,
-                deletedAtUtc: deletedAtUtc,
-                skuId: skuId,
-                rowid: rowid,
-              ),
-          createCompanionCallback:
-              ({
-                required String productionTypeId,
-                required int minRatio,
-                required int maxRatio,
-                required String id,
-                required String revisionId,
-                required String updatedByDevice,
-                required DateTime updatedAtUtc,
-                Value<bool> isDeleted = const Value.absent(),
-                Value<DateTime?> deletedAtUtc = const Value.absent(),
-                required String skuId,
-                Value<int> rowid = const Value.absent(),
-              }) => SkuRatioOverridesCompanion.insert(
-                productionTypeId: productionTypeId,
-                minRatio: minRatio,
-                maxRatio: maxRatio,
-                id: id,
-                revisionId: revisionId,
-                updatedByDevice: updatedByDevice,
-                updatedAtUtc: updatedAtUtc,
-                isDeleted: isDeleted,
-                deletedAtUtc: deletedAtUtc,
-                skuId: skuId,
-                rowid: rowid,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable(table),
-                  $$SkuRatioOverridesTableReferences(db, table, e),
-                ),
-              )
-              .toList(),
-          prefetchHooksCallback: ({productionTypeId = false, skuId = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (productionTypeId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.productionTypeId,
-                                referencedTable:
-                                    $$SkuRatioOverridesTableReferences
-                                        ._productionTypeIdTable(db),
-                                referencedColumn:
-                                    $$SkuRatioOverridesTableReferences
-                                        ._productionTypeIdTable(db)
-                                        .id,
-                              )
-                              as T;
-                    }
-                    if (skuId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.skuId,
-                                referencedTable:
-                                    $$SkuRatioOverridesTableReferences
-                                        ._skuIdTable(db),
-                                referencedColumn:
-                                    $$SkuRatioOverridesTableReferences
-                                        ._skuIdTable(db)
-                                        .id,
-                              )
-                              as T;
-                    }
-
-                    return state;
-                  },
-              getPrefetchedDataCallback: (items) async {
-                return [];
-              },
-            );
-          },
-        ),
-      );
-}
-
-typedef $$SkuRatioOverridesTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $SkuRatioOverridesTable,
-      SkuRatioOverride,
-      $$SkuRatioOverridesTableFilterComposer,
-      $$SkuRatioOverridesTableOrderingComposer,
-      $$SkuRatioOverridesTableAnnotationComposer,
-      $$SkuRatioOverridesTableCreateCompanionBuilder,
-      $$SkuRatioOverridesTableUpdateCompanionBuilder,
-      (SkuRatioOverride, $$SkuRatioOverridesTableReferences),
-      SkuRatioOverride,
-      PrefetchHooks Function({bool productionTypeId, bool skuId})
     >;
 typedef $$RecommendationPresetsTableCreateCompanionBuilder =
     RecommendationPresetsCompanion Function({
@@ -25159,7 +22659,7 @@ typedef $$RecommendationItemsTableCreateCompanionBuilder =
       Value<bool> isDeleted,
       Value<DateTime?> deletedAtUtc,
       required String groupId,
-      required String skuId,
+      required String ingredientId,
       required int ratio,
       Value<int> rowid,
     });
@@ -25172,7 +22672,7 @@ typedef $$RecommendationItemsTableUpdateCompanionBuilder =
       Value<bool> isDeleted,
       Value<DateTime?> deletedAtUtc,
       Value<String> groupId,
-      Value<String> skuId,
+      Value<String> ingredientId,
       Value<int> ratio,
       Value<int> rowid,
     });
@@ -25208,17 +22708,18 @@ final class $$RecommendationItemsTableReferences
     );
   }
 
-  static $IngredientSkusTable _skuIdTable(_$AppDatabase db) => db.ingredientSkus
-      .createAlias('recommendation_items__sku_id__ingredient_skus__id');
+  static $IngredientsTable _ingredientIdTable(_$AppDatabase db) => db
+      .ingredients
+      .createAlias('recommendation_items__ingredient_id__ingredients__id');
 
-  $$IngredientSkusTableProcessedTableManager get skuId {
-    final $_column = $_itemColumn<String>('sku_id')!;
+  $$IngredientsTableProcessedTableManager get ingredientId {
+    final $_column = $_itemColumn<String>('ingredient_id')!;
 
-    final manager = $$IngredientSkusTableTableManager(
+    final manager = $$IngredientsTableTableManager(
       $_db,
-      $_db.ingredientSkus,
+      $_db.ingredients,
     ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_skuIdTable($_db));
+    final item = $_typedResult.readTableOrNull(_ingredientIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -25293,20 +22794,20 @@ class $$RecommendationItemsTableFilterComposer
     return composer;
   }
 
-  $$IngredientSkusTableFilterComposer get skuId {
-    final $$IngredientSkusTableFilterComposer composer = $composerBuilder(
+  $$IngredientsTableFilterComposer get ingredientId {
+    final $$IngredientsTableFilterComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.skuId,
-      referencedTable: $db.ingredientSkus,
+      getCurrentColumn: (t) => t.ingredientId,
+      referencedTable: $db.ingredients,
       getReferencedColumn: (t) => t.id,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$IngredientSkusTableFilterComposer(
+          }) => $$IngredientsTableFilterComposer(
             $db: $db,
-            $table: $db.ingredientSkus,
+            $table: $db.ingredients,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -25385,20 +22886,20 @@ class $$RecommendationItemsTableOrderingComposer
     return composer;
   }
 
-  $$IngredientSkusTableOrderingComposer get skuId {
-    final $$IngredientSkusTableOrderingComposer composer = $composerBuilder(
+  $$IngredientsTableOrderingComposer get ingredientId {
+    final $$IngredientsTableOrderingComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.skuId,
-      referencedTable: $db.ingredientSkus,
+      getCurrentColumn: (t) => t.ingredientId,
+      referencedTable: $db.ingredients,
       getReferencedColumn: (t) => t.id,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$IngredientSkusTableOrderingComposer(
+          }) => $$IngredientsTableOrderingComposer(
             $db: $db,
-            $table: $db.ingredientSkus,
+            $table: $db.ingredients,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -25471,20 +22972,20 @@ class $$RecommendationItemsTableAnnotationComposer
     return composer;
   }
 
-  $$IngredientSkusTableAnnotationComposer get skuId {
-    final $$IngredientSkusTableAnnotationComposer composer = $composerBuilder(
+  $$IngredientsTableAnnotationComposer get ingredientId {
+    final $$IngredientsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.skuId,
-      referencedTable: $db.ingredientSkus,
+      getCurrentColumn: (t) => t.ingredientId,
+      referencedTable: $db.ingredients,
       getReferencedColumn: (t) => t.id,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$IngredientSkusTableAnnotationComposer(
+          }) => $$IngredientsTableAnnotationComposer(
             $db: $db,
-            $table: $db.ingredientSkus,
+            $table: $db.ingredients,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -25508,7 +23009,7 @@ class $$RecommendationItemsTableTableManager
           $$RecommendationItemsTableUpdateCompanionBuilder,
           (RecommendationItem, $$RecommendationItemsTableReferences),
           RecommendationItem,
-          PrefetchHooks Function({bool groupId, bool skuId})
+          PrefetchHooks Function({bool groupId, bool ingredientId})
         > {
   $$RecommendationItemsTableTableManager(
     _$AppDatabase db,
@@ -25538,7 +23039,7 @@ class $$RecommendationItemsTableTableManager
                 Value<bool> isDeleted = const Value.absent(),
                 Value<DateTime?> deletedAtUtc = const Value.absent(),
                 Value<String> groupId = const Value.absent(),
-                Value<String> skuId = const Value.absent(),
+                Value<String> ingredientId = const Value.absent(),
                 Value<int> ratio = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RecommendationItemsCompanion(
@@ -25549,7 +23050,7 @@ class $$RecommendationItemsTableTableManager
                 isDeleted: isDeleted,
                 deletedAtUtc: deletedAtUtc,
                 groupId: groupId,
-                skuId: skuId,
+                ingredientId: ingredientId,
                 ratio: ratio,
                 rowid: rowid,
               ),
@@ -25562,7 +23063,7 @@ class $$RecommendationItemsTableTableManager
                 Value<bool> isDeleted = const Value.absent(),
                 Value<DateTime?> deletedAtUtc = const Value.absent(),
                 required String groupId,
-                required String skuId,
+                required String ingredientId,
                 required int ratio,
                 Value<int> rowid = const Value.absent(),
               }) => RecommendationItemsCompanion.insert(
@@ -25573,7 +23074,7 @@ class $$RecommendationItemsTableTableManager
                 isDeleted: isDeleted,
                 deletedAtUtc: deletedAtUtc,
                 groupId: groupId,
-                skuId: skuId,
+                ingredientId: ingredientId,
                 ratio: ratio,
                 rowid: rowid,
               ),
@@ -25585,7 +23086,7 @@ class $$RecommendationItemsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({groupId = false, skuId = false}) {
+          prefetchHooksCallback: ({groupId = false, ingredientId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -25620,17 +23121,17 @@ class $$RecommendationItemsTableTableManager
                               )
                               as T;
                     }
-                    if (skuId) {
+                    if (ingredientId) {
                       state =
                           state.withJoin(
                                 currentTable: table,
-                                currentColumn: table.skuId,
+                                currentColumn: table.ingredientId,
                                 referencedTable:
                                     $$RecommendationItemsTableReferences
-                                        ._skuIdTable(db),
+                                        ._ingredientIdTable(db),
                                 referencedColumn:
                                     $$RecommendationItemsTableReferences
-                                        ._skuIdTable(db)
+                                        ._ingredientIdTable(db)
                                         .id,
                               )
                               as T;
@@ -25659,7 +23160,7 @@ typedef $$RecommendationItemsTableProcessedTableManager =
       $$RecommendationItemsTableUpdateCompanionBuilder,
       (RecommendationItem, $$RecommendationItemsTableReferences),
       RecommendationItem,
-      PrefetchHooks Function({bool groupId, bool skuId})
+      PrefetchHooks Function({bool groupId, bool ingredientId})
     >;
 typedef $$CustomersTableCreateCompanionBuilder =
     CustomersCompanion Function({
@@ -30349,10 +27850,9 @@ typedef $$FormulaItemsTableCreateCompanionBuilder =
       Value<bool> isDeleted,
       Value<DateTime?> deletedAtUtc,
       required String versionId,
+      Value<String?> ingredientId,
       required String categoryName,
       required String ingredientName,
-      Value<String?> skuCode,
-      Value<String?> skuId,
       required int ratio,
       required int sortOrder,
       Value<int> rowid,
@@ -30366,10 +27866,9 @@ typedef $$FormulaItemsTableUpdateCompanionBuilder =
       Value<bool> isDeleted,
       Value<DateTime?> deletedAtUtc,
       Value<String> versionId,
+      Value<String?> ingredientId,
       Value<String> categoryName,
       Value<String> ingredientName,
-      Value<String?> skuCode,
-      Value<String?> skuId,
       Value<int> ratio,
       Value<int> sortOrder,
       Value<int> rowid,
@@ -30391,6 +27890,24 @@ final class $$FormulaItemsTableReferences
       $_db.formulaVersions,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_versionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $IngredientsTable _ingredientIdTable(_$AppDatabase db) => db
+      .ingredients
+      .createAlias('formula_items__ingredient_id__ingredients__id');
+
+  $$IngredientsTableProcessedTableManager? get ingredientId {
+    final $_column = $_itemColumn<String>('ingredient_id');
+    if ($_column == null) return null;
+    final manager = $$IngredientsTableTableManager(
+      $_db,
+      $_db.ingredients,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ingredientIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -30447,16 +27964,6 @@ class $$FormulaItemsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get skuCode => $composableBuilder(
-    column: $table.skuCode,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get skuId => $composableBuilder(
-    column: $table.skuId,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<int> get ratio => $composableBuilder(
     column: $table.ratio,
     builder: (column) => ColumnFilters(column),
@@ -30481,6 +27988,29 @@ class $$FormulaItemsTableFilterComposer
           }) => $$FormulaVersionsTableFilterComposer(
             $db: $db,
             $table: $db.formulaVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$IngredientsTableFilterComposer get ingredientId {
+    final $$IngredientsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ingredientId,
+      referencedTable: $db.ingredients,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$IngredientsTableFilterComposer(
+            $db: $db,
+            $table: $db.ingredients,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -30540,16 +28070,6 @@ class $$FormulaItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get skuCode => $composableBuilder(
-    column: $table.skuCode,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get skuId => $composableBuilder(
-    column: $table.skuId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<int> get ratio => $composableBuilder(
     column: $table.ratio,
     builder: (column) => ColumnOrderings(column),
@@ -30574,6 +28094,29 @@ class $$FormulaItemsTableOrderingComposer
           }) => $$FormulaVersionsTableOrderingComposer(
             $db: $db,
             $table: $db.formulaVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$IngredientsTableOrderingComposer get ingredientId {
+    final $$IngredientsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ingredientId,
+      referencedTable: $db.ingredients,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$IngredientsTableOrderingComposer(
+            $db: $db,
+            $table: $db.ingredients,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -30629,12 +28172,6 @@ class $$FormulaItemsTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<String> get skuCode =>
-      $composableBuilder(column: $table.skuCode, builder: (column) => column);
-
-  GeneratedColumn<String> get skuId =>
-      $composableBuilder(column: $table.skuId, builder: (column) => column);
-
   GeneratedColumn<int> get ratio =>
       $composableBuilder(column: $table.ratio, builder: (column) => column);
 
@@ -30663,6 +28200,29 @@ class $$FormulaItemsTableAnnotationComposer
     );
     return composer;
   }
+
+  $$IngredientsTableAnnotationComposer get ingredientId {
+    final $$IngredientsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ingredientId,
+      referencedTable: $db.ingredients,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$IngredientsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ingredients,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$FormulaItemsTableTableManager
@@ -30678,7 +28238,7 @@ class $$FormulaItemsTableTableManager
           $$FormulaItemsTableUpdateCompanionBuilder,
           (FormulaItem, $$FormulaItemsTableReferences),
           FormulaItem,
-          PrefetchHooks Function({bool versionId})
+          PrefetchHooks Function({bool versionId, bool ingredientId})
         > {
   $$FormulaItemsTableTableManager(_$AppDatabase db, $FormulaItemsTable table)
     : super(
@@ -30700,10 +28260,9 @@ class $$FormulaItemsTableTableManager
                 Value<bool> isDeleted = const Value.absent(),
                 Value<DateTime?> deletedAtUtc = const Value.absent(),
                 Value<String> versionId = const Value.absent(),
+                Value<String?> ingredientId = const Value.absent(),
                 Value<String> categoryName = const Value.absent(),
                 Value<String> ingredientName = const Value.absent(),
-                Value<String?> skuCode = const Value.absent(),
-                Value<String?> skuId = const Value.absent(),
                 Value<int> ratio = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -30715,10 +28274,9 @@ class $$FormulaItemsTableTableManager
                 isDeleted: isDeleted,
                 deletedAtUtc: deletedAtUtc,
                 versionId: versionId,
+                ingredientId: ingredientId,
                 categoryName: categoryName,
                 ingredientName: ingredientName,
-                skuCode: skuCode,
-                skuId: skuId,
                 ratio: ratio,
                 sortOrder: sortOrder,
                 rowid: rowid,
@@ -30732,10 +28290,9 @@ class $$FormulaItemsTableTableManager
                 Value<bool> isDeleted = const Value.absent(),
                 Value<DateTime?> deletedAtUtc = const Value.absent(),
                 required String versionId,
+                Value<String?> ingredientId = const Value.absent(),
                 required String categoryName,
                 required String ingredientName,
-                Value<String?> skuCode = const Value.absent(),
-                Value<String?> skuId = const Value.absent(),
                 required int ratio,
                 required int sortOrder,
                 Value<int> rowid = const Value.absent(),
@@ -30747,10 +28304,9 @@ class $$FormulaItemsTableTableManager
                 isDeleted: isDeleted,
                 deletedAtUtc: deletedAtUtc,
                 versionId: versionId,
+                ingredientId: ingredientId,
                 categoryName: categoryName,
                 ingredientName: ingredientName,
-                skuCode: skuCode,
-                skuId: skuId,
                 ratio: ratio,
                 sortOrder: sortOrder,
                 rowid: rowid,
@@ -30763,7 +28319,7 @@ class $$FormulaItemsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({versionId = false}) {
+          prefetchHooksCallback: ({versionId = false, ingredientId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -30796,6 +28352,19 @@ class $$FormulaItemsTableTableManager
                               )
                               as T;
                     }
+                    if (ingredientId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ingredientId,
+                                referencedTable: $$FormulaItemsTableReferences
+                                    ._ingredientIdTable(db),
+                                referencedColumn: $$FormulaItemsTableReferences
+                                    ._ingredientIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
 
                     return state;
                   },
@@ -30820,7 +28389,7 @@ typedef $$FormulaItemsTableProcessedTableManager =
       $$FormulaItemsTableUpdateCompanionBuilder,
       (FormulaItem, $$FormulaItemsTableReferences),
       FormulaItem,
-      PrefetchHooks Function({bool versionId})
+      PrefetchHooks Function({bool versionId, bool ingredientId})
     >;
 typedef $$MixingSessionsTableCreateCompanionBuilder =
     MixingSessionsCompanion Function({
@@ -31876,10 +29445,9 @@ typedef $$MixingItemsTableCreateCompanionBuilder =
       Value<bool> isDeleted,
       Value<DateTime?> deletedAtUtc,
       required String sessionId,
+      Value<String?> ingredientId,
       required String categoryName,
       required String ingredientName,
-      Value<String?> skuCode,
-      Value<String?> skuId,
       required int plannedWeight,
       required int finalWeight,
       required bool isManual,
@@ -31896,10 +29464,9 @@ typedef $$MixingItemsTableUpdateCompanionBuilder =
       Value<bool> isDeleted,
       Value<DateTime?> deletedAtUtc,
       Value<String> sessionId,
+      Value<String?> ingredientId,
       Value<String> categoryName,
       Value<String> ingredientName,
-      Value<String?> skuCode,
-      Value<String?> skuId,
       Value<int> plannedWeight,
       Value<int> finalWeight,
       Value<bool> isManual,
@@ -31924,6 +29491,24 @@ final class $$MixingItemsTableReferences
       $_db.mixingSessions,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_sessionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $IngredientsTable _ingredientIdTable(_$AppDatabase db) => db
+      .ingredients
+      .createAlias('mixing_items__ingredient_id__ingredients__id');
+
+  $$IngredientsTableProcessedTableManager? get ingredientId {
+    final $_column = $_itemColumn<String>('ingredient_id');
+    if ($_column == null) return null;
+    final manager = $$IngredientsTableTableManager(
+      $_db,
+      $_db.ingredients,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ingredientIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -31980,16 +29565,6 @@ class $$MixingItemsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get skuCode => $composableBuilder(
-    column: $table.skuCode,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get skuId => $composableBuilder(
-    column: $table.skuId,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<int> get plannedWeight => $composableBuilder(
     column: $table.plannedWeight,
     builder: (column) => ColumnFilters(column),
@@ -32029,6 +29604,29 @@ class $$MixingItemsTableFilterComposer
           }) => $$MixingSessionsTableFilterComposer(
             $db: $db,
             $table: $db.mixingSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$IngredientsTableFilterComposer get ingredientId {
+    final $$IngredientsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ingredientId,
+      referencedTable: $db.ingredients,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$IngredientsTableFilterComposer(
+            $db: $db,
+            $table: $db.ingredients,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -32088,16 +29686,6 @@ class $$MixingItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get skuCode => $composableBuilder(
-    column: $table.skuCode,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get skuId => $composableBuilder(
-    column: $table.skuId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<int> get plannedWeight => $composableBuilder(
     column: $table.plannedWeight,
     builder: (column) => ColumnOrderings(column),
@@ -32137,6 +29725,29 @@ class $$MixingItemsTableOrderingComposer
           }) => $$MixingSessionsTableOrderingComposer(
             $db: $db,
             $table: $db.mixingSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$IngredientsTableOrderingComposer get ingredientId {
+    final $$IngredientsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ingredientId,
+      referencedTable: $db.ingredients,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$IngredientsTableOrderingComposer(
+            $db: $db,
+            $table: $db.ingredients,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -32192,12 +29803,6 @@ class $$MixingItemsTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<String> get skuCode =>
-      $composableBuilder(column: $table.skuCode, builder: (column) => column);
-
-  GeneratedColumn<String> get skuId =>
-      $composableBuilder(column: $table.skuId, builder: (column) => column);
-
   GeneratedColumn<int> get plannedWeight => $composableBuilder(
     column: $table.plannedWeight,
     builder: (column) => column,
@@ -32241,6 +29846,29 @@ class $$MixingItemsTableAnnotationComposer
     );
     return composer;
   }
+
+  $$IngredientsTableAnnotationComposer get ingredientId {
+    final $$IngredientsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ingredientId,
+      referencedTable: $db.ingredients,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$IngredientsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ingredients,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$MixingItemsTableTableManager
@@ -32256,7 +29884,7 @@ class $$MixingItemsTableTableManager
           $$MixingItemsTableUpdateCompanionBuilder,
           (MixingItem, $$MixingItemsTableReferences),
           MixingItem,
-          PrefetchHooks Function({bool sessionId})
+          PrefetchHooks Function({bool sessionId, bool ingredientId})
         > {
   $$MixingItemsTableTableManager(_$AppDatabase db, $MixingItemsTable table)
     : super(
@@ -32278,10 +29906,9 @@ class $$MixingItemsTableTableManager
                 Value<bool> isDeleted = const Value.absent(),
                 Value<DateTime?> deletedAtUtc = const Value.absent(),
                 Value<String> sessionId = const Value.absent(),
+                Value<String?> ingredientId = const Value.absent(),
                 Value<String> categoryName = const Value.absent(),
                 Value<String> ingredientName = const Value.absent(),
-                Value<String?> skuCode = const Value.absent(),
-                Value<String?> skuId = const Value.absent(),
                 Value<int> plannedWeight = const Value.absent(),
                 Value<int> finalWeight = const Value.absent(),
                 Value<bool> isManual = const Value.absent(),
@@ -32296,10 +29923,9 @@ class $$MixingItemsTableTableManager
                 isDeleted: isDeleted,
                 deletedAtUtc: deletedAtUtc,
                 sessionId: sessionId,
+                ingredientId: ingredientId,
                 categoryName: categoryName,
                 ingredientName: ingredientName,
-                skuCode: skuCode,
-                skuId: skuId,
                 plannedWeight: plannedWeight,
                 finalWeight: finalWeight,
                 isManual: isManual,
@@ -32316,10 +29942,9 @@ class $$MixingItemsTableTableManager
                 Value<bool> isDeleted = const Value.absent(),
                 Value<DateTime?> deletedAtUtc = const Value.absent(),
                 required String sessionId,
+                Value<String?> ingredientId = const Value.absent(),
                 required String categoryName,
                 required String ingredientName,
-                Value<String?> skuCode = const Value.absent(),
-                Value<String?> skuId = const Value.absent(),
                 required int plannedWeight,
                 required int finalWeight,
                 required bool isManual,
@@ -32334,10 +29959,9 @@ class $$MixingItemsTableTableManager
                 isDeleted: isDeleted,
                 deletedAtUtc: deletedAtUtc,
                 sessionId: sessionId,
+                ingredientId: ingredientId,
                 categoryName: categoryName,
                 ingredientName: ingredientName,
-                skuCode: skuCode,
-                skuId: skuId,
                 plannedWeight: plannedWeight,
                 finalWeight: finalWeight,
                 isManual: isManual,
@@ -32353,7 +29977,7 @@ class $$MixingItemsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({sessionId = false}) {
+          prefetchHooksCallback: ({sessionId = false, ingredientId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -32386,6 +30010,19 @@ class $$MixingItemsTableTableManager
                               )
                               as T;
                     }
+                    if (ingredientId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ingredientId,
+                                referencedTable: $$MixingItemsTableReferences
+                                    ._ingredientIdTable(db),
+                                referencedColumn: $$MixingItemsTableReferences
+                                    ._ingredientIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
 
                     return state;
                   },
@@ -32410,7 +30047,7 @@ typedef $$MixingItemsTableProcessedTableManager =
       $$MixingItemsTableUpdateCompanionBuilder,
       (MixingItem, $$MixingItemsTableReferences),
       MixingItem,
-      PrefetchHooks Function({bool sessionId})
+      PrefetchHooks Function({bool sessionId, bool ingredientId})
     >;
 typedef $$MixingRevisionsTableCreateCompanionBuilder =
     MixingRevisionsCompanion Function({
@@ -34737,14 +32374,10 @@ class $AppDatabaseManager {
       $$IngredientCategoriesTableTableManager(_db, _db.ingredientCategories);
   $$IngredientsTableTableManager get ingredients =>
       $$IngredientsTableTableManager(_db, _db.ingredients);
-  $$IngredientSkusTableTableManager get ingredientSkus =>
-      $$IngredientSkusTableTableManager(_db, _db.ingredientSkus);
   $$CategoryRatioRangesTableTableManager get categoryRatioRanges =>
       $$CategoryRatioRangesTableTableManager(_db, _db.categoryRatioRanges);
   $$IngredientRatioRangesTableTableManager get ingredientRatioRanges =>
       $$IngredientRatioRangesTableTableManager(_db, _db.ingredientRatioRanges);
-  $$SkuRatioOverridesTableTableManager get skuRatioOverrides =>
-      $$SkuRatioOverridesTableTableManager(_db, _db.skuRatioOverrides);
   $$RecommendationPresetsTableTableManager get recommendationPresets =>
       $$RecommendationPresetsTableTableManager(_db, _db.recommendationPresets);
   $$RecommendationGroupsTableTableManager get recommendationGroups =>

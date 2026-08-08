@@ -23,10 +23,10 @@ void main() {
 
   test('range checks report only exceeded values', () {
     final checks = checkRecommendationRanges(
-      actualRatios: {'category:wood': 2079, 'sku:a': 5941},
+      actualRatios: {'category:wood': 2079, 'ingredient:a': 5941},
       ranges: {
         'category:wood': (label: '木类', minimum: 1000, maximum: 2000),
-        'sku:a': (label: '沉香', minimum: 5000, maximum: 6000),
+        'ingredient:a': (label: '沉香', minimum: 5000, maximum: 6000),
       },
     );
     expect(checks.map((item) => item.label), ['木类']);

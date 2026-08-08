@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../data/app_database.dart';
 import '../../data/media_store.dart';
+import '../../ui/single_modal.dart';
 
 class PlaqueCatalogPage extends StatefulWidget {
   const PlaqueCatalogPage({
@@ -39,10 +40,10 @@ class _PlaqueCatalogPageState extends State<PlaqueCatalogPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('香牌 / 合香珠'),
+        title: const Text('合香珠 / 香牌'),
         actions: [
           Tooltip(
-            message: '添加香牌',
+            message: '添加合香珠 / 香牌',
             child: TextButton.icon(
               onPressed: () => _edit(),
               icon: const Icon(Icons.add, size: 17),
@@ -98,7 +99,7 @@ class _PlaqueCatalogPageState extends State<PlaqueCatalogPage> {
                 final items = snapshot.data ?? const [];
                 if (items.isEmpty) {
                   if (_search.text.trim().isNotEmpty) {
-                    return const Center(child: Text('没有匹配的香牌'));
+                    return const Center(child: Text('没有匹配的合香珠 / 香牌'));
                   }
                   return Center(
                     child: FilledButton.icon(
@@ -137,7 +138,7 @@ class _PlaqueCatalogPageState extends State<PlaqueCatalogPage> {
                                 child: item.imageHash == null
                                     ? const Center(
                                         child: Text(
-                                          '香牌 / 合香珠',
+                                          '合香珠 / 香牌',
                                           style: TextStyle(
                                             color: Color(0xff415047),
                                             fontFamily: 'serif',
@@ -267,7 +268,7 @@ class _PlaqueCatalogPageState extends State<PlaqueCatalogPage> {
   }
 
   Future<void> _pickImage(PlaqueType item) async {
-    final source = await showModalBottomSheet<ImageSource>(
+    final source = await showSingleModalBottomSheet<ImageSource>(
       context: context,
       builder: (context) => SafeArea(
         child: Column(
@@ -309,7 +310,7 @@ class _PlaqueCatalogPageState extends State<PlaqueCatalogPage> {
   }
 
   Future<bool> _confirmDelete(String name) async =>
-      await showModalBottomSheet<bool>(
+      await showSingleModalBottomSheet<bool>(
         context: context,
         builder: (context) => SafeArea(
           child: Padding(
@@ -385,7 +386,7 @@ class _PlaqueEditorPageState extends State<_PlaqueEditorPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: Text(widget.item == null ? '新建香牌 / 合香珠' : '编辑香牌 / 合香珠'),
+      title: Text(widget.item == null ? '新建合香珠 / 香牌' : '编辑合香珠 / 香牌'),
       actions: [
         TextButton(onPressed: _saving ? null : _save, child: const Text('保存')),
       ],
@@ -478,7 +479,7 @@ class _PlaqueEditorPageState extends State<_PlaqueEditorPage> {
   );
 
   Future<void> _pickImage() async {
-    final source = await showModalBottomSheet<ImageSource>(
+    final source = await showSingleModalBottomSheet<ImageSource>(
       context: context,
       builder: (context) => SafeArea(
         child: Column(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/app_database.dart';
+import '../../ui/single_modal.dart';
 import '../../services/peer_discovery.dart';
 import '../../services/peer_http_transport.dart';
 import '../../services/peer_sync_runtime.dart';
@@ -306,7 +307,7 @@ class _SyncDevicesPageState extends State<SyncDevicesPage> {
 
   Future<void> _pair(BuildContext context, PeerDiscoveryPeer peer) async {
     var code = '';
-    final pairingCode = await showDialog<String>(
+    final pairingCode = await showSingleDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('连接设备'),
@@ -357,64 +358,72 @@ class _SyncDevicesPageState extends State<SyncDevicesPage> {
   }
 
   Future<void> _reviewRejoin(BuildContext context, PeerDevice device) async {
-    final database = runtime.database;
-    if (database == null) return;
-    final conflicts = await database.quarantinedConflictCount(device.id);
-    if (!context.mounted) return;
-    final action = await showModalBottomSheet<String>(
+    await runSingleModalAction<void>(
       context: context,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                device.deviceName,
-                style: Theme.of(context).textTheme.titleLarge,
+      action: 'sync-device-rejoin-review',
+      body: () async {
+        final database = runtime.database;
+        if (database == null) return;
+        final conflicts = await database.quarantinedConflictCount(device.id);
+        if (!context.mounted) return;
+        final action = await showSingleModalBottomSheet<String>(
+          context: context,
+          builder: (context) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    device.deviceName,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    conflicts == 0
+                        ? '隔离资料没有未处理冲突，可以完成重新加入。完成后下一轮才会接收设备组数据。'
+                        : '隔离资料中有 $conflicts 项冲突，处理完后才能完成重新加入。',
+                  ),
+                  const SizedBox(height: 20),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(
+                      context,
+                      conflicts == 0 ? 'complete' : 'conflicts',
+                    ),
+                    child: Text(conflicts == 0 ? '完成重新加入' : '处理同步冲突'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, 'remove'),
+                    child: const Text('取消重新加入并保持移除'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('关闭'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                conflicts == 0
-                    ? '隔离资料没有未处理冲突，可以完成重新加入。完成后下一轮才会接收设备组数据。'
-                    : '隔离资料中有 $conflicts 项冲突，处理完后才能完成重新加入。',
-              ),
-              const SizedBox(height: 20),
-              FilledButton(
-                onPressed: () => Navigator.pop(
-                  context,
-                  conflicts == 0 ? 'complete' : 'conflicts',
-                ),
-                child: Text(conflicts == 0 ? '完成重新加入' : '处理同步冲突'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, 'remove'),
-                child: const Text('取消重新加入并保持移除'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('关闭'),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+        if (!context.mounted) return;
+        if (action == 'conflicts') return _openConflicts(context);
+        if (action == 'remove') return _confirmRemove(context, device);
+        if (action != 'complete') return;
+        try {
+          await runtime.completeDeviceRejoin(device.id);
+          if (context.mounted) {
+            _message(context, '已完成重新加入，下一轮开始正常同步');
+          }
+        } catch (error) {
+          if (context.mounted) _message(context, _errorText(error));
+        }
+      },
     );
-    if (!context.mounted) return;
-    if (action == 'conflicts') return _openConflicts(context);
-    if (action == 'remove') return _confirmRemove(context, device);
-    if (action != 'complete') return;
-    try {
-      await runtime.completeDeviceRejoin(device.id);
-      if (context.mounted) _message(context, '已完成重新加入，下一轮开始正常同步');
-    } catch (error) {
-      if (context.mounted) _message(context, _errorText(error));
-    }
   }
 
   Future<void> _confirmRemove(BuildContext context, PeerDevice device) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showSingleDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('移除“${device.deviceName}”？'),
@@ -602,7 +611,7 @@ class _ProductionTypesPage extends StatelessWidget {
     ProductionType? productionType,
   ]) async {
     var name = productionType?.name ?? '';
-    await showDialog<void>(
+    await showSingleDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(productionType == null ? '添加制作类型' : '编辑制作类型'),
@@ -669,7 +678,7 @@ class _ProductionTypesPage extends StatelessWidget {
 }
 
 Future<bool> _confirmDelete(BuildContext context, String name) async =>
-    await showModalBottomSheet<bool>(
+    await showSingleModalBottomSheet<bool>(
       context: context,
       builder: (context) => SafeArea(
         child: Padding(

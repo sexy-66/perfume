@@ -25,14 +25,6 @@ void main() {
         name: '檀香',
         categoryId: category.id,
       );
-      final skuA = await database.createIngredientSku(
-        ingredientId: ingredientA.id,
-        skuCode: 'A',
-      );
-      final skuB = await database.createIngredientSku(
-        ingredientId: ingredientB.id,
-        skuCode: 'B',
-      );
       final customer = await database.createCustomer(name: '王女士');
       final draft = await database.createFormulaDraft(
         productionTypeId: 'type-zhuanxiang',
@@ -40,18 +32,16 @@ void main() {
         customerId: customer.id,
         items: [
           FormulaDraftItemInput(
-            skuId: skuA.id,
+            ingredientId: ingredientA.id,
             categoryName: '木类',
             ingredientName: '沉香',
-            skuCode: 'A',
             ratio: 2000,
             sortOrder: 0,
           ),
           FormulaDraftItemInput(
-            skuId: skuB.id,
+            ingredientId: ingredientB.id,
             categoryName: '木类',
             ingredientName: '檀香',
-            skuCode: 'B',
             ratio: 8000,
             sortOrder: 1,
           ),
@@ -172,10 +162,9 @@ void main() {
       name: '沉香',
       categoryId: category.id,
     );
-    final sku = await database.createIngredientSku(ingredientId: ingredient.id);
     await database.setRatioRange(
-      target: RatioRangeTarget.sku,
-      targetId: sku.id,
+      target: RatioRangeTarget.ingredient,
+      targetId: ingredient.id,
       productionTypeId: 'type-zhuanxiang',
       minRatio: 1000,
       maxRatio: 2000,
@@ -186,7 +175,7 @@ void main() {
       formulaName: '通用香方',
       items: [
         FormulaDraftItemInput(
-          skuId: sku.id,
+          ingredientId: ingredient.id,
           categoryName: '木类',
           ingredientName: '沉香',
           ratio: 10000,
@@ -209,7 +198,7 @@ void main() {
       formulaName: '待删草稿',
       items: [
         FormulaDraftItemInput(
-          skuId: sku.id,
+          ingredientId: ingredient.id,
           categoryName: '木类',
           ingredientName: '沉香',
           ratio: 10000,
@@ -228,10 +217,6 @@ void main() {
       final ingredient = await database.createIngredient(
         name: '沉香',
         categoryId: category.id,
-      );
-      final sku = await database.createIngredientSku(
-        ingredientId: ingredient.id,
-        skuCode: 'A',
       );
       var draft = await database.saveComposerDraft(
         productionTypeId: 'type-zhuanxiang',
@@ -252,10 +237,9 @@ void main() {
         notes: '自动保存',
         items: [
           FormulaDraftItemInput(
-            skuId: sku.id,
+            ingredientId: ingredient.id,
             categoryName: category.name,
             ingredientName: ingredient.name,
-            skuCode: sku.skuCode,
             ratio: 10000,
             sortOrder: 0,
           ),
@@ -282,15 +266,9 @@ void main() {
       name: '檀香',
       categoryId: category.id,
     );
-    final first = await database.createIngredientSku(
-      ingredientId: firstIngredient.id,
-    );
-    final second = await database.createIngredientSku(
-      ingredientId: secondIngredient.id,
-    );
     await database.setRatioRange(
-      target: RatioRangeTarget.sku,
-      targetId: first.id,
+      target: RatioRangeTarget.ingredient,
+      targetId: firstIngredient.id,
       productionTypeId: 'type-zhuanxiang',
       minRatio: 1000,
       maxRatio: 2000,
@@ -301,14 +279,14 @@ void main() {
       formulaName: '提醒测试',
       items: [
         FormulaDraftItemInput(
-          skuId: first.id,
+          ingredientId: firstIngredient.id,
           categoryName: category.name,
           ingredientName: firstIngredient.name,
           ratio: 2000,
           sortOrder: 0,
         ),
         FormulaDraftItemInput(
-          skuId: second.id,
+          ingredientId: secondIngredient.id,
           categoryName: category.name,
           ingredientName: secondIngredient.name,
           ratio: 8000,

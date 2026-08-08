@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/app_database.dart';
+import '../../ui/single_modal.dart';
 import '../ingredients/ratio_ranges_page.dart';
 
 class RecommendationPresetDetailPage extends StatelessWidget {
@@ -56,7 +57,7 @@ class RecommendationPresetDetailPage extends StatelessWidget {
                   title: Text(group.categoryName),
                   subtitle: Text(
                     '大类 ${formatRatioPercentage(group.ratio)}% · '
-                    'SKU ${formatRatioPercentage(group.itemTotal)}%',
+                    '香料 ${formatRatioPercentage(group.itemTotal)}%',
                   ),
                   onTap: () => Navigator.push(
                     context,
@@ -94,75 +95,81 @@ class RecommendationPresetDetailPage extends StatelessWidget {
     BuildContext context,
     List<RecommendationGroupSummary> groups,
   ) async {
-    final used = groups.map((group) => group.categoryId).toSet();
-    final categories = (await database.getActiveIngredientCategories())
-        .where((category) => !used.contains(category.id))
-        .toList();
-    if (!context.mounted) return;
-    if (categories.isEmpty) return _message(context, '没有可添加的大类');
-    var categoryId = categories.first.id;
-    var ratio = '';
-    final saved = await showDialog<bool>(
+    await runSingleModalAction<void>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('添加大类比例'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DropdownButtonFormField<String>(
-                  initialValue: categoryId,
-                  decoration: const InputDecoration(labelText: '大类'),
-                  items: [
-                    for (final category in categories)
-                      DropdownMenuItem(
-                        value: category.id,
-                        child: Text(category.name),
+      action: 'recommendation-group-add',
+      body: () async {
+        final used = groups.map((group) => group.categoryId).toSet();
+        final categories = (await database.getActiveIngredientCategories())
+            .where((category) => !used.contains(category.id))
+            .toList();
+        if (!context.mounted) return;
+        if (categories.isEmpty) return _message(context, '没有可添加的大类');
+        var categoryId = categories.first.id;
+        var ratio = '';
+        final saved = await showSingleDialog<bool>(
+          context: context,
+          builder: (context) => StatefulBuilder(
+            builder: (context, setState) => AlertDialog(
+              title: const Text('添加大类比例'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      initialValue: categoryId,
+                      decoration: const InputDecoration(labelText: '大类'),
+                      items: [
+                        for (final category in categories)
+                          DropdownMenuItem(
+                            value: category.id,
+                            child: Text(category.name),
+                          ),
+                      ],
+                      onChanged: (value) => setState(() => categoryId = value!),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      autofocus: true,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
                       ),
+                      decoration: const InputDecoration(
+                        labelText: '固定比例',
+                        suffixText: '%',
+                      ),
+                      onChanged: (value) => ratio = value,
+                    ),
                   ],
-                  onChanged: (value) => setState(() => categoryId = value!),
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  autofocus: true,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: const InputDecoration(
-                    labelText: '固定比例',
-                    suffixText: '%',
-                  ),
-                  onChanged: (value) => ratio = value,
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('取消'),
+                ),
+                FilledButton(
+                  onPressed: () async {
+                    try {
+                      await database.createRecommendationGroup(
+                        presetId: preset.id,
+                        categoryId: categoryId,
+                        ratio: parseRatioPercentage(ratio),
+                      );
+                      if (context.mounted) Navigator.pop(context, true);
+                    } catch (error) {
+                      if (context.mounted) _message(context, _errorText(error));
+                    }
+                  },
+                  child: const Text('保存'),
                 ),
               ],
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                try {
-                  await database.createRecommendationGroup(
-                    presetId: preset.id,
-                    categoryId: categoryId,
-                    ratio: parseRatioPercentage(ratio),
-                  );
-                  if (context.mounted) Navigator.pop(context, true);
-                } catch (error) {
-                  if (context.mounted) _message(context, _errorText(error));
-                }
-              },
-              child: const Text('保存'),
-            ),
-          ],
-        ),
-      ),
+        );
+        if (saved == true && context.mounted) _message(context, '已保存');
+      },
     );
-    if (saved == true && context.mounted) _message(context, '已保存');
   }
 
   Future<void> _editGroup(
@@ -217,7 +224,7 @@ class _RecommendationItemsPage extends StatelessWidget {
         final items = snapshot.data ?? const [];
         final total = items.fold(0, (sum, item) => sum + item.ratio);
         return Scaffold(
-          appBar: AppBar(title: Text('${group.categoryName} SKU')),
+          appBar: AppBar(title: Text('${group.categoryName}香料')),
           body: ListView(
             padding: const EdgeInsets.only(bottom: 88),
             children: [
@@ -229,8 +236,8 @@ class _RecommendationItemsPage extends StatelessWidget {
                 ),
                 title: Text(
                   total == 0
-                      ? '未细分 SKU'
-                      : 'SKU 合计 ${formatRatioPercentage(total)}%',
+                      ? '未细分香料'
+                      : '香料合计 ${formatRatioPercentage(total)}%',
                 ),
                 subtitle: Text('大类比例 ${formatRatioPercentage(group.ratio)}%'),
               ),
@@ -238,7 +245,6 @@ class _RecommendationItemsPage extends StatelessWidget {
               for (final item in items)
                 ListTile(
                   title: Text(item.ingredientName),
-                  subtitle: item.skuCode == null ? null : Text(item.skuCode!),
                   trailing: PopupMenuButton<String>(
                     tooltip: '${item.ingredientName}的更多操作',
                     icon: Text('${formatRatioPercentage(item.ratio)}%'),
@@ -256,7 +262,7 @@ class _RecommendationItemsPage extends StatelessWidget {
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _addItem(context, items),
             icon: const Icon(Icons.add),
-            label: const Text('添加 SKU'),
+            label: const Text('添加香料'),
           ),
         );
       },
@@ -267,74 +273,81 @@ class _RecommendationItemsPage extends StatelessWidget {
     BuildContext context,
     List<RecommendationItemSummary> items,
   ) async {
-    final used = items.map((item) => item.skuId).toSet();
-    final choices = (await database.getActiveSkusForCategory(
-      group.categoryId,
-    )).where((choice) => !used.contains(choice.id)).toList();
-    if (!context.mounted) return;
-    if (choices.isEmpty) return _message(context, '该大类没有可添加的 SKU');
-    var skuId = choices.first.id;
-    var ratio = '';
-    await showDialog<void>(
+    await runSingleModalAction<void>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('添加 SKU 比例'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DropdownButtonFormField<String>(
-                  initialValue: skuId,
-                  isExpanded: true,
-                  decoration: const InputDecoration(labelText: 'SKU'),
-                  items: [
-                    for (final choice in choices)
-                      DropdownMenuItem(
-                        value: choice.id,
-                        child: Text(choice.label),
+      action: 'recommendation-item-add',
+      body: () async {
+        final used = items.map((item) => item.ingredientId).toSet();
+        final choices = (await database.getActiveIngredientsForCategory(
+          group.categoryId,
+        )).where((choice) => !used.contains(choice.id)).toList();
+        if (!context.mounted) return;
+        if (choices.isEmpty) return _message(context, '该大类没有可添加的香料');
+        var ingredientId = choices.first.id;
+        var ratio = '';
+        await showSingleDialog<void>(
+          context: context,
+          builder: (context) => StatefulBuilder(
+            builder: (context, setState) => AlertDialog(
+              title: const Text('添加香料比例'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      initialValue: ingredientId,
+                      isExpanded: true,
+                      decoration: const InputDecoration(labelText: '香料'),
+                      items: [
+                        for (final choice in choices)
+                          DropdownMenuItem(
+                            value: choice.id,
+                            child: Text(choice.label),
+                          ),
+                      ],
+                      onChanged: (value) =>
+                          setState(() => ingredientId = value!),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      autofocus: true,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
                       ),
+                      decoration: const InputDecoration(
+                        labelText: '固定比例',
+                        suffixText: '%',
+                      ),
+                      onChanged: (value) => ratio = value,
+                    ),
                   ],
-                  onChanged: (value) => setState(() => skuId = value!),
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  autofocus: true,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: const InputDecoration(
-                    labelText: '固定比例',
-                    suffixText: '%',
-                  ),
-                  onChanged: (value) => ratio = value,
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('取消'),
+                ),
+                FilledButton(
+                  onPressed: () async {
+                    try {
+                      await database.createRecommendationItem(
+                        groupId: group.id,
+                        ingredientId: ingredientId,
+                        ratio: parseRatioPercentage(ratio),
+                      );
+                      if (context.mounted) Navigator.pop(context);
+                    } catch (error) {
+                      if (context.mounted) _message(context, _errorText(error));
+                    }
+                  },
+                  child: const Text('保存'),
                 ),
               ],
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                try {
-                  await database.createRecommendationItem(
-                    groupId: group.id,
-                    skuId: skuId,
-                    ratio: parseRatioPercentage(ratio),
-                  );
-                  if (context.mounted) Navigator.pop(context);
-                } catch (error) {
-                  if (context.mounted) _message(context, _errorText(error));
-                }
-              },
-              child: const Text('保存'),
-            ),
-          ],
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -359,7 +372,7 @@ class _RecommendationItemsPage extends StatelessWidget {
     BuildContext context,
     RecommendationItemSummary item,
   ) async {
-    if (!await _confirmDelete(context, '删除“${item.ingredientName}”SKU 比例？')) {
+    if (!await _confirmDelete(context, '删除“${item.ingredientName}”比例？')) {
       return;
     }
     try {
@@ -371,7 +384,7 @@ class _RecommendationItemsPage extends StatelessWidget {
 }
 
 Future<bool> _confirmDelete(BuildContext context, String title) async =>
-    await showModalBottomSheet<bool>(
+    await showSingleModalBottomSheet<bool>(
       context: context,
       builder: (context) => SafeArea(
         child: Padding(
@@ -404,7 +417,7 @@ Future<bool> _confirmDelete(BuildContext context, String title) async =>
 
 Future<int?> _askRatio(BuildContext context, String title, int current) async {
   var text = formatRatioPercentage(current);
-  return showDialog<int>(
+  return showSingleDialog<int>(
     context: context,
     builder: (context) => AlertDialog(
       title: Text(title),

@@ -19,16 +19,16 @@ void main() {
   tearDown(() => database.close());
 
   test(
-    'initializes the four structural production types and one device',
+    'initializes the three structural production types and one device',
     () async {
       expect(
         await database.select(database.productionTypes).get(),
-        hasLength(4),
+        hasLength(3),
       );
       final device = await database.localDevice();
       expect(device.id, matches(RegExp(r'^[0-9a-f]{32}$')));
       expect(device.deviceSeq, 0);
-      for (final table in ['ingredient_skus', 'assets']) {
+      for (final table in ['ingredients', 'assets']) {
         final columns = await database
             .customSelect('PRAGMA table_info($table)')
             .get();
@@ -53,7 +53,7 @@ void main() {
 
   test('rejects blank production type names', () async {
     expect(() => database.createProductionType('  '), throwsArgumentError);
-    expect(await database.select(database.productionTypes).get(), hasLength(4));
+    expect(await database.select(database.productionTypes).get(), hasLength(3));
   });
 
   test(
@@ -232,7 +232,9 @@ void main() {
     await database.updateIngredient(
       ingredient.id,
       name: '沉香木',
+      imageHash: ingredient.imageHash,
       alias: ingredient.alias,
+      notes: ingredient.notes,
       categoryId: flower.id,
       isInactive: true,
     );
@@ -257,48 +259,42 @@ void main() {
     );
   });
 
-  test('SKU changes are searchable, logged and soft deleted', () async {
-    final category = await database.createIngredientCategory('木类');
-    final ingredient = await database.createIngredient(
-      name: '沉香',
-      categoryId: category.id,
-    );
-    final sku = await database.createIngredientSku(
-      ingredientId: ingredient.id,
-      skuCode: '  AG-01  ',
-      imageHash: _imageHash,
-      supplier: '  香材行  ',
-      origin: '海南',
-    );
+  test(
+    'ingredient image and notes changes are logged and soft deleted',
+    () async {
+      final category = await database.createIngredientCategory('木类');
+      final ingredient = await database.createIngredient(
+        name: '  沉香  ',
+        categoryId: category.id,
+        imageHash: _imageHash,
+        notes: '库存样品',
+      );
 
-    expect(sku.skuCode, 'AG-01');
-    expect(
-      (await database.watchIngredients(search: '香材行').first),
-      hasLength(1),
-    );
-    await database.updateIngredientSku(
-      sku.id,
-      skuCode: sku.skuCode,
-      imageHash: sku.imageHash,
-      supplier: sku.supplier,
-      origin: sku.origin,
-      notes: '库存样品',
-      isInactive: true,
-    );
-    final updated =
-        (await database.watchIngredientSkus(ingredient.id).first).single;
-    expect((updated.notes, updated.imageHash), ('库存样品', _imageHash));
+      expect((ingredient.name, ingredient.imageHash), ('沉香', _imageHash));
+      await database.updateIngredient(
+        ingredient.id,
+        name: ingredient.name,
+        categoryId: ingredient.categoryId,
+        imageHash: ingredient.imageHash,
+        alias: ingredient.alias,
+        notes: '陈化样品',
+        isInactive: true,
+      );
+      final updated =
+          (await database.watchIngredients(includeInactive: true).first)
+              .single
+              .ingredient;
+      expect((updated.notes, updated.imageHash), ('陈化样品', _imageHash));
 
-    await database.deleteIngredientSku(sku.id);
-    expect(await database.watchIngredientSkus(ingredient.id).first, isEmpty);
-    await database.deleteIngredient(ingredient.id);
-    expect(
-      (await database.select(database.syncOperations).get()).map(
-        (operation) => operation.operationKind,
-      ),
-      ['create', 'create', 'create', 'update', 'delete', 'delete'],
-    );
-  });
+      await database.deleteIngredient(ingredient.id);
+      expect(
+        (await database.select(database.syncOperations).get()).map(
+          (operation) => operation.operationKind,
+        ),
+        ['create', 'create', 'update', 'delete'],
+      );
+    },
+  );
 
   test('plaque catalog searches, updates, filters and soft deletes', () async {
     final plaque = await database.createPlaqueType(
@@ -451,30 +447,25 @@ void main() {
       name: '沉香',
       categoryId: category.id,
     );
-    final sku = await database.createIngredientSku(
-      ingredientId: ingredient.id,
-      skuCode: 'AG-01',
-    );
-    await database.deleteIngredientSku(sku.id);
     await database.deleteIngredient(ingredient.id);
     await database.deleteIngredientCategory(category.id);
 
     var trash = await database.watchTrash().first;
-    expect(trash.map((item) => item.name).toSet(), {'木类', '沉香', 'AG-01'});
-    final skuEntry = trash.singleWhere(
-      (item) => item.type == TrashEntityType.ingredientSku,
+    expect(trash.map((item) => item.name).toSet(), {'木类', '沉香'});
+    final ingredientEntry = trash.singleWhere(
+      (item) => item.type == TrashEntityType.ingredient,
     );
-    await expectLater(database.restoreTrashEntry(skuEntry), throwsStateError);
+    await expectLater(
+      database.restoreTrashEntry(ingredientEntry),
+      throwsStateError,
+    );
 
     await database.restoreTrashEntry(
       trash.singleWhere(
         (item) => item.type == TrashEntityType.ingredientCategory,
       ),
     );
-    await database.restoreTrashEntry(
-      trash.singleWhere((item) => item.type == TrashEntityType.ingredient),
-    );
-    await database.restoreTrashEntry(skuEntry);
+    await database.restoreTrashEntry(ingredientEntry);
     trash = await database.watchTrash().first;
     expect(trash, isEmpty);
     final expired = await database.createPlaqueType(name: '过期删除项');
@@ -496,11 +487,8 @@ void main() {
       [
         'create',
         'create',
-        'create',
         'delete',
         'delete',
-        'delete',
-        'restore',
         'restore',
         'restore',
         'create',
@@ -510,23 +498,18 @@ void main() {
   });
 
   test(
-    'ratio ranges save, validate, clear and restore at all levels',
+    'ratio ranges save, validate, clear and restore at both levels',
     () async {
       final category = await database.createIngredientCategory('木类');
       final ingredient = await database.createIngredient(
         name: '沉香',
         categoryId: category.id,
       );
-      final sku = await database.createIngredientSku(
-        ingredientId: ingredient.id,
-        skuCode: 'AG-01',
-      );
       const productionTypeId = 'type-zhuanxiang';
 
       for (final target in [
         (RatioRangeTarget.category, category.id),
         (RatioRangeTarget.ingredient, ingredient.id),
-        (RatioRangeTarget.sku, sku.id),
       ]) {
         await database.setRatioRange(
           target: target.$1,
@@ -544,33 +527,37 @@ void main() {
       }
 
       await database.clearRatioRange(
-        RatioRangeTarget.sku,
-        sku.id,
+        RatioRangeTarget.ingredient,
+        ingredient.id,
         productionTypeId,
       );
       expect(
-        (await database.watchRatioRanges(RatioRangeTarget.sku, sku.id).first)
+        (await database
+                .watchRatioRanges(RatioRangeTarget.ingredient, ingredient.id)
+                .first)
             .first
             .minRatio,
         isNull,
       );
       await database.setRatioRange(
-        target: RatioRangeTarget.sku,
-        targetId: sku.id,
+        target: RatioRangeTarget.ingredient,
+        targetId: ingredient.id,
         productionTypeId: productionTypeId,
         minRatio: 1500,
         maxRatio: 2000,
       );
       expect(
-        (await database.watchRatioRanges(RatioRangeTarget.sku, sku.id).first)
+        (await database
+                .watchRatioRanges(RatioRangeTarget.ingredient, ingredient.id)
+                .first)
             .first
             .minRatio,
         1500,
       );
       expect(
         () => database.setRatioRange(
-          target: RatioRangeTarget.sku,
-          targetId: sku.id,
+          target: RatioRangeTarget.ingredient,
+          targetId: ingredient.id,
           productionTypeId: productionTypeId,
           minRatio: 2001,
           maxRatio: 2000,
@@ -627,14 +614,6 @@ void main() {
         name: '玫瑰',
         categoryId: flower.id,
       );
-      final woodSku = await database.createIngredientSku(
-        ingredientId: agarwood.id,
-        skuCode: 'AG-01',
-      );
-      final flowerSku = await database.createIngredientSku(
-        ingredientId: rose.id,
-        skuCode: 'ROSE-01',
-      );
       final preset = await database.createRecommendationPreset(
         name: '配比测试',
         productionTypeId: 'type-zhuanxiang',
@@ -656,20 +635,20 @@ void main() {
       await expectLater(
         database.createRecommendationItem(
           groupId: group.id,
-          skuId: flowerSku.id,
+          ingredientId: rose.id,
           ratio: 1000,
         ),
         throwsStateError,
       );
       final item = await database.createRecommendationItem(
         groupId: group.id,
-        skuId: woodSku.id,
+        ingredientId: agarwood.id,
         ratio: 5000,
       );
       await expectLater(
         database.createRecommendationItem(
           groupId: group.id,
-          skuId: woodSku.id,
+          ingredientId: agarwood.id,
           ratio: 1001,
         ),
         throwsStateError,
@@ -711,7 +690,7 @@ void main() {
       );
       final restoredItem = await database.createRecommendationItem(
         groupId: restoredGroup.id,
-        skuId: woodSku.id,
+        ingredientId: agarwood.id,
         ratio: 6000,
       );
       expect((restoredGroup.id, restoredItem.id), (group.id, item.id));
@@ -750,19 +729,6 @@ void main() {
         throwsStateError,
       );
 
-      final sku = await database.createIngredientSku(
-        ingredientId: ingredient.id,
-        skuCode: 'AG-01',
-      );
-      await database.setRatioRange(
-        target: RatioRangeTarget.sku,
-        targetId: sku.id,
-        productionTypeId: 'type-zhuanxiang',
-        minRatio: 100,
-        maxRatio: 200,
-      );
-      await expectLater(database.deleteIngredientSku(sku.id), throwsStateError);
-
       final groupedCategory = await database.createIngredientCategory('配置分类');
       final preset = await database.createRecommendationPreset(
         name: '配置',
@@ -786,10 +752,6 @@ void main() {
       name: '沉香',
       categoryId: category.id,
     );
-    final sku = await database.createIngredientSku(
-      ingredientId: ingredient.id,
-      skuCode: 'AG-01',
-    );
     final preset = await database.createRecommendationPreset(
       name: '配置',
       productionTypeId: 'type-zhuanxiang',
@@ -801,12 +763,11 @@ void main() {
     );
     await database.createRecommendationItem(
       groupId: group.id,
-      skuId: sku.id,
+      ingredientId: ingredient.id,
       ratio: 10000,
     );
 
     await database.deleteRecommendationPreset(preset.id);
-    await database.deleteIngredientSku(sku.id);
     await database.deleteIngredient(ingredient.id);
     await database.deleteIngredientCategory(category.id);
     var trash = await database.watchTrash().first;
@@ -821,7 +782,6 @@ void main() {
     for (final type in [
       TrashEntityType.ingredientCategory,
       TrashEntityType.ingredient,
-      TrashEntityType.ingredientSku,
     ]) {
       trash = await database.watchTrash().first;
       await database.restoreTrashEntry(
@@ -841,27 +801,17 @@ void main() {
       name: '沉香',
       categoryId: category.id,
     );
-    final sku = await database.createIngredientSku(
-      ingredientId: ingredient.id,
-      skuCode: 'AG-01',
-    );
     await database.updateIngredientCategory(category.id, isInactive: true);
     await database.updateIngredient(
       ingredient.id,
       name: '沉香木',
+      imageHash: ingredient.imageHash,
       alias: null,
+      notes: '保留父级',
       categoryId: category.id,
     );
-    await database.updateIngredientSku(
-      sku.id,
-      skuCode: sku.skuCode,
-      imageHash: sku.imageHash,
-      supplier: sku.supplier,
-      origin: sku.origin,
-      notes: '保留父级',
-    );
     await expectLater(
-      database.createIngredientSku(ingredientId: ingredient.id),
+      database.createIngredient(name: '新香料', categoryId: category.id),
       throwsStateError,
     );
 
@@ -955,13 +905,10 @@ void main() {
     'ordered creates log sort state and invalid media hashes are rejected',
     () async {
       final category = await database.createIngredientCategory('木类');
-      final ingredient = await database.createIngredient(
-        name: '沉香',
-        categoryId: category.id,
-      );
       await expectLater(
-        database.createIngredientSku(
-          ingredientId: ingredient.id,
+        database.createIngredient(
+          name: '沉香',
+          categoryId: category.id,
           imageHash: '../outside',
         ),
         throwsArgumentError,

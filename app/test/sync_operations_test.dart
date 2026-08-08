@@ -6,7 +6,7 @@ import 'package:xiangfangbu/data/app_database.dart';
 
 void main() {
   test(
-    'replicates SKU dependencies and ignores duplicate operations',
+    'replicates ingredient dependencies and ignores duplicate operations',
     () async {
       final source = AppDatabase(NativeDatabase.memory());
       final target = AppDatabase(NativeDatabase.memory());
@@ -20,21 +20,17 @@ void main() {
         name: '沉香',
         categoryId: category.id,
       );
-      final sku = await source.createIngredientSku(
-        ingredientId: ingredient.id,
-        skuCode: 'AG-01',
-      );
       final operations = await source.select(source.syncOperations).get();
       final batch = [
         for (final operation in operations)
           Map<String, dynamic>.from(syncOperationToJson(operation)),
       ];
 
-      expect(await target.applyRemoteSyncOperations(batch), 3);
+      expect(await target.applyRemoteSyncOperations(batch), 2);
       expect(
         await (target.select(
-          target.ingredientSkus,
-        )..where((row) => row.id.equals(sku.id))).getSingle(),
+          target.ingredients,
+        )..where((row) => row.id.equals(ingredient.id))).getSingle(),
         isNotNull,
       );
       expect(await target.applyRemoteSyncOperations(batch), 0);
@@ -42,31 +38,31 @@ void main() {
         (await target.syncVector())[await source.localDevice().then(
           (d) => d.id,
         )],
-        3,
+        2,
       );
 
-      await source.updateIngredientSku(
-        sku.id,
-        skuCode: 'AG-02',
-        imageHash: null,
-        supplier: null,
-        origin: null,
-        notes: null,
+      await source.updateIngredient(
+        ingredient.id,
+        name: '沉香木',
+        categoryId: ingredient.categoryId,
+        imageHash: ingredient.imageHash,
+        alias: ingredient.alias,
+        notes: ingredient.notes,
       );
       final update = (await source.select(source.syncOperations).get()).last;
       await target.applyRemoteSyncOperations([
         Map<String, dynamic>.from(syncOperationToJson(update)),
       ]);
       final synced = await (target.select(
-        target.ingredientSkus,
-      )..where((row) => row.id.equals(sku.id))).getSingle();
-      expect(synced.skuCode, 'AG-02');
-      expect(jsonDecode(update.payloadJson)['skuCode'], 'AG-02');
+        target.ingredients,
+      )..where((row) => row.id.equals(ingredient.id))).getSingle();
+      expect(synced.name, '沉香木');
+      expect(jsonDecode(update.payloadJson)['name'], '沉香木');
     },
   );
 
   test(
-    'keeps both concurrent SKU snapshots and syncs the resolution',
+    'keeps both concurrent ingredient snapshots and syncs the resolution',
     () async {
       final a = AppDatabase(NativeDatabase.memory());
       final b = AppDatabase(NativeDatabase.memory());
@@ -92,28 +88,24 @@ void main() {
         name: '沉香',
         categoryId: category.id,
       );
-      final sku = await a.createIngredientSku(
-        ingredientId: ingredient.id,
-        skuCode: 'ORIGINAL',
-      );
       await exchange(a, b);
       await exchange(a, c);
 
-      await b.updateIngredientSku(
-        sku.id,
-        skuCode: 'B-EDIT',
-        imageHash: null,
-        supplier: null,
-        origin: null,
-        notes: null,
+      await b.updateIngredient(
+        ingredient.id,
+        name: 'B-EDIT',
+        categoryId: ingredient.categoryId,
+        imageHash: ingredient.imageHash,
+        alias: ingredient.alias,
+        notes: ingredient.notes,
       );
-      await c.updateIngredientSku(
-        sku.id,
-        skuCode: 'C-EDIT',
-        imageHash: null,
-        supplier: null,
-        origin: null,
-        notes: null,
+      await c.updateIngredient(
+        ingredient.id,
+        name: 'C-EDIT',
+        categoryId: ingredient.categoryId,
+        imageHash: ingredient.imageHash,
+        alias: ingredient.alias,
+        notes: ingredient.notes,
       );
       await exchange(c, b);
       await exchange(b, a);
@@ -126,30 +118,28 @@ void main() {
         jsonDecode(conflict.firstSnapshotJson) as Map<String, dynamic>,
         jsonDecode(conflict.secondSnapshotJson) as Map<String, dynamic>,
       ];
-      expect(snapshots.map((item) => item['skuCode']), {'B-EDIT', 'C-EDIT'});
-      final chosen = snapshots.singleWhere(
-        (item) => item['skuCode'] == 'C-EDIT',
-      );
+      expect(snapshots.map((item) => item['name']), {'B-EDIT', 'C-EDIT'});
+      final chosen = snapshots.singleWhere((item) => item['name'] == 'C-EDIT');
       await b.resolveSyncConflict(
         conflict.id,
         chosenRevisionId: chosen['revisionId'] as String,
       );
       expect(await b.pendingSyncConflictCount(), 0);
       expect(
-        await (b.select(b.ingredientSkus)
-              ..where((row) => row.id.equals(sku.id)))
+        await (b.select(b.ingredients)
+              ..where((row) => row.id.equals(ingredient.id)))
             .getSingle()
-            .then((value) => value.skuCode),
+            .then((value) => value.name),
         'C-EDIT',
       );
 
       await exchange(b, c);
       expect(await c.pendingSyncConflictCount(), 0);
       expect(
-        await (c.select(c.ingredientSkus)
-              ..where((row) => row.id.equals(sku.id)))
+        await (c.select(c.ingredients)
+              ..where((row) => row.id.equals(ingredient.id)))
             .getSingle()
-            .then((value) => value.skuCode),
+            .then((value) => value.name),
         'C-EDIT',
       );
     },
@@ -171,13 +161,9 @@ void main() {
         name: '沉香',
         categoryId: category.id,
       );
-      final sku = await source.createIngredientSku(
-        ingredientId: ingredient.id,
-        skuCode: 'FULL-01',
-      );
       await source.setRatioRange(
-        target: RatioRangeTarget.sku,
-        targetId: sku.id,
+        target: RatioRangeTarget.ingredient,
+        targetId: ingredient.id,
         productionTypeId: productionType.id,
         minRatio: 100,
         maxRatio: 200,
@@ -193,7 +179,7 @@ void main() {
       );
       await source.createRecommendationItem(
         groupId: group.id,
-        skuId: sku.id,
+        ingredientId: ingredient.id,
         ratio: 100,
       );
       final customer = await source.createCustomer(
@@ -222,10 +208,9 @@ void main() {
         targetWeight: 100,
         items: [
           FormulaDraftItemInput(
-            skuId: sku.id,
+            ingredientId: ingredient.id,
             categoryName: category.name,
             ingredientName: ingredient.name,
-            skuCode: sku.skuCode,
             ratio: 10000,
             sortOrder: 0,
           ),
@@ -253,7 +238,10 @@ void main() {
         ]);
       }
 
-      expect(await target.select(target.skuRatioOverrides).get(), hasLength(1));
+      expect(
+        await target.select(target.ingredientRatioRanges).get(),
+        hasLength(1),
+      );
       expect(
         await target.select(target.recommendationPresets).get(),
         hasLength(1),

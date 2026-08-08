@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/native.dart';
@@ -50,6 +51,63 @@ void main() {
     mediaDirectory.deleteSync(recursive: true);
   });
 
+  testWidgets('sync entry retries initialization without duplicate pages', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1080, 2400);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final database = AppDatabase(NativeDatabase.memory());
+    final mediaDirectory = Directory.systemTemp.createTempSync('xiang-ui-');
+    final runtime = _RecordingPeerSyncRuntime(
+      await PeerIdentity.create(
+        deviceId: 'sync-entry-device',
+        deviceName: '同步入口设备',
+      ),
+    );
+    final retry = Completer<PeerSyncRuntime>();
+    var loaderCalls = 0;
+    await database.initialize();
+    await tester.pumpWidget(
+      XiangApp(
+        database: database,
+        mediaStore: MediaStore(mediaDirectory),
+        syncRuntimeLoader: () async {
+          loaderCalls++;
+          if (loaderCalls == 1) throw StateError('首次初始化失败');
+          return retry.future;
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('更多'));
+    await tester.pump();
+    final syncTile = find.widgetWithText(ListTile, '同步与设备');
+    expect(
+      find.descendant(of: syncTile, matching: find.text('初始化失败，点按重试')),
+      findsOneWidget,
+    );
+    final tile = tester.widget<ListTile>(syncTile);
+    tile.onTap!();
+    tile.onTap!();
+    tile.onTap!();
+    await tester.pump();
+    expect(loaderCalls, 2);
+
+    retry.complete(runtime);
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(AppBar, '同步与设备'), findsOneWidget);
+    expect(find.text('同步入口设备'), findsOneWidget);
+    expect(loaderCalls, 2);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+    await database.close();
+    mediaDirectory.deleteSync(recursive: true);
+  });
+
   testWidgets('product entry selects plaque before formula', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1080, 2400);
@@ -64,7 +122,7 @@ void main() {
       XiangApp(database: database, mediaStore: mediaStore),
     );
 
-    await tester.tap(find.text('香牌 / 合香珠'));
+    await tester.tap(find.text('合香珠 / 香牌'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
     expect(find.text('选择成品'), findsOneWidget);
@@ -110,7 +168,7 @@ void main() {
     await tester.pump();
     for (final item in const [
       '香料库',
-      '香牌目录',
+      '合香珠 / 香牌目录',
       '顾客',
       '推荐配置',
       '资产清点',
@@ -136,13 +194,35 @@ void main() {
     await tester.tap(find.text('香料库'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-    expect(
-      find.widgetWithText(SearchBar, '搜索名称、别名、SKU、供应商或分类'),
-      findsOneWidget,
-    );
+    expect(find.widgetWithText(SearchBar, '搜索名称、别名或分类'), findsOneWidget);
     expect(find.byType(RefreshIndicator), findsOneWidget);
     expect(find.text('添加第一项'), findsOneWidget);
     expect(find.byTooltip('管理分类'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+    await database.close();
+    mediaDirectory.deleteSync(recursive: true);
+  });
+
+  testWidgets('root back shows a lightweight double-back exit hint', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    final mediaDirectory = Directory.systemTemp.createTempSync('xiang-ui-');
+    await database.initialize();
+    await tester.pumpWidget(
+      XiangApp(database: database, mediaStore: MediaStore(mediaDirectory)),
+    );
+
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    expect(find.text('再按一次退出香方簿'), findsOneWidget);
+    expect(find.text('退出香方簿？'), findsNothing);
+
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    expect(find.text('再按一次退出香方簿'), findsNothing);
+
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 1));
     await database.close();
@@ -169,11 +249,11 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('香料库'));
     await tester.pumpAndSettle();
-    expect(find.byTooltip('添加香料'), findsOneWidget);
-    await tester.tap(find.byTooltip('添加香料'));
+    expect(find.byTooltip('添加香料'), findsNWidgets(2));
+    await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
     expect(find.text('添加香料'), findsOneWidget);
-    expect(find.byType(TextFormField), findsNWidgets(2));
+    expect(find.byType(TextFormField), findsNWidgets(3));
     expect(find.text('新建大类'), findsOneWidget);
     await tester.enterText(find.byType(TextFormField).first, '沉香');
     await tester.tap(find.widgetWithText(FilledButton, '保存'));
@@ -185,8 +265,8 @@ void main() {
 
     await tester.tap(find.text('沉香'));
     await tester.pumpAndSettle();
-    expect(find.text('添加第一个 SKU'), findsOneWidget);
-    await tester.tap(find.byTooltip('香料推荐区间'));
+    expect(find.text('编辑香料'), findsOneWidget);
+    await tester.tap(find.widgetWithText(TextButton, '推荐区间'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('篆香'));
     await tester.pumpAndSettle();
@@ -197,22 +277,6 @@ void main() {
     expect(find.text('12.50%–25.00%'), findsOneWidget);
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
-
-    await tester.tap(find.byTooltip('添加 SKU'));
-    await tester.pumpAndSettle();
-    final skuFields = find.byType(TextFormField);
-    expect(skuFields, findsNWidgets(4));
-    for (var i = 0; i < 3; i++) {
-      expect(
-        tester.getTopLeft(skuFields.at(i + 1)).dy -
-            tester.getBottomLeft(skuFields.at(i)).dy,
-        greaterThanOrEqualTo(12),
-      );
-    }
-    await tester.enterText(skuFields.first, 'AG-01');
-    await tester.tap(find.widgetWithText(FilledButton, '保存'));
-    await tester.pumpAndSettle();
-    expect(find.text('AG-01'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -237,9 +301,9 @@ void main() {
 
     await tester.tap(find.text('更多'));
     await tester.pump();
-    await tester.tap(find.text('香牌目录'));
+    await tester.tap(find.text('合香珠 / 香牌目录'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('添加香牌'));
+    await tester.tap(find.byTooltip('添加合香珠 / 香牌'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, '如意牌');
     await tester.enterText(find.byType(TextField).at(1), '6 × 3 cm');
@@ -304,7 +368,7 @@ void main() {
     tester.view.physicalSize = const Size(1080, 2400);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
-    final database = AppDatabase(NativeDatabase.memory());
+    final database = _DelayedAssetDatabase();
     final mediaDirectory = Directory.systemTemp.createTempSync('xiang-ui-');
     await database.initialize();
     await database.createAssetCategory('工具');
@@ -316,17 +380,74 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('资产清点'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('添加资产'));
-    await tester.pump(const Duration(milliseconds: 100));
+    final addFirstAsset = find.widgetWithText(FilledButton, '添加第一项资产');
+    final addFirstAssetButton = tester.widget<FilledButton>(addFirstAsset);
+    addFirstAssetButton.onPressed!();
+    addFirstAssetButton.onPressed!();
+    addFirstAssetButton.onPressed!();
+    await tester.pump();
+    expect(database.categoryQueries, 1);
+    database.releaseCategoryQuery.complete();
     await tester.pumpAndSettle();
+    expect(database.statusQueries, 1);
+    expect(find.text('添加资产'), findsOneWidget);
     await tester.enterText(find.byType(TextFormField).first, '压香器');
     await tester.enterText(find.byType(TextFormField).at(1), '2');
     await tester.tap(find.widgetWithText(FilledButton, '保存'));
     await tester.pumpAndSettle();
 
+    expect(find.text('添加资产'), findsNothing);
     expect(find.text('压香器 × 2'), findsOneWidget);
     expect(find.text('工具'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+    await database.close();
+    mediaDirectory.deleteSync(recursive: true);
+  });
+
+  testWidgets('ingredient long press supports batch delete and disable', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1080, 2400);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final database = AppDatabase(NativeDatabase.memory());
+    final mediaDirectory = Directory.systemTemp.createTempSync('xiang-ui-');
+    await database.initialize();
+    final category = await database.createIngredientCategory('木类');
+    for (final name in ['沉香', '檀香', '乳香']) {
+      await database.createIngredient(name: name, categoryId: category.id);
+    }
+    await tester.pumpWidget(
+      XiangApp(database: database, mediaStore: MediaStore(mediaDirectory)),
+    );
+
+    await tester.tap(find.text('更多'));
+    await tester.pump();
+    await tester.tap(find.text('香料库'));
+    await tester.pumpAndSettle();
+    await tester.longPress(find.text('沉香'));
+    await tester.pump();
+    await tester.tap(find.text('檀香'));
+    await tester.pump();
+    expect(find.text('已选 2 项'), findsOneWidget);
+    await tester.tap(find.byTooltip('删除所选香料'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, '确认删除'));
+    await tester.pumpAndSettle();
+    expect(find.text('沉香'), findsNothing);
+    expect(find.text('檀香'), findsNothing);
+    expect(find.text('乳香'), findsOneWidget);
+
+    await tester.longPress(find.text('乳香'));
+    await tester.pump();
+    await tester.tap(find.byTooltip('停用所选香料'));
+    await tester.pumpAndSettle();
+    expect(find.text('乳香'), findsNothing);
+    expect(tester.takeException(), isNull);
+
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 1));
     await database.close();
@@ -395,60 +516,57 @@ void main() {
     mediaDirectory.deleteSync(recursive: true);
   });
 
-  testWidgets('shows recommendation category and SKU completion status', (
-    tester,
-  ) async {
-    tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(1080, 2400);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    addTearDown(tester.view.resetPhysicalSize);
-    final database = AppDatabase(NativeDatabase.memory());
-    await database.initialize();
-    final category = await database.createIngredientCategory('木类');
-    final ingredient = await database.createIngredient(
-      name: '沉香',
-      categoryId: category.id,
-    );
-    final sku = await database.createIngredientSku(
-      ingredientId: ingredient.id,
-      skuCode: 'AG-01',
-    );
-    final preset = await database.createRecommendationPreset(
-      name: '篆香基础',
-      productionTypeId: 'type-zhuanxiang',
-    );
-    final group = await database.createRecommendationGroup(
-      presetId: preset.id,
-      categoryId: category.id,
-      ratio: 10000,
-    );
-    await database.createRecommendationItem(
-      groupId: group.id,
-      skuId: sku.id,
-      ratio: 10000,
-    );
-    await tester.pumpWidget(
-      MaterialApp(
-        home: RecommendationPresetDetailPage(
-          database: database,
-          preset: preset,
+  testWidgets(
+    'shows recommendation category and ingredient completion status',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(1080, 2400);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      final database = AppDatabase(NativeDatabase.memory());
+      await database.initialize();
+      final category = await database.createIngredientCategory('木类');
+      final ingredient = await database.createIngredient(
+        name: '沉香',
+        categoryId: category.id,
+      );
+      final preset = await database.createRecommendationPreset(
+        name: '篆香基础',
+        productionTypeId: 'type-zhuanxiang',
+      );
+      final group = await database.createRecommendationGroup(
+        presetId: preset.id,
+        categoryId: category.id,
+        ratio: 10000,
+      );
+      await database.createRecommendationItem(
+        groupId: group.id,
+        ingredientId: ingredient.id,
+        ratio: 10000,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RecommendationPresetDetailPage(
+            database: database,
+            preset: preset,
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('配置已完成'), findsOneWidget);
+      expect(find.text('配置已完成'), findsOneWidget);
 
-    await tester.tap(find.text('木类'));
-    await tester.pumpAndSettle();
-    expect(find.text('SKU 合计 100.00%'), findsOneWidget);
-    expect(find.text('AG-01'), findsOneWidget);
-    expect(tester.takeException(), isNull);
+      await tester.tap(find.text('木类'));
+      await tester.pumpAndSettle();
+      expect(find.text('香料合计 100.00%'), findsOneWidget);
+      expect(find.text('沉香'), findsOneWidget);
+      expect(tester.takeException(), isNull);
 
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump(const Duration(milliseconds: 1));
-    await database.close();
-  });
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 1));
+      await database.close();
+    },
+  );
 
   testWidgets('edits an ingredient without losing its inactive category', (
     tester,
@@ -474,9 +592,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('香料库'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('沉香的更多操作'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('编辑'));
+    await tester.tap(find.text('沉香'));
     await tester.pumpAndSettle();
     expect(find.text('木类（已停用）'), findsOneWidget);
     await tester.tap(find.widgetWithText(FilledButton, '保存'));
@@ -606,14 +722,13 @@ void main() {
       name: '沉香',
       categoryId: category.id,
     );
-    final sku = await database.createIngredientSku(ingredientId: ingredient.id);
     final draft = await database.createFormulaDraft(
       productionTypeId: 'type-zhuanxiang',
       targetWeight: 100,
       formulaName: '可撤销香方',
       items: [
         FormulaDraftItemInput(
-          skuId: sku.id,
+          ingredientId: ingredient.id,
           categoryName: '木类',
           ingredientName: '沉香',
           ratio: 10000,
@@ -726,4 +841,27 @@ class _RecordingPeerSyncRuntime extends PeerSyncRuntime {
 
   @override
   Future<void> syncAll() async => syncCalls++;
+}
+
+class _DelayedAssetDatabase extends AppDatabase {
+  _DelayedAssetDatabase() : super(NativeDatabase.memory());
+
+  final releaseCategoryQuery = Completer<void>();
+  var categoryQueries = 0;
+  var statusQueries = 0;
+
+  @override
+  Future<List<AssetCategory>> getActiveAssetCategories({
+    String? includeId,
+  }) async {
+    categoryQueries++;
+    await releaseCategoryQuery.future;
+    return super.getActiveAssetCategories(includeId: includeId);
+  }
+
+  @override
+  Future<List<AssetStatuse>> getActiveAssetStatuses({String? includeId}) async {
+    statusQueries++;
+    return super.getActiveAssetStatuses(includeId: includeId);
+  }
 }

@@ -2,58 +2,50 @@ part of 'app_database.dart';
 
 class FormulaDraftItemInput {
   const FormulaDraftItemInput({
-    required this.skuId,
+    required this.ingredientId,
     required this.categoryName,
     required this.ingredientName,
     required this.ratio,
     required this.sortOrder,
-    this.skuCode,
   });
 
-  final String skuId;
+  final String ingredientId;
   final String categoryName;
   final String ingredientName;
-  final String? skuCode;
   final int ratio;
   final int sortOrder;
 
   Map<String, Object?> toJson() => {
-    'skuId': skuId,
+    'ingredientId': ingredientId,
     'categoryName': categoryName,
     'ingredientName': ingredientName,
-    'skuCode': skuCode,
     'ratio': ratio,
     'sortOrder': sortOrder,
   };
 
   factory FormulaDraftItemInput.fromJson(Map<String, Object?> json) =>
       FormulaDraftItemInput(
-        skuId: json['skuId']! as String,
+        ingredientId: json['ingredientId']! as String,
         categoryName: json['categoryName']! as String,
         ingredientName: json['ingredientName']! as String,
-        skuCode: json['skuCode'] as String?,
         ratio: json['ratio']! as int,
         sortOrder: json['sortOrder']! as int,
       );
 
-  String get label =>
-      skuCode == null ? ingredientName : '$ingredientName · $skuCode';
+  String get label => ingredientName;
 }
 
-class FormulaSkuChoice {
-  const FormulaSkuChoice({
+class FormulaIngredientChoice {
+  const FormulaIngredientChoice({
     required this.id,
     required this.categoryName,
     required this.ingredientName,
-    this.skuCode,
   });
 
   final String id;
   final String categoryName;
   final String ingredientName;
-  final String? skuCode;
-  String get label =>
-      skuCode == null ? ingredientName : '$ingredientName · $skuCode';
+  String get label => ingredientName;
 }
 
 class FormulaSummary {
@@ -235,7 +227,7 @@ extension M3Database on AppDatabase {
     if (weight <= 0) throw ArgumentError('目标总重必须大于 0');
     _validateDraftItems(state.items);
     for (final item in state.items) {
-      await _validateDraftSku(item.skuId);
+      await _validateDraftIngredient(item.ingredientId);
     }
     final change = await _recordOperation(
       entityType: 'formula_drafts',
@@ -338,22 +330,16 @@ extension M3Database on AppDatabase {
     );
   });
 
-  Future<List<FormulaSkuChoice>> getActiveFormulaSkus() async {
+  Future<List<FormulaIngredientChoice>> getActiveFormulaIngredients() async {
     final rows =
-        await (select(ingredientSkus).join([
-                innerJoin(
-                  ingredients,
-                  ingredients.id.equalsExp(ingredientSkus.ingredientId),
-                ),
+        await (select(ingredients).join([
                 innerJoin(
                   ingredientCategories,
                   ingredientCategories.id.equalsExp(ingredients.categoryId),
                 ),
               ])
               ..where(
-                ingredientSkus.isDeleted.equals(false) &
-                    ingredientSkus.isInactive.equals(false) &
-                    ingredients.isDeleted.equals(false) &
+                ingredients.isDeleted.equals(false) &
                     ingredients.isInactive.equals(false) &
                     ingredientCategories.isDeleted.equals(false) &
                     ingredientCategories.isInactive.equals(false),
@@ -365,11 +351,10 @@ extension M3Database on AppDatabase {
             .get();
     return [
       for (final row in rows)
-        FormulaSkuChoice(
-          id: row.readTable(ingredientSkus).id,
+        FormulaIngredientChoice(
+          id: row.readTable(ingredients).id,
           categoryName: row.readTable(ingredientCategories).name,
           ingredientName: row.readTable(ingredients).name,
-          skuCode: row.readTable(ingredientSkus).skuCode,
         ),
     ];
   }
@@ -393,12 +378,8 @@ extension M3Database on AppDatabase {
       final rows =
           await (select(recommendationItems).join([
                 innerJoin(
-                  ingredientSkus,
-                  ingredientSkus.id.equalsExp(recommendationItems.skuId),
-                ),
-                innerJoin(
                   ingredients,
-                  ingredients.id.equalsExp(ingredientSkus.ingredientId),
+                  ingredients.id.equalsExp(recommendationItems.ingredientId),
                 ),
                 innerJoin(
                   ingredientCategories,
@@ -414,18 +395,16 @@ extension M3Database on AppDatabase {
             (sum, row) => sum + row.readTable(recommendationItems).ratio,
           ) !=
           group.ratio) {
-        throw StateError('推荐配置的 SKU 比例尚未补齐');
+        throw StateError('推荐配置的香料比例尚未补齐');
       }
       for (final row in rows) {
         final item = row.readTable(recommendationItems);
-        final sku = row.readTable(ingredientSkus);
         final ingredient = row.readTable(ingredients);
         result.add(
           FormulaDraftItemInput(
-            skuId: sku.id,
+            ingredientId: ingredient.id,
             categoryName: row.readTable(ingredientCategories).name,
             ingredientName: ingredient.name,
-            skuCode: sku.skuCode,
             ratio: item.ratio,
             sortOrder: result.length,
           ),
@@ -453,7 +432,7 @@ extension M3Database on AppDatabase {
     }
     _validateDraftItems(items);
     for (final item in items) {
-      await _validateDraftSku(item.skuId);
+      await _validateDraftIngredient(item.ingredientId);
     }
     if (customerId != null) await _activeCustomer(customerId);
     if (plaqueTypeId != null) await _activePlaque(plaqueTypeId);
@@ -555,10 +534,9 @@ extension M3Database on AppDatabase {
       items: [
         for (final item in mixing)
           FormulaDraftItemInput(
-            skuId: item.skuId ?? '',
+            ingredientId: item.ingredientId ?? '',
             categoryName: item.categoryName,
             ingredientName: item.ingredientName,
-            skuCode: item.skuCode,
             ratio: item.finalRatio,
             sortOrder: item.sortOrder,
           ),
@@ -684,26 +662,23 @@ extension M3Database on AppDatabase {
     final ranges = <String, ({String label, int minimum, int maximum})>{};
     for (var i = 0; i < state.items.length; i++) {
       final item = state.items[i];
-      actual['sku:${item.skuId}'] = state.projectedRatios[i];
-      final sku = await (select(
-        ingredientSkus,
-      )..where((row) => row.id.equals(item.skuId))).getSingle();
+      actual['ingredient:${item.ingredientId}'] = state.projectedRatios[i];
       final ingredient = await (select(
         ingredients,
-      )..where((row) => row.id.equals(sku.ingredientId))).getSingle();
+      )..where((row) => row.id.equals(item.ingredientId))).getSingle();
       categoryRatios[ingredient.categoryId] =
           (categoryRatios[ingredient.categoryId] ?? 0) +
           state.projectedRatios[i];
       categoryLabels[ingredient.categoryId] = item.categoryName;
-      final skuRange = await _effectiveSkuRange(
-        item.skuId,
+      final ingredientRange = await _effectiveIngredientRange(
+        item.ingredientId,
         state.draft.productionTypeId,
       );
-      if (skuRange != null) {
-        ranges['sku:${item.skuId}'] = (
+      if (ingredientRange != null) {
+        ranges['ingredient:${item.ingredientId}'] = (
           label: item.label,
-          minimum: skuRange.$1,
-          maximum: skuRange.$2,
+          minimum: ingredientRange.$1,
+          maximum: ingredientRange.$2,
         );
       }
     }
@@ -927,7 +902,10 @@ extension M3Database on AppDatabase {
     )..where((row) => row.id.equals(sessionId))).getSingle();
   });
 
-  Stream<List<FormulaSummary>> watchFormulas({String search = ''}) =>
+  Stream<List<FormulaSummary>> watchFormulas({
+    String search = '',
+    String? productionTypeId,
+  }) =>
       (select(formulas)
             ..where(
               (row) =>
@@ -945,6 +923,10 @@ extension M3Database on AppDatabase {
                         (row) => row.id.equals(formula.currentVersionId!),
                       ))
                       .getSingle();
+              if (productionTypeId != null &&
+                  version.productionTypeId != productionTypeId) {
+                continue;
+              }
               final type =
                   await (select(productionTypes)..where(
                         (row) => row.id.equals(version.productionTypeId),
@@ -1210,10 +1192,9 @@ extension M3Database on AppDatabase {
       await _insertMixingItem(
         id,
         FormulaDraftItemInput(
-          skuId: item.skuId ?? '',
+          ingredientId: item.ingredientId ?? '',
           categoryName: item.categoryName,
           ingredientName: item.ingredientName,
-          skuCode: item.skuCode,
           ratio: item.finalRatio,
           sortOrder: item.sortOrder,
         ),
@@ -1238,13 +1219,13 @@ extension M3Database on AppDatabase {
           .get();
 
   void _validateDraftItems(List<FormulaDraftItemInput> items) {
-    if (items.isEmpty) throw ArgumentError('至少选择一个 SKU');
-    if (items.map((item) => item.skuId).toSet().length != items.length) {
-      throw ArgumentError('不能重复选择同一 SKU');
+    if (items.isEmpty) throw ArgumentError('至少选择一个香料');
+    if (items.map((item) => item.ingredientId).toSet().length != items.length) {
+      throw ArgumentError('不能重复选择同一香料');
     }
     if (items.any((item) => item.ratio <= 0 || item.ratio > 10000) ||
         items.fold<int>(0, (sum, item) => sum + item.ratio) != 10000) {
-      throw ArgumentError('SKU 比例合计必须为 100.00%');
+      throw ArgumentError('香料比例合计必须为 100.00%');
     }
   }
 
@@ -1273,10 +1254,9 @@ extension M3Database on AppDatabase {
               ..orderBy([(row) => OrderingTerm.asc(row.sortOrder)]))
             .get())
       FormulaDraftItemInput(
-        skuId: item.skuId ?? '',
+        ingredientId: item.ingredientId ?? '',
         categoryName: item.categoryName,
         ingredientName: item.ingredientName,
-        skuCode: item.skuCode,
         ratio: item.ratio,
         sortOrder: item.sortOrder,
       ),
@@ -1294,41 +1274,30 @@ extension M3Database on AppDatabase {
     final plaque = await (select(
       plaqueTypes,
     )..where((row) => row.id.equals(id))).getSingle();
-    if (plaque.isDeleted || plaque.isInactive) throw StateError('请选择可用的香牌');
+    if (plaque.isDeleted || plaque.isInactive) {
+      throw StateError('请选择可用的合香珠 / 香牌');
+    }
     return plaque;
   }
 
-  Future<void> _validateDraftSku(String id) async {
-    final sku = await (select(
-      ingredientSkus,
+  Future<void> _validateDraftIngredient(String id) async {
+    final ingredient = await (select(
+      ingredients,
     )..where((row) => row.id.equals(id))).getSingleOrNull();
-    if (sku == null || sku.isDeleted || sku.isInactive) {
-      throw StateError('草稿包含已停用或删除的 SKU');
+    if (ingredient == null || ingredient.isDeleted || ingredient.isInactive) {
+      throw StateError('草稿包含已停用或删除的香料');
     }
-    await _activeIngredient(sku.ingredientId);
+    await _activeIngredient(ingredient.id);
   }
 
-  Future<(int, int)?> _effectiveSkuRange(
-    String skuId,
+  Future<(int, int)?> _effectiveIngredientRange(
+    String ingredientId,
     String productionTypeId,
   ) async {
-    final override =
-        await (select(skuRatioOverrides)..where(
-              (row) =>
-                  row.skuId.equals(skuId) &
-                  row.productionTypeId.equals(productionTypeId) &
-                  row.isDeleted.equals(false),
-            ))
-            .getSingleOrNull();
-    if (override != null) return (override.minRatio, override.maxRatio);
-    final sku = await (select(
-      ingredientSkus,
-    )..where((row) => row.id.equals(skuId))).getSingleOrNull();
-    if (sku == null) return null;
     final range =
         await (select(ingredientRatioRanges)..where(
               (row) =>
-                  row.ingredientId.equals(sku.ingredientId) &
+                  row.ingredientId.equals(ingredientId) &
                   row.productionTypeId.equals(productionTypeId) &
                   row.isDeleted.equals(false),
             ))
@@ -1383,10 +1352,9 @@ extension M3Database on AppDatabase {
         updatedByDevice: change.deviceId,
         updatedAtUtc: change.now,
         versionId: versionId,
+        ingredientId: Value(item.ingredientId),
         categoryName: item.categoryName,
         ingredientName: item.ingredientName,
-        skuCode: Value(item.skuCode),
-        skuId: Value(item.skuId),
         ratio: ratio,
         sortOrder: item.sortOrder,
       ),
@@ -1415,10 +1383,9 @@ extension M3Database on AppDatabase {
         updatedByDevice: change.deviceId,
         updatedAtUtc: change.now,
         sessionId: sessionId,
+        ingredientId: Value(item.ingredientId),
         categoryName: item.categoryName,
         ingredientName: item.ingredientName,
-        skuCode: Value(item.skuCode),
-        skuId: Value(item.skuId),
         plannedWeight: plannedWeight,
         finalWeight: finalWeight,
         isManual: isManual,

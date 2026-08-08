@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/app_database.dart';
+import '../../ui/single_modal.dart';
 import 'recommendation_preset_detail_page.dart';
 
 class RecommendationPresetsPage extends StatefulWidget {
@@ -185,100 +186,106 @@ class _RecommendationPresetsPageState extends State<RecommendationPresetsPage> {
   }
 
   Future<void> _edit([RecommendationPreset? preset]) async {
-    final types = await widget.database.getActiveProductionTypes(
-      includeId: preset?.productionTypeId,
-    );
-    if (!mounted) return;
-    if (types.isEmpty) {
-      _message('请先添加可用的制作类型');
-      return;
-    }
-    var name = preset?.name ?? '';
-    var notes = preset?.notes ?? '';
-    var productionTypeId = preset?.productionTypeId ?? types.first.id;
-    final saved = await showDialog<bool>(
+    await runSingleModalAction<void>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text(preset == null ? '添加推荐配置' : '编辑推荐配置'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  initialValue: name,
-                  autofocus: true,
-                  decoration: const InputDecoration(labelText: '名称 *'),
-                  onChanged: (value) => name = value,
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  initialValue: productionTypeId,
-                  decoration: const InputDecoration(labelText: '制作类型 *'),
-                  items: [
-                    for (final type in types)
-                      DropdownMenuItem(
-                        value: type.id,
-                        child: Text(
-                          type.isInactive ? '${type.name}（已停用）' : type.name,
-                        ),
+      action: 'recommendation-preset-editor',
+      body: () async {
+        final types = await widget.database.getActiveProductionTypes(
+          includeId: preset?.productionTypeId,
+        );
+        if (!mounted) return;
+        if (types.isEmpty) {
+          _message('请先添加可用的制作类型');
+          return;
+        }
+        var name = preset?.name ?? '';
+        var notes = preset?.notes ?? '';
+        var productionTypeId = preset?.productionTypeId ?? types.first.id;
+        final saved = await showSingleDialog<bool>(
+          context: context,
+          builder: (context) => StatefulBuilder(
+            builder: (context, setDialogState) => AlertDialog(
+              title: Text(preset == null ? '添加推荐配置' : '编辑推荐配置'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      initialValue: name,
+                      autofocus: true,
+                      decoration: const InputDecoration(labelText: '名称 *'),
+                      onChanged: (value) => name = value,
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: productionTypeId,
+                      decoration: const InputDecoration(labelText: '制作类型 *'),
+                      items: [
+                        for (final type in types)
+                          DropdownMenuItem(
+                            value: type.id,
+                            child: Text(
+                              type.isInactive ? '${type.name}（已停用）' : type.name,
+                            ),
+                          ),
+                      ],
+                      onChanged: (value) => setDialogState(
+                        () => productionTypeId = value ?? productionTypeId,
                       ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      initialValue: notes,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        labelText: '备注',
+                        alignLabelWithHint: true,
+                      ),
+                      onChanged: (value) => notes = value,
+                    ),
                   ],
-                  onChanged: (value) => setDialogState(
-                    () => productionTypeId = value ?? productionTypeId,
-                  ),
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  initialValue: notes,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: '备注',
-                    alignLabelWithHint: true,
-                  ),
-                  onChanged: (value) => notes = value,
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('取消'),
+                ),
+                FilledButton(
+                  onPressed: () async {
+                    try {
+                      if (preset == null) {
+                        await widget.database.createRecommendationPreset(
+                          name: name,
+                          productionTypeId: productionTypeId,
+                          notes: notes,
+                        );
+                      } else {
+                        await widget.database.updateRecommendationPreset(
+                          preset.id,
+                          name: name,
+                          productionTypeId: productionTypeId,
+                          notes: notes,
+                        );
+                      }
+                      if (context.mounted) Navigator.pop(context, true);
+                    } catch (error) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(_errorText(error))),
+                        );
+                      }
+                    }
+                  },
+                  child: const Text('保存'),
                 ),
               ],
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                try {
-                  if (preset == null) {
-                    await widget.database.createRecommendationPreset(
-                      name: name,
-                      productionTypeId: productionTypeId,
-                      notes: notes,
-                    );
-                  } else {
-                    await widget.database.updateRecommendationPreset(
-                      preset.id,
-                      name: name,
-                      productionTypeId: productionTypeId,
-                      notes: notes,
-                    );
-                  }
-                  if (context.mounted) Navigator.pop(context, true);
-                } catch (error) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text(_errorText(error))));
-                  }
-                }
-              },
-              child: const Text('保存'),
-            ),
-          ],
-        ),
-      ),
+        );
+        if (saved == true && mounted) _message('已保存');
+      },
     );
-    if (saved == true && mounted) _message('已保存');
   }
 
   Future<void> _action(RecommendationPreset preset, String action) async {
@@ -308,7 +315,7 @@ class _RecommendationPresetsPageState extends State<RecommendationPresetsPage> {
   }
 
   Future<bool> _confirmDelete(String name) async =>
-      await showModalBottomSheet<bool>(
+      await showSingleModalBottomSheet<bool>(
         context: context,
         builder: (context) => SafeArea(
           child: Padding(

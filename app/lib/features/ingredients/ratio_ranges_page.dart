@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/app_database.dart';
+import '../../ui/single_modal.dart';
 
 class RatioRangesPage extends StatefulWidget {
   const RatioRangesPage({
@@ -76,7 +77,7 @@ class _RatioRangesPageState extends State<RatioRangesPage> {
     var maxText = setting.maxRatio == null
         ? ''
         : formatRatioPercentage(setting.maxRatio!);
-    final action = await showDialog<String>(
+    final action = await showSingleDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('${setting.productionTypeName}推荐区间'),
