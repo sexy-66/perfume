@@ -237,7 +237,7 @@ class _SyncDevicesPageState extends State<SyncDevicesPage> {
 
   Widget _memberTile(BuildContext context, PeerDevice device) {
     final connected = runtime.isPaired(device.id);
-    final lastSync = runtime.lastSyncFor(device.id);
+    final lastSync = runtime.lastSyncFor(device.id) ?? device.lastSyncAtUtc;
     final state = device.isRevoked
         ? '已移除，旧授权已撤销'
         : device.isPendingRejoin

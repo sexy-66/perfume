@@ -87,4 +87,11 @@ class MediaStore extends ChangeNotifier {
     }
     return File(p.join(directory.path, '$hash.jpg'));
   }
+
+  Future<void> deleteHashes(Iterable<String> hashes) async {
+    for (final hash in hashes) {
+      final file = fileFor(hash);
+      if (await file.exists()) await file.delete();
+    }
+  }
 }

@@ -17468,6 +17468,18 @@ class $PeerDevicesTable extends PeerDevices
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _lastSyncAtUtcMeta = const VerificationMeta(
+    'lastSyncAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastSyncAtUtc =
+      GeneratedColumn<DateTime>(
+        'last_sync_at_utc',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -17482,6 +17494,7 @@ class $PeerDevicesTable extends PeerDevices
     isPendingRejoin,
     joinedAtUtc,
     removedAtUtc,
+    lastSyncAtUtc,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -17599,6 +17612,15 @@ class $PeerDevicesTable extends PeerDevices
         ),
       );
     }
+    if (data.containsKey('last_sync_at_utc')) {
+      context.handle(
+        _lastSyncAtUtcMeta,
+        lastSyncAtUtc.isAcceptableOrUnknown(
+          data['last_sync_at_utc']!,
+          _lastSyncAtUtcMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -17656,6 +17678,10 @@ class $PeerDevicesTable extends PeerDevices
         DriftSqlType.dateTime,
         data['${effectivePrefix}removed_at_utc'],
       ),
+      lastSyncAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_sync_at_utc'],
+      ),
     );
   }
 
@@ -17678,6 +17704,7 @@ class PeerDevice extends DataClass implements Insertable<PeerDevice> {
   final bool isPendingRejoin;
   final DateTime joinedAtUtc;
   final DateTime? removedAtUtc;
+  final DateTime? lastSyncAtUtc;
   const PeerDevice({
     required this.id,
     required this.revisionId,
@@ -17691,6 +17718,7 @@ class PeerDevice extends DataClass implements Insertable<PeerDevice> {
     required this.isPendingRejoin,
     required this.joinedAtUtc,
     this.removedAtUtc,
+    this.lastSyncAtUtc,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -17710,6 +17738,9 @@ class PeerDevice extends DataClass implements Insertable<PeerDevice> {
     map['joined_at_utc'] = Variable<DateTime>(joinedAtUtc);
     if (!nullToAbsent || removedAtUtc != null) {
       map['removed_at_utc'] = Variable<DateTime>(removedAtUtc);
+    }
+    if (!nullToAbsent || lastSyncAtUtc != null) {
+      map['last_sync_at_utc'] = Variable<DateTime>(lastSyncAtUtc);
     }
     return map;
   }
@@ -17732,6 +17763,9 @@ class PeerDevice extends DataClass implements Insertable<PeerDevice> {
       removedAtUtc: removedAtUtc == null && nullToAbsent
           ? const Value.absent()
           : Value(removedAtUtc),
+      lastSyncAtUtc: lastSyncAtUtc == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSyncAtUtc),
     );
   }
 
@@ -17753,6 +17787,7 @@ class PeerDevice extends DataClass implements Insertable<PeerDevice> {
       isPendingRejoin: serializer.fromJson<bool>(json['isPendingRejoin']),
       joinedAtUtc: serializer.fromJson<DateTime>(json['joinedAtUtc']),
       removedAtUtc: serializer.fromJson<DateTime?>(json['removedAtUtc']),
+      lastSyncAtUtc: serializer.fromJson<DateTime?>(json['lastSyncAtUtc']),
     );
   }
   @override
@@ -17771,6 +17806,7 @@ class PeerDevice extends DataClass implements Insertable<PeerDevice> {
       'isPendingRejoin': serializer.toJson<bool>(isPendingRejoin),
       'joinedAtUtc': serializer.toJson<DateTime>(joinedAtUtc),
       'removedAtUtc': serializer.toJson<DateTime?>(removedAtUtc),
+      'lastSyncAtUtc': serializer.toJson<DateTime?>(lastSyncAtUtc),
     };
   }
 
@@ -17787,6 +17823,7 @@ class PeerDevice extends DataClass implements Insertable<PeerDevice> {
     bool? isPendingRejoin,
     DateTime? joinedAtUtc,
     Value<DateTime?> removedAtUtc = const Value.absent(),
+    Value<DateTime?> lastSyncAtUtc = const Value.absent(),
   }) => PeerDevice(
     id: id ?? this.id,
     revisionId: revisionId ?? this.revisionId,
@@ -17800,6 +17837,9 @@ class PeerDevice extends DataClass implements Insertable<PeerDevice> {
     isPendingRejoin: isPendingRejoin ?? this.isPendingRejoin,
     joinedAtUtc: joinedAtUtc ?? this.joinedAtUtc,
     removedAtUtc: removedAtUtc.present ? removedAtUtc.value : this.removedAtUtc,
+    lastSyncAtUtc: lastSyncAtUtc.present
+        ? lastSyncAtUtc.value
+        : this.lastSyncAtUtc,
   );
   PeerDevice copyWithCompanion(PeerDevicesCompanion data) {
     return PeerDevice(
@@ -17833,6 +17873,9 @@ class PeerDevice extends DataClass implements Insertable<PeerDevice> {
       removedAtUtc: data.removedAtUtc.present
           ? data.removedAtUtc.value
           : this.removedAtUtc,
+      lastSyncAtUtc: data.lastSyncAtUtc.present
+          ? data.lastSyncAtUtc.value
+          : this.lastSyncAtUtc,
     );
   }
 
@@ -17850,7 +17893,8 @@ class PeerDevice extends DataClass implements Insertable<PeerDevice> {
           ..write('isRevoked: $isRevoked, ')
           ..write('isPendingRejoin: $isPendingRejoin, ')
           ..write('joinedAtUtc: $joinedAtUtc, ')
-          ..write('removedAtUtc: $removedAtUtc')
+          ..write('removedAtUtc: $removedAtUtc, ')
+          ..write('lastSyncAtUtc: $lastSyncAtUtc')
           ..write(')'))
         .toString();
   }
@@ -17869,6 +17913,7 @@ class PeerDevice extends DataClass implements Insertable<PeerDevice> {
     isPendingRejoin,
     joinedAtUtc,
     removedAtUtc,
+    lastSyncAtUtc,
   );
   @override
   bool operator ==(Object other) =>
@@ -17885,7 +17930,8 @@ class PeerDevice extends DataClass implements Insertable<PeerDevice> {
           other.isRevoked == this.isRevoked &&
           other.isPendingRejoin == this.isPendingRejoin &&
           other.joinedAtUtc == this.joinedAtUtc &&
-          other.removedAtUtc == this.removedAtUtc);
+          other.removedAtUtc == this.removedAtUtc &&
+          other.lastSyncAtUtc == this.lastSyncAtUtc);
 }
 
 class PeerDevicesCompanion extends UpdateCompanion<PeerDevice> {
@@ -17901,6 +17947,7 @@ class PeerDevicesCompanion extends UpdateCompanion<PeerDevice> {
   final Value<bool> isPendingRejoin;
   final Value<DateTime> joinedAtUtc;
   final Value<DateTime?> removedAtUtc;
+  final Value<DateTime?> lastSyncAtUtc;
   final Value<int> rowid;
   const PeerDevicesCompanion({
     this.id = const Value.absent(),
@@ -17915,6 +17962,7 @@ class PeerDevicesCompanion extends UpdateCompanion<PeerDevice> {
     this.isPendingRejoin = const Value.absent(),
     this.joinedAtUtc = const Value.absent(),
     this.removedAtUtc = const Value.absent(),
+    this.lastSyncAtUtc = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PeerDevicesCompanion.insert({
@@ -17930,6 +17978,7 @@ class PeerDevicesCompanion extends UpdateCompanion<PeerDevice> {
     this.isPendingRejoin = const Value.absent(),
     required DateTime joinedAtUtc,
     this.removedAtUtc = const Value.absent(),
+    this.lastSyncAtUtc = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        revisionId = Value(revisionId),
@@ -17951,6 +18000,7 @@ class PeerDevicesCompanion extends UpdateCompanion<PeerDevice> {
     Expression<bool>? isPendingRejoin,
     Expression<DateTime>? joinedAtUtc,
     Expression<DateTime>? removedAtUtc,
+    Expression<DateTime>? lastSyncAtUtc,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -17966,6 +18016,7 @@ class PeerDevicesCompanion extends UpdateCompanion<PeerDevice> {
       if (isPendingRejoin != null) 'is_pending_rejoin': isPendingRejoin,
       if (joinedAtUtc != null) 'joined_at_utc': joinedAtUtc,
       if (removedAtUtc != null) 'removed_at_utc': removedAtUtc,
+      if (lastSyncAtUtc != null) 'last_sync_at_utc': lastSyncAtUtc,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -17983,6 +18034,7 @@ class PeerDevicesCompanion extends UpdateCompanion<PeerDevice> {
     Value<bool>? isPendingRejoin,
     Value<DateTime>? joinedAtUtc,
     Value<DateTime?>? removedAtUtc,
+    Value<DateTime?>? lastSyncAtUtc,
     Value<int>? rowid,
   }) {
     return PeerDevicesCompanion(
@@ -17998,6 +18050,7 @@ class PeerDevicesCompanion extends UpdateCompanion<PeerDevice> {
       isPendingRejoin: isPendingRejoin ?? this.isPendingRejoin,
       joinedAtUtc: joinedAtUtc ?? this.joinedAtUtc,
       removedAtUtc: removedAtUtc ?? this.removedAtUtc,
+      lastSyncAtUtc: lastSyncAtUtc ?? this.lastSyncAtUtc,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -18041,6 +18094,9 @@ class PeerDevicesCompanion extends UpdateCompanion<PeerDevice> {
     if (removedAtUtc.present) {
       map['removed_at_utc'] = Variable<DateTime>(removedAtUtc.value);
     }
+    if (lastSyncAtUtc.present) {
+      map['last_sync_at_utc'] = Variable<DateTime>(lastSyncAtUtc.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -18062,6 +18118,683 @@ class PeerDevicesCompanion extends UpdateCompanion<PeerDevice> {
           ..write('isPendingRejoin: $isPendingRejoin, ')
           ..write('joinedAtUtc: $joinedAtUtc, ')
           ..write('removedAtUtc: $removedAtUtc, ')
+          ..write('lastSyncAtUtc: $lastSyncAtUtc, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SyncCursorsTable extends SyncCursors
+    with TableInfo<$SyncCursorsTable, SyncCursor> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SyncCursorsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _peerDeviceIdMeta = const VerificationMeta(
+    'peerDeviceId',
+  );
+  @override
+  late final GeneratedColumn<String> peerDeviceId = GeneratedColumn<String>(
+    'peer_device_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _originDeviceIdMeta = const VerificationMeta(
+    'originDeviceId',
+  );
+  @override
+  late final GeneratedColumn<String> originDeviceId = GeneratedColumn<String>(
+    'origin_device_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastDeviceSeqMeta = const VerificationMeta(
+    'lastDeviceSeq',
+  );
+  @override
+  late final GeneratedColumn<int> lastDeviceSeq = GeneratedColumn<int>(
+    'last_device_seq',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtUtcMeta = const VerificationMeta(
+    'updatedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAtUtc = GeneratedColumn<DateTime>(
+    'updated_at_utc',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    peerDeviceId,
+    originDeviceId,
+    lastDeviceSeq,
+    updatedAtUtc,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sync_cursors';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SyncCursor> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('peer_device_id')) {
+      context.handle(
+        _peerDeviceIdMeta,
+        peerDeviceId.isAcceptableOrUnknown(
+          data['peer_device_id']!,
+          _peerDeviceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_peerDeviceIdMeta);
+    }
+    if (data.containsKey('origin_device_id')) {
+      context.handle(
+        _originDeviceIdMeta,
+        originDeviceId.isAcceptableOrUnknown(
+          data['origin_device_id']!,
+          _originDeviceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_originDeviceIdMeta);
+    }
+    if (data.containsKey('last_device_seq')) {
+      context.handle(
+        _lastDeviceSeqMeta,
+        lastDeviceSeq.isAcceptableOrUnknown(
+          data['last_device_seq']!,
+          _lastDeviceSeqMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_lastDeviceSeqMeta);
+    }
+    if (data.containsKey('updated_at_utc')) {
+      context.handle(
+        _updatedAtUtcMeta,
+        updatedAtUtc.isAcceptableOrUnknown(
+          data['updated_at_utc']!,
+          _updatedAtUtcMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {peerDeviceId, originDeviceId};
+  @override
+  SyncCursor map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SyncCursor(
+      peerDeviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}peer_device_id'],
+      )!,
+      originDeviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_device_id'],
+      )!,
+      lastDeviceSeq: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_device_seq'],
+      )!,
+      updatedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at_utc'],
+      )!,
+    );
+  }
+
+  @override
+  $SyncCursorsTable createAlias(String alias) {
+    return $SyncCursorsTable(attachedDatabase, alias);
+  }
+}
+
+class SyncCursor extends DataClass implements Insertable<SyncCursor> {
+  final String peerDeviceId;
+  final String originDeviceId;
+  final int lastDeviceSeq;
+  final DateTime updatedAtUtc;
+  const SyncCursor({
+    required this.peerDeviceId,
+    required this.originDeviceId,
+    required this.lastDeviceSeq,
+    required this.updatedAtUtc,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['peer_device_id'] = Variable<String>(peerDeviceId);
+    map['origin_device_id'] = Variable<String>(originDeviceId);
+    map['last_device_seq'] = Variable<int>(lastDeviceSeq);
+    map['updated_at_utc'] = Variable<DateTime>(updatedAtUtc);
+    return map;
+  }
+
+  SyncCursorsCompanion toCompanion(bool nullToAbsent) {
+    return SyncCursorsCompanion(
+      peerDeviceId: Value(peerDeviceId),
+      originDeviceId: Value(originDeviceId),
+      lastDeviceSeq: Value(lastDeviceSeq),
+      updatedAtUtc: Value(updatedAtUtc),
+    );
+  }
+
+  factory SyncCursor.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SyncCursor(
+      peerDeviceId: serializer.fromJson<String>(json['peerDeviceId']),
+      originDeviceId: serializer.fromJson<String>(json['originDeviceId']),
+      lastDeviceSeq: serializer.fromJson<int>(json['lastDeviceSeq']),
+      updatedAtUtc: serializer.fromJson<DateTime>(json['updatedAtUtc']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'peerDeviceId': serializer.toJson<String>(peerDeviceId),
+      'originDeviceId': serializer.toJson<String>(originDeviceId),
+      'lastDeviceSeq': serializer.toJson<int>(lastDeviceSeq),
+      'updatedAtUtc': serializer.toJson<DateTime>(updatedAtUtc),
+    };
+  }
+
+  SyncCursor copyWith({
+    String? peerDeviceId,
+    String? originDeviceId,
+    int? lastDeviceSeq,
+    DateTime? updatedAtUtc,
+  }) => SyncCursor(
+    peerDeviceId: peerDeviceId ?? this.peerDeviceId,
+    originDeviceId: originDeviceId ?? this.originDeviceId,
+    lastDeviceSeq: lastDeviceSeq ?? this.lastDeviceSeq,
+    updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
+  );
+  SyncCursor copyWithCompanion(SyncCursorsCompanion data) {
+    return SyncCursor(
+      peerDeviceId: data.peerDeviceId.present
+          ? data.peerDeviceId.value
+          : this.peerDeviceId,
+      originDeviceId: data.originDeviceId.present
+          ? data.originDeviceId.value
+          : this.originDeviceId,
+      lastDeviceSeq: data.lastDeviceSeq.present
+          ? data.lastDeviceSeq.value
+          : this.lastDeviceSeq,
+      updatedAtUtc: data.updatedAtUtc.present
+          ? data.updatedAtUtc.value
+          : this.updatedAtUtc,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncCursor(')
+          ..write('peerDeviceId: $peerDeviceId, ')
+          ..write('originDeviceId: $originDeviceId, ')
+          ..write('lastDeviceSeq: $lastDeviceSeq, ')
+          ..write('updatedAtUtc: $updatedAtUtc')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(peerDeviceId, originDeviceId, lastDeviceSeq, updatedAtUtc);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SyncCursor &&
+          other.peerDeviceId == this.peerDeviceId &&
+          other.originDeviceId == this.originDeviceId &&
+          other.lastDeviceSeq == this.lastDeviceSeq &&
+          other.updatedAtUtc == this.updatedAtUtc);
+}
+
+class SyncCursorsCompanion extends UpdateCompanion<SyncCursor> {
+  final Value<String> peerDeviceId;
+  final Value<String> originDeviceId;
+  final Value<int> lastDeviceSeq;
+  final Value<DateTime> updatedAtUtc;
+  final Value<int> rowid;
+  const SyncCursorsCompanion({
+    this.peerDeviceId = const Value.absent(),
+    this.originDeviceId = const Value.absent(),
+    this.lastDeviceSeq = const Value.absent(),
+    this.updatedAtUtc = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SyncCursorsCompanion.insert({
+    required String peerDeviceId,
+    required String originDeviceId,
+    required int lastDeviceSeq,
+    required DateTime updatedAtUtc,
+    this.rowid = const Value.absent(),
+  }) : peerDeviceId = Value(peerDeviceId),
+       originDeviceId = Value(originDeviceId),
+       lastDeviceSeq = Value(lastDeviceSeq),
+       updatedAtUtc = Value(updatedAtUtc);
+  static Insertable<SyncCursor> custom({
+    Expression<String>? peerDeviceId,
+    Expression<String>? originDeviceId,
+    Expression<int>? lastDeviceSeq,
+    Expression<DateTime>? updatedAtUtc,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (peerDeviceId != null) 'peer_device_id': peerDeviceId,
+      if (originDeviceId != null) 'origin_device_id': originDeviceId,
+      if (lastDeviceSeq != null) 'last_device_seq': lastDeviceSeq,
+      if (updatedAtUtc != null) 'updated_at_utc': updatedAtUtc,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SyncCursorsCompanion copyWith({
+    Value<String>? peerDeviceId,
+    Value<String>? originDeviceId,
+    Value<int>? lastDeviceSeq,
+    Value<DateTime>? updatedAtUtc,
+    Value<int>? rowid,
+  }) {
+    return SyncCursorsCompanion(
+      peerDeviceId: peerDeviceId ?? this.peerDeviceId,
+      originDeviceId: originDeviceId ?? this.originDeviceId,
+      lastDeviceSeq: lastDeviceSeq ?? this.lastDeviceSeq,
+      updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (peerDeviceId.present) {
+      map['peer_device_id'] = Variable<String>(peerDeviceId.value);
+    }
+    if (originDeviceId.present) {
+      map['origin_device_id'] = Variable<String>(originDeviceId.value);
+    }
+    if (lastDeviceSeq.present) {
+      map['last_device_seq'] = Variable<int>(lastDeviceSeq.value);
+    }
+    if (updatedAtUtc.present) {
+      map['updated_at_utc'] = Variable<DateTime>(updatedAtUtc.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncCursorsCompanion(')
+          ..write('peerDeviceId: $peerDeviceId, ')
+          ..write('originDeviceId: $originDeviceId, ')
+          ..write('lastDeviceSeq: $lastDeviceSeq, ')
+          ..write('updatedAtUtc: $updatedAtUtc, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PurgedSyncEntitiesTable extends PurgedSyncEntities
+    with TableInfo<$PurgedSyncEntitiesTable, PurgedSyncEntity> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PurgedSyncEntitiesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _entityTypeMeta = const VerificationMeta(
+    'entityType',
+  );
+  @override
+  late final GeneratedColumn<String> entityType = GeneratedColumn<String>(
+    'entity_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _entityIdMeta = const VerificationMeta(
+    'entityId',
+  );
+  @override
+  late final GeneratedColumn<String> entityId = GeneratedColumn<String>(
+    'entity_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deleteOperationIdMeta = const VerificationMeta(
+    'deleteOperationId',
+  );
+  @override
+  late final GeneratedColumn<String> deleteOperationId =
+      GeneratedColumn<String>(
+        'delete_operation_id',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _purgedAtUtcMeta = const VerificationMeta(
+    'purgedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> purgedAtUtc = GeneratedColumn<DateTime>(
+    'purged_at_utc',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    entityType,
+    entityId,
+    deleteOperationId,
+    purgedAtUtc,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'purged_sync_entities';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PurgedSyncEntity> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('entity_type')) {
+      context.handle(
+        _entityTypeMeta,
+        entityType.isAcceptableOrUnknown(data['entity_type']!, _entityTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entityTypeMeta);
+    }
+    if (data.containsKey('entity_id')) {
+      context.handle(
+        _entityIdMeta,
+        entityId.isAcceptableOrUnknown(data['entity_id']!, _entityIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entityIdMeta);
+    }
+    if (data.containsKey('delete_operation_id')) {
+      context.handle(
+        _deleteOperationIdMeta,
+        deleteOperationId.isAcceptableOrUnknown(
+          data['delete_operation_id']!,
+          _deleteOperationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_deleteOperationIdMeta);
+    }
+    if (data.containsKey('purged_at_utc')) {
+      context.handle(
+        _purgedAtUtcMeta,
+        purgedAtUtc.isAcceptableOrUnknown(
+          data['purged_at_utc']!,
+          _purgedAtUtcMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_purgedAtUtcMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {entityType, entityId};
+  @override
+  PurgedSyncEntity map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PurgedSyncEntity(
+      entityType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entity_type'],
+      )!,
+      entityId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entity_id'],
+      )!,
+      deleteOperationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}delete_operation_id'],
+      )!,
+      purgedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}purged_at_utc'],
+      )!,
+    );
+  }
+
+  @override
+  $PurgedSyncEntitiesTable createAlias(String alias) {
+    return $PurgedSyncEntitiesTable(attachedDatabase, alias);
+  }
+}
+
+class PurgedSyncEntity extends DataClass
+    implements Insertable<PurgedSyncEntity> {
+  final String entityType;
+  final String entityId;
+  final String deleteOperationId;
+  final DateTime purgedAtUtc;
+  const PurgedSyncEntity({
+    required this.entityType,
+    required this.entityId,
+    required this.deleteOperationId,
+    required this.purgedAtUtc,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['entity_type'] = Variable<String>(entityType);
+    map['entity_id'] = Variable<String>(entityId);
+    map['delete_operation_id'] = Variable<String>(deleteOperationId);
+    map['purged_at_utc'] = Variable<DateTime>(purgedAtUtc);
+    return map;
+  }
+
+  PurgedSyncEntitiesCompanion toCompanion(bool nullToAbsent) {
+    return PurgedSyncEntitiesCompanion(
+      entityType: Value(entityType),
+      entityId: Value(entityId),
+      deleteOperationId: Value(deleteOperationId),
+      purgedAtUtc: Value(purgedAtUtc),
+    );
+  }
+
+  factory PurgedSyncEntity.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PurgedSyncEntity(
+      entityType: serializer.fromJson<String>(json['entityType']),
+      entityId: serializer.fromJson<String>(json['entityId']),
+      deleteOperationId: serializer.fromJson<String>(json['deleteOperationId']),
+      purgedAtUtc: serializer.fromJson<DateTime>(json['purgedAtUtc']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'entityType': serializer.toJson<String>(entityType),
+      'entityId': serializer.toJson<String>(entityId),
+      'deleteOperationId': serializer.toJson<String>(deleteOperationId),
+      'purgedAtUtc': serializer.toJson<DateTime>(purgedAtUtc),
+    };
+  }
+
+  PurgedSyncEntity copyWith({
+    String? entityType,
+    String? entityId,
+    String? deleteOperationId,
+    DateTime? purgedAtUtc,
+  }) => PurgedSyncEntity(
+    entityType: entityType ?? this.entityType,
+    entityId: entityId ?? this.entityId,
+    deleteOperationId: deleteOperationId ?? this.deleteOperationId,
+    purgedAtUtc: purgedAtUtc ?? this.purgedAtUtc,
+  );
+  PurgedSyncEntity copyWithCompanion(PurgedSyncEntitiesCompanion data) {
+    return PurgedSyncEntity(
+      entityType: data.entityType.present
+          ? data.entityType.value
+          : this.entityType,
+      entityId: data.entityId.present ? data.entityId.value : this.entityId,
+      deleteOperationId: data.deleteOperationId.present
+          ? data.deleteOperationId.value
+          : this.deleteOperationId,
+      purgedAtUtc: data.purgedAtUtc.present
+          ? data.purgedAtUtc.value
+          : this.purgedAtUtc,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PurgedSyncEntity(')
+          ..write('entityType: $entityType, ')
+          ..write('entityId: $entityId, ')
+          ..write('deleteOperationId: $deleteOperationId, ')
+          ..write('purgedAtUtc: $purgedAtUtc')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(entityType, entityId, deleteOperationId, purgedAtUtc);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PurgedSyncEntity &&
+          other.entityType == this.entityType &&
+          other.entityId == this.entityId &&
+          other.deleteOperationId == this.deleteOperationId &&
+          other.purgedAtUtc == this.purgedAtUtc);
+}
+
+class PurgedSyncEntitiesCompanion extends UpdateCompanion<PurgedSyncEntity> {
+  final Value<String> entityType;
+  final Value<String> entityId;
+  final Value<String> deleteOperationId;
+  final Value<DateTime> purgedAtUtc;
+  final Value<int> rowid;
+  const PurgedSyncEntitiesCompanion({
+    this.entityType = const Value.absent(),
+    this.entityId = const Value.absent(),
+    this.deleteOperationId = const Value.absent(),
+    this.purgedAtUtc = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PurgedSyncEntitiesCompanion.insert({
+    required String entityType,
+    required String entityId,
+    required String deleteOperationId,
+    required DateTime purgedAtUtc,
+    this.rowid = const Value.absent(),
+  }) : entityType = Value(entityType),
+       entityId = Value(entityId),
+       deleteOperationId = Value(deleteOperationId),
+       purgedAtUtc = Value(purgedAtUtc);
+  static Insertable<PurgedSyncEntity> custom({
+    Expression<String>? entityType,
+    Expression<String>? entityId,
+    Expression<String>? deleteOperationId,
+    Expression<DateTime>? purgedAtUtc,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (entityType != null) 'entity_type': entityType,
+      if (entityId != null) 'entity_id': entityId,
+      if (deleteOperationId != null) 'delete_operation_id': deleteOperationId,
+      if (purgedAtUtc != null) 'purged_at_utc': purgedAtUtc,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PurgedSyncEntitiesCompanion copyWith({
+    Value<String>? entityType,
+    Value<String>? entityId,
+    Value<String>? deleteOperationId,
+    Value<DateTime>? purgedAtUtc,
+    Value<int>? rowid,
+  }) {
+    return PurgedSyncEntitiesCompanion(
+      entityType: entityType ?? this.entityType,
+      entityId: entityId ?? this.entityId,
+      deleteOperationId: deleteOperationId ?? this.deleteOperationId,
+      purgedAtUtc: purgedAtUtc ?? this.purgedAtUtc,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (entityType.present) {
+      map['entity_type'] = Variable<String>(entityType.value);
+    }
+    if (entityId.present) {
+      map['entity_id'] = Variable<String>(entityId.value);
+    }
+    if (deleteOperationId.present) {
+      map['delete_operation_id'] = Variable<String>(deleteOperationId.value);
+    }
+    if (purgedAtUtc.present) {
+      map['purged_at_utc'] = Variable<DateTime>(purgedAtUtc.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PurgedSyncEntitiesCompanion(')
+          ..write('entityType: $entityType, ')
+          ..write('entityId: $entityId, ')
+          ..write('deleteOperationId: $deleteOperationId, ')
+          ..write('purgedAtUtc: $purgedAtUtc, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -18713,6 +19446,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SyncOperationsTable syncOperations = $SyncOperationsTable(this);
   late final $SyncConflictsTable syncConflicts = $SyncConflictsTable(this);
   late final $PeerDevicesTable peerDevices = $PeerDevicesTable(this);
+  late final $SyncCursorsTable syncCursors = $SyncCursorsTable(this);
+  late final $PurgedSyncEntitiesTable purgedSyncEntities =
+      $PurgedSyncEntitiesTable(this);
   late final $QuarantinedSyncOperationsTable quarantinedSyncOperations =
       $QuarantinedSyncOperationsTable(this);
   @override
@@ -18746,6 +19482,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     syncOperations,
     syncConflicts,
     peerDevices,
+    syncCursors,
+    purgedSyncEntities,
     quarantinedSyncOperations,
   ];
 }
@@ -32933,6 +33671,7 @@ typedef $$PeerDevicesTableCreateCompanionBuilder =
       Value<bool> isPendingRejoin,
       required DateTime joinedAtUtc,
       Value<DateTime?> removedAtUtc,
+      Value<DateTime?> lastSyncAtUtc,
       Value<int> rowid,
     });
 typedef $$PeerDevicesTableUpdateCompanionBuilder =
@@ -32949,6 +33688,7 @@ typedef $$PeerDevicesTableUpdateCompanionBuilder =
       Value<bool> isPendingRejoin,
       Value<DateTime> joinedAtUtc,
       Value<DateTime?> removedAtUtc,
+      Value<DateTime?> lastSyncAtUtc,
       Value<int> rowid,
     });
 
@@ -33018,6 +33758,11 @@ class $$PeerDevicesTableFilterComposer
 
   ColumnFilters<DateTime> get removedAtUtc => $composableBuilder(
     column: $table.removedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastSyncAtUtc => $composableBuilder(
+    column: $table.lastSyncAtUtc,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -33090,6 +33835,11 @@ class $$PeerDevicesTableOrderingComposer
     column: $table.removedAtUtc,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<DateTime> get lastSyncAtUtc => $composableBuilder(
+    column: $table.lastSyncAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$PeerDevicesTableAnnotationComposer
@@ -33154,6 +33904,11 @@ class $$PeerDevicesTableAnnotationComposer
     column: $table.removedAtUtc,
     builder: (column) => column,
   );
+
+  GeneratedColumn<DateTime> get lastSyncAtUtc => $composableBuilder(
+    column: $table.lastSyncAtUtc,
+    builder: (column) => column,
+  );
 }
 
 class $$PeerDevicesTableTableManager
@@ -33199,6 +33954,7 @@ class $$PeerDevicesTableTableManager
                 Value<bool> isPendingRejoin = const Value.absent(),
                 Value<DateTime> joinedAtUtc = const Value.absent(),
                 Value<DateTime?> removedAtUtc = const Value.absent(),
+                Value<DateTime?> lastSyncAtUtc = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PeerDevicesCompanion(
                 id: id,
@@ -33213,6 +33969,7 @@ class $$PeerDevicesTableTableManager
                 isPendingRejoin: isPendingRejoin,
                 joinedAtUtc: joinedAtUtc,
                 removedAtUtc: removedAtUtc,
+                lastSyncAtUtc: lastSyncAtUtc,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -33229,6 +33986,7 @@ class $$PeerDevicesTableTableManager
                 Value<bool> isPendingRejoin = const Value.absent(),
                 required DateTime joinedAtUtc,
                 Value<DateTime?> removedAtUtc = const Value.absent(),
+                Value<DateTime?> lastSyncAtUtc = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PeerDevicesCompanion.insert(
                 id: id,
@@ -33243,6 +34001,7 @@ class $$PeerDevicesTableTableManager
                 isPendingRejoin: isPendingRejoin,
                 joinedAtUtc: joinedAtUtc,
                 removedAtUtc: removedAtUtc,
+                lastSyncAtUtc: lastSyncAtUtc,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -33268,6 +34027,395 @@ typedef $$PeerDevicesTableProcessedTableManager =
         BaseReferences<_$AppDatabase, $PeerDevicesTable, PeerDevice>,
       ),
       PeerDevice,
+      PrefetchHooks Function()
+    >;
+typedef $$SyncCursorsTableCreateCompanionBuilder =
+    SyncCursorsCompanion Function({
+      required String peerDeviceId,
+      required String originDeviceId,
+      required int lastDeviceSeq,
+      required DateTime updatedAtUtc,
+      Value<int> rowid,
+    });
+typedef $$SyncCursorsTableUpdateCompanionBuilder =
+    SyncCursorsCompanion Function({
+      Value<String> peerDeviceId,
+      Value<String> originDeviceId,
+      Value<int> lastDeviceSeq,
+      Value<DateTime> updatedAtUtc,
+      Value<int> rowid,
+    });
+
+class $$SyncCursorsTableFilterComposer
+    extends Composer<_$AppDatabase, $SyncCursorsTable> {
+  $$SyncCursorsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get peerDeviceId => $composableBuilder(
+    column: $table.peerDeviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originDeviceId => $composableBuilder(
+    column: $table.originDeviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastDeviceSeq => $composableBuilder(
+    column: $table.lastDeviceSeq,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SyncCursorsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SyncCursorsTable> {
+  $$SyncCursorsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get peerDeviceId => $composableBuilder(
+    column: $table.peerDeviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originDeviceId => $composableBuilder(
+    column: $table.originDeviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastDeviceSeq => $composableBuilder(
+    column: $table.lastDeviceSeq,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SyncCursorsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SyncCursorsTable> {
+  $$SyncCursorsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get peerDeviceId => $composableBuilder(
+    column: $table.peerDeviceId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get originDeviceId => $composableBuilder(
+    column: $table.originDeviceId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastDeviceSeq => $composableBuilder(
+    column: $table.lastDeviceSeq,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get updatedAtUtc => $composableBuilder(
+    column: $table.updatedAtUtc,
+    builder: (column) => column,
+  );
+}
+
+class $$SyncCursorsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SyncCursorsTable,
+          SyncCursor,
+          $$SyncCursorsTableFilterComposer,
+          $$SyncCursorsTableOrderingComposer,
+          $$SyncCursorsTableAnnotationComposer,
+          $$SyncCursorsTableCreateCompanionBuilder,
+          $$SyncCursorsTableUpdateCompanionBuilder,
+          (
+            SyncCursor,
+            BaseReferences<_$AppDatabase, $SyncCursorsTable, SyncCursor>,
+          ),
+          SyncCursor,
+          PrefetchHooks Function()
+        > {
+  $$SyncCursorsTableTableManager(_$AppDatabase db, $SyncCursorsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SyncCursorsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SyncCursorsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SyncCursorsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> peerDeviceId = const Value.absent(),
+                Value<String> originDeviceId = const Value.absent(),
+                Value<int> lastDeviceSeq = const Value.absent(),
+                Value<DateTime> updatedAtUtc = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SyncCursorsCompanion(
+                peerDeviceId: peerDeviceId,
+                originDeviceId: originDeviceId,
+                lastDeviceSeq: lastDeviceSeq,
+                updatedAtUtc: updatedAtUtc,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String peerDeviceId,
+                required String originDeviceId,
+                required int lastDeviceSeq,
+                required DateTime updatedAtUtc,
+                Value<int> rowid = const Value.absent(),
+              }) => SyncCursorsCompanion.insert(
+                peerDeviceId: peerDeviceId,
+                originDeviceId: originDeviceId,
+                lastDeviceSeq: lastDeviceSeq,
+                updatedAtUtc: updatedAtUtc,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SyncCursorsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SyncCursorsTable,
+      SyncCursor,
+      $$SyncCursorsTableFilterComposer,
+      $$SyncCursorsTableOrderingComposer,
+      $$SyncCursorsTableAnnotationComposer,
+      $$SyncCursorsTableCreateCompanionBuilder,
+      $$SyncCursorsTableUpdateCompanionBuilder,
+      (
+        SyncCursor,
+        BaseReferences<_$AppDatabase, $SyncCursorsTable, SyncCursor>,
+      ),
+      SyncCursor,
+      PrefetchHooks Function()
+    >;
+typedef $$PurgedSyncEntitiesTableCreateCompanionBuilder =
+    PurgedSyncEntitiesCompanion Function({
+      required String entityType,
+      required String entityId,
+      required String deleteOperationId,
+      required DateTime purgedAtUtc,
+      Value<int> rowid,
+    });
+typedef $$PurgedSyncEntitiesTableUpdateCompanionBuilder =
+    PurgedSyncEntitiesCompanion Function({
+      Value<String> entityType,
+      Value<String> entityId,
+      Value<String> deleteOperationId,
+      Value<DateTime> purgedAtUtc,
+      Value<int> rowid,
+    });
+
+class $$PurgedSyncEntitiesTableFilterComposer
+    extends Composer<_$AppDatabase, $PurgedSyncEntitiesTable> {
+  $$PurgedSyncEntitiesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entityId => $composableBuilder(
+    column: $table.entityId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deleteOperationId => $composableBuilder(
+    column: $table.deleteOperationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get purgedAtUtc => $composableBuilder(
+    column: $table.purgedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PurgedSyncEntitiesTableOrderingComposer
+    extends Composer<_$AppDatabase, $PurgedSyncEntitiesTable> {
+  $$PurgedSyncEntitiesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entityId => $composableBuilder(
+    column: $table.entityId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deleteOperationId => $composableBuilder(
+    column: $table.deleteOperationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get purgedAtUtc => $composableBuilder(
+    column: $table.purgedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PurgedSyncEntitiesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PurgedSyncEntitiesTable> {
+  $$PurgedSyncEntitiesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get entityId =>
+      $composableBuilder(column: $table.entityId, builder: (column) => column);
+
+  GeneratedColumn<String> get deleteOperationId => $composableBuilder(
+    column: $table.deleteOperationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get purgedAtUtc => $composableBuilder(
+    column: $table.purgedAtUtc,
+    builder: (column) => column,
+  );
+}
+
+class $$PurgedSyncEntitiesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PurgedSyncEntitiesTable,
+          PurgedSyncEntity,
+          $$PurgedSyncEntitiesTableFilterComposer,
+          $$PurgedSyncEntitiesTableOrderingComposer,
+          $$PurgedSyncEntitiesTableAnnotationComposer,
+          $$PurgedSyncEntitiesTableCreateCompanionBuilder,
+          $$PurgedSyncEntitiesTableUpdateCompanionBuilder,
+          (
+            PurgedSyncEntity,
+            BaseReferences<
+              _$AppDatabase,
+              $PurgedSyncEntitiesTable,
+              PurgedSyncEntity
+            >,
+          ),
+          PurgedSyncEntity,
+          PrefetchHooks Function()
+        > {
+  $$PurgedSyncEntitiesTableTableManager(
+    _$AppDatabase db,
+    $PurgedSyncEntitiesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PurgedSyncEntitiesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PurgedSyncEntitiesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PurgedSyncEntitiesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> entityType = const Value.absent(),
+                Value<String> entityId = const Value.absent(),
+                Value<String> deleteOperationId = const Value.absent(),
+                Value<DateTime> purgedAtUtc = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PurgedSyncEntitiesCompanion(
+                entityType: entityType,
+                entityId: entityId,
+                deleteOperationId: deleteOperationId,
+                purgedAtUtc: purgedAtUtc,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String entityType,
+                required String entityId,
+                required String deleteOperationId,
+                required DateTime purgedAtUtc,
+                Value<int> rowid = const Value.absent(),
+              }) => PurgedSyncEntitiesCompanion.insert(
+                entityType: entityType,
+                entityId: entityId,
+                deleteOperationId: deleteOperationId,
+                purgedAtUtc: purgedAtUtc,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PurgedSyncEntitiesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PurgedSyncEntitiesTable,
+      PurgedSyncEntity,
+      $$PurgedSyncEntitiesTableFilterComposer,
+      $$PurgedSyncEntitiesTableOrderingComposer,
+      $$PurgedSyncEntitiesTableAnnotationComposer,
+      $$PurgedSyncEntitiesTableCreateCompanionBuilder,
+      $$PurgedSyncEntitiesTableUpdateCompanionBuilder,
+      (
+        PurgedSyncEntity,
+        BaseReferences<
+          _$AppDatabase,
+          $PurgedSyncEntitiesTable,
+          PurgedSyncEntity
+        >,
+      ),
+      PurgedSyncEntity,
       PrefetchHooks Function()
     >;
 typedef $$QuarantinedSyncOperationsTableCreateCompanionBuilder =
@@ -33635,6 +34783,10 @@ class $AppDatabaseManager {
       $$SyncConflictsTableTableManager(_db, _db.syncConflicts);
   $$PeerDevicesTableTableManager get peerDevices =>
       $$PeerDevicesTableTableManager(_db, _db.peerDevices);
+  $$SyncCursorsTableTableManager get syncCursors =>
+      $$SyncCursorsTableTableManager(_db, _db.syncCursors);
+  $$PurgedSyncEntitiesTableTableManager get purgedSyncEntities =>
+      $$PurgedSyncEntitiesTableTableManager(_db, _db.purgedSyncEntities);
   $$QuarantinedSyncOperationsTableTableManager get quarantinedSyncOperations =>
       $$QuarantinedSyncOperationsTableTableManager(
         _db,

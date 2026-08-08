@@ -243,6 +243,7 @@ class PeerSyncRuntime extends ChangeNotifier {
         unawaited(_autoConnect(peer));
       }
       if (database != null) {
+        await _cleanupAcknowledgedDeletions();
         var lastLocalSequence = (await database!.localDevice()).deviceSeq;
         _localChanges = database!
             .select(database!.localDevices)
@@ -604,6 +605,8 @@ class PeerSyncRuntime extends ChangeNotifier {
       await _downloadMedia(client, _syncImageHashes(result['mediaHashes']));
       if (outgoing.isEmpty && incoming.isEmpty) break;
     }
+    await db.recordPeerSyncState(client.session.remoteDeviceId, remoteVector);
+    await _cleanupAcknowledgedDeletions();
     _lastSyncAtUtc = DateTime.now().toUtc();
     _lastSyncByDevice[client.session.remoteDeviceId] = _lastSyncAtUtc!;
     _syncError = null;
@@ -726,6 +729,7 @@ class PeerSyncRuntime extends ChangeNotifier {
       final request = Map<String, dynamic>.from(payload);
       final vector = _syncVector(request['vector']);
       final remoteMediaHashes = _syncImageHashes(request['mediaHashes']);
+      await db.recordPeerSyncState(remoteDeviceId, vector);
       final applied = await db.applyRemoteSyncOperations(
         _syncOperations(request['operations']),
       );
@@ -739,6 +743,7 @@ class PeerSyncRuntime extends ChangeNotifier {
           if (!await media.fileFor(hash).exists()) missingMediaHashes.add(hash);
         }
       }
+      await _cleanupAcknowledgedDeletions();
       _lastSyncAtUtc = DateTime.now().toUtc();
       _lastSyncByDevice[remoteDeviceId] = _lastSyncAtUtc!;
       _syncError = null;
@@ -1026,6 +1031,13 @@ class PeerSyncRuntime extends ChangeNotifier {
   Future<String> _hashBytes(List<int> bytes) async => (await Sha256().hash(
     bytes,
   )).bytes.map((byte) => byte.toRadixString(16).padLeft(2, '0')).join();
+
+  Future<void> _cleanupAcknowledgedDeletions() async {
+    final db = database;
+    if (db == null) return;
+    final hashes = await db.purgeAcknowledgedDeletions();
+    await mediaStore?.deleteHashes(hashes);
+  }
 
   void _publishSyncCompletion(int transferred, {required bool manual}) {
     _lastSyncTransferredCount = transferred;

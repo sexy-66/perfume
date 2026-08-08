@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:xiangfangbu/data/app_database.dart';
 
 void main() {
-  test('v1 to v5 keeps existing data and creates M2/M3/M5 tables', () async {
+  test('v1 to v6 keeps existing data and creates M2/M3/M5 tables', () async {
     final executor = NativeDatabase.memory(
       setup: (raw) {
         raw.execute('''
@@ -67,6 +67,8 @@ void main() {
     expect(await database.select(database.mixingSessions).get(), isEmpty);
     expect(await database.select(database.syncConflicts).get(), isEmpty);
     expect(await database.select(database.peerDevices).get(), isEmpty);
+    expect(await database.select(database.syncCursors).get(), isEmpty);
+    expect(await database.select(database.purgedSyncEntities).get(), isEmpty);
     expect(
       await database.select(database.quarantinedSyncOperations).get(),
       isEmpty,
@@ -78,6 +80,14 @@ void main() {
     );
     expect(
       await database.customSelect('PRAGMA foreign_key_check').get(),
+      isEmpty,
+    );
+    expect(
+      (await database
+          .customSelect(
+            "SELECT last_sync_at_utc FROM devices WHERE id = 'missing'",
+          )
+          .get()),
       isEmpty,
     );
   });

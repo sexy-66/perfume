@@ -332,6 +332,27 @@ class PeerDevices extends Table with SyncColumns {
       boolean().withDefault(const Constant(false))();
   DateTimeColumn get joinedAtUtc => dateTime()();
   DateTimeColumn get removedAtUtc => dateTime().nullable()();
+  DateTimeColumn get lastSyncAtUtc => dateTime().nullable()();
+}
+
+class SyncCursors extends Table {
+  TextColumn get peerDeviceId => text()();
+  TextColumn get originDeviceId => text()();
+  IntColumn get lastDeviceSeq => integer()();
+  DateTimeColumn get updatedAtUtc => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {peerDeviceId, originDeviceId};
+}
+
+class PurgedSyncEntities extends Table {
+  TextColumn get entityType => text()();
+  TextColumn get entityId => text()();
+  TextColumn get deleteOperationId => text()();
+  DateTimeColumn get purgedAtUtc => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {entityType, entityId};
 }
 
 class QuarantinedSyncOperations extends Table {
@@ -496,6 +517,8 @@ class TrashEntry {
     SyncOperations,
     SyncConflicts,
     PeerDevices,
+    SyncCursors,
+    PurgedSyncEntities,
     QuarantinedSyncOperations,
   ],
 )
@@ -516,7 +539,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -560,7 +583,14 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(peerDevices);
         await m.createTable(quarantinedSyncOperations);
       }
-      if (from < 1 || to != 5) {
+      if (from <= 5) {
+        if (from == 5) {
+          await m.addColumn(peerDevices, peerDevices.lastSyncAtUtc);
+        }
+        await m.createTable(syncCursors);
+        await m.createTable(purgedSyncEntities);
+      }
+      if (from < 1 || to != 6) {
         throw StateError('缺少数据库迁移：$from → $to');
       }
     },
@@ -602,6 +632,204 @@ class AppDatabase extends _$AppDatabase {
   Future<PeerDevice?> peerDevice(String deviceId) => (select(
     peerDevices,
   )..where((row) => row.id.equals(deviceId))).getSingleOrNull();
+
+  Future<void> recordPeerSyncState(
+    String peerDeviceId,
+    Map<String, int> vector, {
+    DateTime? now,
+  }) => transaction(() async {
+    final syncedAt = (now ?? DateTime.now()).toUtc();
+    for (final entry in vector.entries) {
+      if (entry.key.isEmpty || entry.value < 0) {
+        throw const FormatException('同步确认水位无效');
+      }
+      await customInsert(
+        '''INSERT INTO sync_cursors (
+             peer_device_id, origin_device_id, last_device_seq, updated_at_utc
+           ) VALUES (?, ?, ?, ?)
+           ON CONFLICT(peer_device_id, origin_device_id) DO UPDATE SET
+             last_device_seq = MAX(last_device_seq, excluded.last_device_seq),
+             updated_at_utc = excluded.updated_at_utc''',
+        variables: [
+          Variable(peerDeviceId),
+          Variable(entry.key),
+          Variable(entry.value),
+          Variable(syncedAt),
+        ],
+        updates: {syncCursors},
+      );
+    }
+    await customUpdate(
+      'UPDATE devices SET last_sync_at_utc = ? WHERE id = ?',
+      variables: [Variable(syncedAt), Variable(peerDeviceId)],
+      updates: {peerDevices},
+    );
+  });
+
+  Future<Set<String>> purgeAcknowledgedDeletions({DateTime? now}) =>
+      transaction(() async {
+        final cutoff = (now ?? DateTime.now()).toUtc().subtract(
+          const Duration(days: 30),
+        );
+        final localId = (await localDevice()).id;
+        final activePeers =
+            await (select(peerDevices)..where(
+                  (row) =>
+                      row.id.equals(localId).not() &
+                      row.isRevoked.equals(false) &
+                      row.isPendingRejoin.equals(false),
+                ))
+                .get();
+        final imageCandidates = <String>{};
+        for (final type in TrashEntityType.values) {
+          final rows = await customSelect(
+            '''SELECT id, revision_id${_imageColumn(type) ? ', image_hash' : ''}
+                 FROM ${type.tableName}
+                WHERE is_deleted = 1
+                  AND deleted_at_utc <= ?
+                  AND NOT EXISTS (
+                    SELECT 1 FROM purged_sync_entities p
+                     WHERE p.entity_type = ? AND p.entity_id = ${type.tableName}.id
+                  )''',
+            variables: [Variable(cutoff), Variable(type.tableName)],
+            readsFrom: {_syncTable(type.tableName)!},
+          ).get();
+          for (final row in rows) {
+            final entityId = row.read<String>('id');
+            if (await _hasPendingConflict(type.tableName, entityId)) continue;
+            final deletion = await customSelect(
+              '''SELECT operation_id, origin_device_id, device_seq
+                   FROM sync_operations
+                  WHERE entity_type = ? AND entity_id = ?
+                    AND operation_kind = 'delete' AND new_revision_id = ?
+                  ORDER BY created_at_utc DESC LIMIT 1''',
+              variables: [
+                Variable(type.tableName),
+                Variable(entityId),
+                Variable(row.read<String>('revision_id')),
+              ],
+              readsFrom: {syncOperations},
+            ).getSingleOrNull();
+            if (deletion == null) continue;
+            final originId = deletion.read<String>('origin_device_id');
+            final deviceSeq = deletion.read<int>('device_seq');
+            var confirmed = true;
+            for (final peer in activePeers) {
+              final cursor =
+                  await (select(syncCursors)..where(
+                        (row) =>
+                            row.peerDeviceId.equals(peer.id) &
+                            row.originDeviceId.equals(originId),
+                      ))
+                      .getSingleOrNull();
+              if (cursor == null || cursor.lastDeviceSeq < deviceSeq) {
+                confirmed = false;
+                break;
+              }
+            }
+            if (!confirmed) continue;
+            if (_imageColumn(type)) {
+              final hash = row.readNullable<String>('image_hash');
+              if (hash != null) imageCandidates.add(hash);
+            }
+            await _compactDeletedEntity(
+              type,
+              entityId,
+              deletion.read<String>('operation_id'),
+            );
+          }
+        }
+        final orphaned = <String>{};
+        for (final hash in imageCandidates) {
+          final referenced = await customSelect(
+            '''SELECT 1 WHERE
+                 EXISTS (SELECT 1 FROM ingredient_skus WHERE image_hash = ?)
+              OR EXISTS (SELECT 1 FROM plaque_types WHERE image_hash = ?)
+              OR EXISTS (SELECT 1 FROM assets WHERE image_hash = ?)''',
+            variables: [Variable(hash), Variable(hash), Variable(hash)],
+            readsFrom: {ingredientSkus, plaqueTypes, assets},
+          ).getSingleOrNull();
+          if (referenced == null) orphaned.add(hash);
+        }
+        return orphaned;
+      });
+
+  Future<bool> _hasPendingConflict(String entityType, String entityId) async =>
+      await (select(syncConflicts)..where(
+            (row) =>
+                row.entityType.equals(entityType) &
+                row.entityId.equals(entityId) &
+                row.resolvedAtUtc.isNull(),
+          ))
+          .getSingleOrNull() !=
+      null;
+
+  bool _imageColumn(TrashEntityType type) =>
+      type == TrashEntityType.ingredientSku ||
+      type == TrashEntityType.plaqueType ||
+      type == TrashEntityType.asset;
+
+  Future<void> _compactDeletedEntity(
+    TrashEntityType type,
+    String entityId,
+    String deleteOperationId,
+  ) async {
+    final assignments = switch (type) {
+      TrashEntityType.productionType ||
+      TrashEntityType.ingredientCategory ||
+      TrashEntityType.assetCategory ||
+      TrashEntityType.assetStatus =>
+        "name = '已删除', sort_order = 0, is_inactive = 1",
+      TrashEntityType.ingredient =>
+        "name = '已删除', alias = NULL, is_inactive = 1",
+      TrashEntityType.ingredientSku =>
+        'sku_code = NULL, image_hash = NULL, supplier = NULL, origin = NULL, notes = NULL, is_inactive = 1',
+      TrashEntityType.recommendationPreset =>
+        "name = '已删除', notes = NULL, sort_order = 0, is_inactive = 1",
+      TrashEntityType.formula =>
+        "name = '已删除', notes = NULL, current_version_id = NULL, last_used_at_utc = NULL",
+      TrashEntityType.customer => "name = '已删除', phone = '', notes = NULL",
+      TrashEntityType.plaqueType =>
+        "name = '已删除', image_hash = NULL, specification = NULL, notes = NULL, sort_order = 0, is_inactive = 1",
+      TrashEntityType.asset =>
+        "name = '已删除', image_hash = NULL, status_id = NULL, quantity = 0, location = NULL, notes = NULL, last_counted_at_utc = NULL, is_inactive = 1",
+    };
+    await customUpdate(
+      'UPDATE ${type.tableName} SET $assignments WHERE id = ?',
+      variables: [Variable(entityId)],
+      updates: {_syncTable(type.tableName)!},
+    );
+    await customUpdate(
+      "UPDATE sync_operations SET payload_json = ? WHERE operation_id = ?",
+      variables: [
+        Variable(jsonEncode({'id': entityId, 'isDeleted': true})),
+        Variable(deleteOperationId),
+      ],
+      updates: {syncOperations},
+    );
+    await customUpdate(
+      '''DELETE FROM sync_operations
+          WHERE entity_type = ? AND entity_id = ? AND operation_id <> ?''',
+      variables: [
+        Variable(type.tableName),
+        Variable(entityId),
+        Variable(deleteOperationId),
+      ],
+      updates: {syncOperations},
+    );
+    await customInsert(
+      '''INSERT OR REPLACE INTO purged_sync_entities (
+           entity_type, entity_id, delete_operation_id, purged_at_utc
+         ) VALUES (?, ?, ?, ?)''',
+      variables: [
+        Variable(type.tableName),
+        Variable(entityId),
+        Variable(deleteOperationId),
+        Variable(DateTime.now().toUtc()),
+      ],
+      updates: {purgedSyncEntities},
+    );
+  }
 
   Future<void> rememberPeerDevice({
     required String deviceId,
@@ -869,6 +1097,7 @@ class AppDatabase extends _$AppDatabase {
       operation.entityId,
     );
     if (snapshot == null) return operation;
+    if (operation.entityType == 'devices') snapshot.remove('lastSyncAtUtc');
     final payload = _syncPayload(operation.payloadJson)..addAll(snapshot);
     payload['revisionId'] = operation.newRevisionId;
     if (operation.operationKind == 'delete') {
@@ -971,6 +1200,49 @@ class AppDatabase extends _$AppDatabase {
         throw StateError('远程操作序号冲突');
       }
       return false;
+    }
+
+    final purged =
+        await (select(purgedSyncEntities)..where(
+              (row) =>
+                  row.entityType.equals(operation.entityType) &
+                  row.entityId.equals(operation.entityId),
+            ))
+            .getSingleOrNull();
+    if (purged != null) {
+      await _storeRemoteOperation(
+        operation.copyWith(
+          payloadJson: jsonEncode({
+            'id': operation.entityId,
+            'isDeleted': true,
+          }),
+        ),
+      );
+      return true;
+    }
+    if (operation.operationKind == 'delete' &&
+        operation.entityType != 'devices' &&
+        operation.entityType != 'sync_conflicts' &&
+        await _syncRowSnapshot(operation.entityType, operation.entityId) ==
+            null) {
+      await into(purgedSyncEntities).insert(
+        PurgedSyncEntitiesCompanion.insert(
+          entityType: operation.entityType,
+          entityId: operation.entityId,
+          deleteOperationId: operation.operationId,
+          purgedAtUtc: operation.createdAtUtc,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+      await _storeRemoteOperation(
+        operation.copyWith(
+          payloadJson: jsonEncode({
+            'id': operation.entityId,
+            'isDeleted': true,
+          }),
+        ),
+      );
+      return true;
     }
 
     final payload = _syncPayload(operation.payloadJson);
