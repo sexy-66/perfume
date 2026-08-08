@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -14,12 +15,21 @@ import 'features/plaques/plaque_catalog_page.dart';
 import 'features/recommendations/recommendation_presets_page.dart';
 import 'features/settings/settings_page.dart';
 import 'features/trash/recently_deleted_page.dart';
+import 'services/peer_sync_runtime.dart';
 
 class XiangApp extends StatelessWidget {
-  const XiangApp({super.key, required this.database, required this.mediaStore});
+  const XiangApp({
+    super.key,
+    required this.database,
+    required this.mediaStore,
+    this.syncRuntime,
+    this.syncRuntimeLoader,
+  });
 
   final AppDatabase database;
   final MediaStore mediaStore;
+  final PeerSyncRuntime? syncRuntime;
+  final Future<PeerSyncRuntime> Function()? syncRuntimeLoader;
 
   @override
   Widget build(BuildContext context) {
@@ -83,23 +93,99 @@ class XiangApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: _Shell(database: database, mediaStore: mediaStore),
+      home: _Shell(
+        database: database,
+        mediaStore: mediaStore,
+        syncRuntime: syncRuntime,
+        syncRuntimeLoader: syncRuntimeLoader,
+      ),
     );
   }
 }
 
 class _Shell extends StatefulWidget {
-  const _Shell({required this.database, required this.mediaStore});
+  const _Shell({
+    required this.database,
+    required this.mediaStore,
+    this.syncRuntime,
+    this.syncRuntimeLoader,
+  });
 
   final AppDatabase database;
   final MediaStore mediaStore;
+  final PeerSyncRuntime? syncRuntime;
+  final Future<PeerSyncRuntime> Function()? syncRuntimeLoader;
 
   @override
   State<_Shell> createState() => _ShellState();
 }
 
-class _ShellState extends State<_Shell> {
+class _ShellState extends State<_Shell> with WidgetsBindingObserver {
   var _index = 0;
+  PeerSyncRuntime? _runtime;
+
+  @override
+  void initState() {
+    super.initState();
+    _runtime = widget.syncRuntime;
+    if (_runtime != null || widget.syncRuntimeLoader != null) {
+      WidgetsBinding.instance.addObserver(this);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_initializeSync());
+      });
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final runtime = _runtime;
+    if (runtime == null) return;
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_resumeSync(runtime));
+    } else {
+      unawaited(runtime.stop());
+    }
+  }
+
+  @override
+  void dispose() {
+    final runtime = _runtime;
+    if (runtime != null) {
+      WidgetsBinding.instance.removeObserver(this);
+      unawaited(runtime.close());
+    }
+    super.dispose();
+  }
+
+  Future<void> _initializeSync() async {
+    final runtime = _runtime ?? await _loadSyncRuntime();
+    if (runtime == null) return;
+    if (_runtime == null) {
+      if (!mounted) {
+        await runtime.close();
+        return;
+      }
+      setState(() => _runtime = runtime);
+    }
+    await _resumeSync(runtime);
+  }
+
+  Future<PeerSyncRuntime?> _loadSyncRuntime() async {
+    final loader = widget.syncRuntimeLoader;
+    if (loader == null) return null;
+    try {
+      return await loader();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _resumeSync(PeerSyncRuntime runtime) async {
+    try {
+      await runtime.start();
+      await runtime.syncAll();
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,8 +194,13 @@ class _ShellState extends State<_Shell> {
       IngredientLibraryPage(
         database: widget.database,
         mediaStore: widget.mediaStore,
+        syncRuntime: _runtime,
       ),
-      _MorePage(database: widget.database, mediaStore: widget.mediaStore),
+      _MorePage(
+        database: widget.database,
+        mediaStore: widget.mediaStore,
+        syncRuntime: _runtime,
+      ),
     ];
     return Scaffold(
       extendBody: true,
@@ -219,21 +310,27 @@ class _GlassNavigationBar extends StatelessWidget {
 }
 
 class _MorePage extends StatelessWidget {
-  const _MorePage({required this.database, required this.mediaStore});
+  const _MorePage({
+    required this.database,
+    required this.mediaStore,
+    this.syncRuntime,
+  });
 
   final AppDatabase database;
   final MediaStore mediaStore;
+  final PeerSyncRuntime? syncRuntime;
 
   @override
   Widget build(BuildContext context) {
     Widget tile(String item) => ListTile(
       title: Text(item),
       subtitle: switch (item) {
+        '同步与设备' when syncRuntime != null => const Text('局域网设备与配对状态'),
         '同步与设备' || '备份与恢复' => const Text('后续里程碑'),
         _ => null,
       },
       trailing: switch (item) {
-        '同步与设备' || '备份与恢复' => null,
+        '备份与恢复' => null,
         _ => const Icon(Icons.chevron_right, color: Color(0xffc7c7cc)),
       },
       onTap: switch (item) {
@@ -242,6 +339,7 @@ class _MorePage extends StatelessWidget {
             builder: (_) => IngredientLibraryPage(
               database: database,
               mediaStore: mediaStore,
+              syncRuntime: syncRuntime,
             ),
           ),
         ),
@@ -277,6 +375,14 @@ class _MorePage extends StatelessWidget {
             builder: (_) => SettingsPage(database: database),
           ),
         ),
+        '同步与设备' =>
+          syncRuntime == null
+              ? null
+              : () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => SyncDevicesPage(runtime: syncRuntime!),
+                  ),
+                ),
         _ => null,
       },
     );

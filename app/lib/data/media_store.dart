@@ -1,17 +1,21 @@
 import 'dart:io';
 import 'dart:isolate';
-import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/painting.dart';
 import 'package:image/image.dart' as image;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-class MediaStore {
+class MediaStore extends ChangeNotifier {
   MediaStore(this.directory);
 
   final Directory directory;
   final Map<String, Future<String>> _writes = {};
+  int _revision = 0;
+
+  int get revision => _revision;
 
   static Future<MediaStore> defaults() async => MediaStore(
     Directory(p.join((await getApplicationSupportDirectory()).path, 'media')),
@@ -55,11 +59,24 @@ class MediaStore {
     final file = File(p.join(directory.path, '$hash.jpg'));
     if (await file.exists()) return hash;
     final temporary = File(p.join(directory.path, '.$hash.tmp'));
+    var created = false;
     try {
       await temporary.writeAsBytes(bytes, flush: true);
-      if (!await file.exists()) await temporary.rename(file.path);
+      if (!await file.exists()) {
+        await temporary.rename(file.path);
+        created = true;
+      }
     } finally {
       if (await temporary.exists()) await temporary.delete();
+    }
+    if (created) {
+      try {
+        PaintingBinding.instance.imageCache.evict(FileImage(file));
+      } on FlutterError {
+        // Plain unit tests do not initialize Flutter's painting binding.
+      }
+      _revision++;
+      notifyListeners();
     }
     return hash;
   }

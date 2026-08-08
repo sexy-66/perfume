@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../data/app_database.dart';
 import '../../data/media_store.dart';
 import '../../services/formula_calculator.dart';
+import '../settings/sync_conflicts_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key, required this.database, required this.mediaStore});
@@ -31,6 +32,35 @@ class HomePage extends StatelessWidget {
           ).textTheme.bodySmall?.copyWith(color: const Color(0xff636366)),
         ),
         const SizedBox(height: 16),
+        StreamBuilder<List<SyncConflict>>(
+          stream: database.watchPendingSyncConflicts(),
+          builder: (context, snapshot) {
+            final count = snapshot.data?.length ?? 0;
+            if (count == 0) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Material(
+                color: const Color(0xfffff3cd),
+                borderRadius: BorderRadius.circular(13),
+                child: ListTile(
+                  leading: const Icon(
+                    Icons.sync_problem_outlined,
+                    color: Color(0xff8a5a00),
+                  ),
+                  title: const Text('有待处理冲突'),
+                  subtitle: Text('$count 项资料需要选择保留版本'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => SyncConflictsPage(database: database),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
         LayoutBuilder(
           builder: (context, constraints) {
             final cards = [

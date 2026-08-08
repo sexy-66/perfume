@@ -11,11 +11,15 @@ void main() {
     addTearDown(() => directory.delete(recursive: true));
     final store = MediaStore(directory);
     final bytes = Uint8List.fromList([1, 2, 3, 4]);
+    var changes = 0;
+    store.addListener(() => changes++);
 
     final first = await store.putJpeg(bytes);
     final second = await store.putJpeg(bytes);
 
     expect(second, first);
+    expect(store.revision, 1);
+    expect(changes, 1);
     expect(await store.fileFor(first).readAsBytes(), bytes);
     expect(await directory.list().length, 1);
   });

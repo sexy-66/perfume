@@ -299,6 +299,56 @@ class SyncOperations extends Table {
   ];
 }
 
+class SyncConflicts extends Table {
+  TextColumn get id => text()();
+  TextColumn get entityType => text()();
+  TextColumn get entityId => text()();
+  TextColumn get firstRevisionId => text()();
+  TextColumn get secondRevisionId => text()();
+  TextColumn get firstSnapshotJson => text()();
+  TextColumn get secondSnapshotJson => text()();
+  DateTimeColumn get createdAtUtc => dateTime()();
+  TextColumn get chosenRevisionId => text().nullable()();
+  TextColumn get resolutionRevisionId => text().nullable()();
+  DateTimeColumn get resolvedAtUtc => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+    {entityType, entityId, firstRevisionId, secondRevisionId},
+  ];
+}
+
+class PeerDevices extends Table with SyncColumns {
+  @override
+  String get tableName => 'devices';
+
+  TextColumn get deviceName => text()();
+  TextColumn get identityPublicKey => text()();
+  BoolColumn get isRevoked => boolean().withDefault(const Constant(false))();
+  BoolColumn get isPendingRejoin =>
+      boolean().withDefault(const Constant(false))();
+  DateTimeColumn get joinedAtUtc => dateTime()();
+  DateTimeColumn get removedAtUtc => dateTime().nullable()();
+}
+
+class QuarantinedSyncOperations extends Table {
+  TextColumn get operationId => text()();
+  TextColumn get sourceDeviceId => text()();
+  TextColumn get entityType => text()();
+  TextColumn get entityId => text()();
+  TextColumn get newRevisionId => text()();
+  TextColumn get operationJson => text()();
+  TextColumn get status => text()();
+  TextColumn get conflictId => text().nullable()();
+  DateTimeColumn get receivedAtUtc => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {operationId};
+}
+
 class IngredientSummary {
   const IngredientSummary(
     this.ingredient,
@@ -444,6 +494,9 @@ class TrashEntry {
     MixingRevisions,
     LocalDevices,
     SyncOperations,
+    SyncConflicts,
+    PeerDevices,
+    QuarantinedSyncOperations,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -463,7 +516,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -502,7 +555,12 @@ class AppDatabase extends _$AppDatabase {
           await m.createTable(table);
         }
       }
-      if (from < 1 || to != 3) {
+      if (from <= 3) await m.createTable(syncConflicts);
+      if (from <= 4) {
+        await m.createTable(peerDevices);
+        await m.createTable(quarantinedSyncOperations);
+      }
+      if (from < 1 || to != 5) {
         throw StateError('缺少数据库迁移：$from → $to');
       }
     },
@@ -536,6 +594,478 @@ class AppDatabase extends _$AppDatabase {
   });
 
   Future<LocalDevice> localDevice() => select(localDevices).getSingle();
+
+  Stream<List<PeerDevice>> watchPeerDevices() => (select(
+    peerDevices,
+  )..orderBy([(row) => OrderingTerm.asc(row.deviceName)])).watch();
+
+  Future<PeerDevice?> peerDevice(String deviceId) => (select(
+    peerDevices,
+  )..where((row) => row.id.equals(deviceId))).getSingleOrNull();
+
+  Future<void> rememberPeerDevice({
+    required String deviceId,
+    required String deviceName,
+    required List<int> identityPublicKey,
+    bool pendingRejoin = false,
+  }) => transaction(
+    () => _rememberPeerDevice(
+      deviceId: deviceId,
+      deviceName: deviceName,
+      identityPublicKey: identityPublicKey,
+      pendingRejoin: pendingRejoin,
+    ),
+  );
+
+  Future<void> _rememberPeerDevice({
+    required String deviceId,
+    required String deviceName,
+    required List<int> identityPublicKey,
+    required bool pendingRejoin,
+  }) async {
+    final current = await peerDevice(deviceId);
+    final encodedKey = base64Url.encode(identityPublicKey);
+    if (current == null) {
+      final change = await _recordOperation(
+        entityType: 'devices',
+        entityId: deviceId,
+        operationKind: 'create',
+        payload: {
+          'id': deviceId,
+          'deviceName': deviceName,
+          'identityPublicKey': encodedKey,
+          'isRevoked': false,
+          'isPendingRejoin': pendingRejoin,
+          'joinedAtUtc': DateTime.now().toUtc().millisecondsSinceEpoch,
+        },
+      );
+      await into(peerDevices).insert(
+        PeerDevicesCompanion.insert(
+          id: deviceId,
+          revisionId: change.revisionId,
+          updatedByDevice: change.deviceId,
+          updatedAtUtc: change.now,
+          deviceName: deviceName,
+          identityPublicKey: encodedKey,
+          isPendingRejoin: Value(pendingRejoin),
+          joinedAtUtc: change.now,
+        ),
+      );
+      return;
+    }
+    if (current.deviceName == deviceName &&
+        current.identityPublicKey == encodedKey &&
+        !current.isDeleted &&
+        !current.isRevoked &&
+        current.isPendingRejoin == pendingRejoin &&
+        current.removedAtUtc == null) {
+      return;
+    }
+    final change = await _recordOperation(
+      entityType: 'devices',
+      entityId: deviceId,
+      baseRevisionId: current.revisionId,
+      operationKind: 'update',
+      payload: {
+        'id': deviceId,
+        'deviceName': deviceName,
+        'identityPublicKey': encodedKey,
+        'isRevoked': false,
+        'isPendingRejoin': pendingRejoin,
+        'joinedAtUtc': current.joinedAtUtc.millisecondsSinceEpoch,
+        'removedAtUtc': null,
+      },
+    );
+    await (update(peerDevices)..where((row) => row.id.equals(deviceId))).write(
+      PeerDevicesCompanion(
+        revisionId: Value(change.revisionId),
+        updatedByDevice: Value(change.deviceId),
+        updatedAtUtc: Value(change.now),
+        deviceName: Value(deviceName),
+        identityPublicKey: Value(encodedKey),
+        isRevoked: const Value(false),
+        isPendingRejoin: Value(pendingRejoin),
+        removedAtUtc: const Value(null),
+      ),
+    );
+  }
+
+  Future<void> revokePeerDevice(String deviceId) => transaction(() async {
+    final current = await peerDevice(deviceId);
+    if (current == null || current.isRevoked) return;
+    final change = await _recordOperation(
+      entityType: 'devices',
+      entityId: deviceId,
+      baseRevisionId: current.revisionId,
+      operationKind: 'update',
+      payload: {
+        ...current.toJson(),
+        'isRevoked': true,
+        'isPendingRejoin': false,
+        'removedAtUtc': DateTime.now().toUtc().millisecondsSinceEpoch,
+      },
+    );
+    await (update(peerDevices)..where((row) => row.id.equals(deviceId))).write(
+      PeerDevicesCompanion(
+        revisionId: Value(change.revisionId),
+        updatedByDevice: Value(change.deviceId),
+        updatedAtUtc: Value(change.now),
+        isRevoked: const Value(true),
+        isPendingRejoin: const Value(false),
+        removedAtUtc: Value(change.now),
+      ),
+    );
+  });
+
+  Future<bool> isPeerRevoked(String deviceId) async =>
+      (await peerDevice(deviceId))?.isRevoked ?? false;
+
+  Future<bool> isPeerPendingRejoin(String deviceId) async =>
+      (await peerDevice(deviceId))?.isPendingRejoin ?? false;
+
+  Future<void> completePeerRejoin(String deviceId) => transaction(() async {
+    final current = await peerDevice(deviceId);
+    if (current == null || !current.isPendingRejoin) return;
+    final pending = await quarantinedConflictCount(deviceId);
+    if (pending > 0) throw StateError('请先处理该设备带回的 $pending 项冲突');
+    await _rememberPeerDevice(
+      deviceId: current.id,
+      deviceName: current.deviceName,
+      identityPublicKey: base64Url.decode(current.identityPublicKey),
+      pendingRejoin: false,
+    );
+  });
+
+  Future<int> quarantinedConflictCount(String deviceId) async {
+    final row = await customSelect(
+      '''SELECT COUNT(*) AS total
+           FROM quarantined_sync_operations q
+           JOIN sync_conflicts c ON c.id = q.conflict_id
+          WHERE q.source_device_id = ?
+            AND q.status = 'conflict'
+            AND c.resolved_at_utc IS NULL''',
+      variables: [Variable(deviceId)],
+      readsFrom: {quarantinedSyncOperations, syncConflicts},
+    ).getSingle();
+    return row.read<int>('total');
+  }
+
+  Future<Map<String, Object?>> receiveQuarantinedSyncOperations(
+    String sourceDeviceId,
+    List<Map<String, dynamic>> values,
+  ) => transaction(() async {
+    var accepted = 0;
+    var conflicts = 0;
+    for (final value in values) {
+      final operation = _decodeSyncOperation(value);
+      if (!syncSupportedEntityTypes.contains(operation.entityType) ||
+          operation.entityType == 'devices' ||
+          operation.entityType == 'sync_conflicts') {
+        continue;
+      }
+      final duplicate =
+          await (select(quarantinedSyncOperations)
+                ..where((row) => row.operationId.equals(operation.operationId)))
+              .getSingleOrNull();
+      if (duplicate != null) continue;
+      final current = await _syncRowSnapshot(
+        operation.entityType,
+        operation.entityId,
+      );
+      String status;
+      String? conflictId;
+      if (current == null && operation.operationKind == 'create') {
+        await _applyRemoteSyncOperation(value);
+        status = 'accepted';
+        accepted++;
+      } else {
+        final incoming = _syncPayload(operation.payloadJson);
+        if (current == null) {
+          status = 'ignored';
+        } else {
+          await _recordSyncConflict(operation, current, incoming);
+          final revisions = [
+            _syncRequiredText(current, 'revisionId'),
+            operation.newRevisionId,
+          ]..sort();
+          conflictId = _syncConflictId(
+            operation.entityType,
+            operation.entityId,
+            revisions.first,
+            revisions.last,
+          );
+          await _storeRemoteOperation(operation);
+          status = 'conflict';
+          conflicts++;
+        }
+      }
+      await into(quarantinedSyncOperations).insert(
+        QuarantinedSyncOperationsCompanion.insert(
+          operationId: operation.operationId,
+          sourceDeviceId: sourceDeviceId,
+          entityType: operation.entityType,
+          entityId: operation.entityId,
+          newRevisionId: operation.newRevisionId,
+          operationJson: jsonEncode(value),
+          status: status,
+          conflictId: Value(conflictId),
+          receivedAtUtc: DateTime.now().toUtc(),
+        ),
+      );
+    }
+    return {'accepted': accepted, 'conflicts': conflicts};
+  });
+
+  Future<Map<String, int>> syncVector() async {
+    final entities = syncSupportedEntityTypes.toList();
+    final rows = await customSelect(
+      '''SELECT origin_device_id, MAX(device_seq) AS last_seq
+         FROM sync_operations
+         WHERE entity_type IN (${List.filled(entities.length, '?').join(', ')})
+         GROUP BY origin_device_id''',
+      variables: [for (final entity in entities) Variable(entity)],
+      readsFrom: {syncOperations},
+    ).get();
+    return {
+      for (final row in rows)
+        row.read<String>('origin_device_id'): row.read<int>('last_seq'),
+    };
+  }
+
+  Future<List<SyncOperation>> syncOperationsMissingFrom(
+    Map<String, int> vector, {
+    int limit = 64,
+    bool forRejoin = false,
+  }) async {
+    if (limit <= 0 || limit > 128) throw ArgumentError.value(limit, 'limit');
+    final operations = await select(syncOperations).get();
+    final result =
+        operations
+            .where(
+              (operation) =>
+                  syncSupportedEntityTypes.contains(operation.entityType) &&
+                  (!forRejoin ||
+                      (operation.entityType != 'devices' &&
+                          operation.entityType != 'sync_conflicts')) &&
+                  operation.deviceSeq > (vector[operation.originDeviceId] ?? 0),
+            )
+            .toList()
+          ..sort((a, b) {
+            final origin = a.originDeviceId.compareTo(b.originDeviceId);
+            return origin != 0 ? origin : a.deviceSeq.compareTo(b.deviceSeq);
+          });
+    return [
+      for (final operation in result.take(limit))
+        await _operationWithCurrentSnapshot(operation),
+    ];
+  }
+
+  Future<SyncOperation> _operationWithCurrentSnapshot(
+    SyncOperation operation,
+  ) async {
+    if (operation.originDeviceId != (await localDevice()).id) return operation;
+    final snapshot = await _syncRowSnapshot(
+      operation.entityType,
+      operation.entityId,
+    );
+    if (snapshot == null) return operation;
+    final payload = _syncPayload(operation.payloadJson)..addAll(snapshot);
+    payload['revisionId'] = operation.newRevisionId;
+    if (operation.operationKind == 'delete') {
+      payload['isDeleted'] = true;
+      payload['deletedAtUtc'] = operation.createdAtUtc.toIso8601String();
+    }
+    return operation.copyWith(payloadJson: jsonEncode(payload));
+  }
+
+  Future<Map<String, Object?>?> _syncRowSnapshot(
+    String entityType,
+    String entityId,
+  ) async {
+    final table = _syncTable(entityType);
+    if (table == null) return null;
+    final row = await customSelect(
+      'SELECT * FROM $entityType WHERE id = ?',
+      variables: [Variable(entityId)],
+      readsFrom: {table},
+    ).getSingleOrNull();
+    if (row == null) return null;
+    final data = await table.map(row.data);
+    return Map<String, Object?>.from((data as DataClass).toJson());
+  }
+
+  ResultSetImplementation? _syncTable(String entityType) =>
+      switch (entityType) {
+        'production_types' => productionTypes,
+        'ingredient_categories' => ingredientCategories,
+        'ingredients' => ingredients,
+        'ingredient_skus' => ingredientSkus,
+        'category_ratio_ranges' => categoryRatioRanges,
+        'ingredient_ratio_ranges' => ingredientRatioRanges,
+        'sku_ratio_overrides' => skuRatioOverrides,
+        'recommendation_presets' => recommendationPresets,
+        'recommendation_groups' => recommendationGroups,
+        'recommendation_items' => recommendationItems,
+        'customers' => customers,
+        'plaque_types' => plaqueTypes,
+        'asset_categories' => assetCategories,
+        'asset_statuses' => assetStatuses,
+        'assets' => assets,
+        'formulas' => formulas,
+        'formula_drafts' => formulaDrafts,
+        'formula_versions' => formulaVersions,
+        'formula_items' => formulaItems,
+        'mixing_sessions' => mixingSessions,
+        'mixing_items' => mixingItems,
+        'mixing_revisions' => mixingRevisions,
+        'sync_conflicts' => syncConflicts,
+        'devices' => peerDevices,
+        _ => null,
+      };
+
+  Future<Set<String>> referencedImageHashes() async {
+    final rows = await customSelect(
+      '''SELECT image_hash FROM ingredient_skus
+          WHERE image_hash IS NOT NULL AND is_deleted = 0
+         UNION
+         SELECT image_hash FROM plaque_types
+          WHERE image_hash IS NOT NULL AND is_deleted = 0
+         UNION
+         SELECT image_hash FROM assets
+          WHERE image_hash IS NOT NULL AND is_deleted = 0''',
+      readsFrom: {ingredientSkus, plaqueTypes, assets},
+    ).get();
+    return {for (final row in rows) row.read<String>('image_hash')};
+  }
+
+  Future<int> applyRemoteSyncOperations(
+    List<Map<String, dynamic>> values,
+  ) async {
+    if (values.length > 128) throw ArgumentError.value(values, 'values');
+    var applied = 0;
+    await transaction(() async {
+      for (final value in values) {
+        if (await _applyRemoteSyncOperation(value)) applied++;
+      }
+    });
+    return applied;
+  }
+
+  Future<bool> _applyRemoteSyncOperation(Map<String, dynamic> value) async {
+    final operation = _decodeSyncOperation(value);
+    if (!syncSupportedEntityTypes.contains(operation.entityType)) return false;
+    final duplicate =
+        await (select(syncOperations)
+              ..where((row) => row.operationId.equals(operation.operationId)))
+            .getSingleOrNull();
+    if (duplicate != null) return false;
+    final sameSequence =
+        await (select(syncOperations)..where(
+              (row) =>
+                  row.originDeviceId.equals(operation.originDeviceId) &
+                  row.deviceSeq.equals(operation.deviceSeq),
+            ))
+            .getSingleOrNull();
+    if (sameSequence != null) {
+      if (sameSequence.operationId != operation.operationId) {
+        throw StateError('远程操作序号冲突');
+      }
+      return false;
+    }
+
+    final payload = _syncPayload(operation.payloadJson);
+    if (operation.operationKind == 'resolve_conflict') {
+      await _applyRemoteConflictResolution(operation, payload);
+      await _storeRemoteOperation(operation);
+      return true;
+    }
+    switch (operation.entityType) {
+      case 'production_types':
+        await _applyRemoteProductionType(operation, payload);
+      case 'ingredient_categories':
+        await _applyRemoteIngredientCategory(operation, payload);
+      case 'ingredients':
+        await _applyRemoteIngredient(operation, payload);
+      case 'ingredient_skus':
+        await _applyRemoteSku(operation, payload);
+      case 'sync_conflicts':
+        await _applyRemoteSyncConflict(payload);
+      case 'devices':
+        await _applyRemotePeerDevice(operation, payload);
+      default:
+        await _applyRemoteGeneric(operation, payload);
+    }
+    await _storeRemoteOperation(operation);
+    return true;
+  }
+
+  Stream<List<SyncConflict>> watchPendingSyncConflicts() =>
+      (select(syncConflicts)
+            ..where((row) => row.resolvedAtUtc.isNull())
+            ..orderBy([(row) => OrderingTerm.desc(row.createdAtUtc)]))
+          .watch();
+
+  Future<int> pendingSyncConflictCount() async {
+    final count = syncConflicts.id.count();
+    final query = selectOnly(syncConflicts)..addColumns([count]);
+    query.where(syncConflicts.resolvedAtUtc.isNull());
+    return query.map((row) => row.read(count) ?? 0).getSingle();
+  }
+
+  Future<void> resolveSyncConflict(
+    String conflictId, {
+    required String chosenRevisionId,
+  }) => transaction(() async {
+    final conflict = await (select(
+      syncConflicts,
+    )..where((row) => row.id.equals(conflictId))).getSingle();
+    if (conflict.resolvedAtUtc != null) return;
+    if (chosenRevisionId != conflict.firstRevisionId &&
+        chosenRevisionId != conflict.secondRevisionId) {
+      throw ArgumentError.value(chosenRevisionId, 'chosenRevisionId');
+    }
+    final chosenSnapshot = _syncPayload(
+      chosenRevisionId == conflict.firstRevisionId
+          ? conflict.firstSnapshotJson
+          : conflict.secondSnapshotJson,
+    );
+    final currentRevision = await _syncCurrentRevision(
+      conflict.entityType,
+      conflict.entityId,
+    );
+    final change = await _recordOperation(
+      entityType: conflict.entityType,
+      entityId: conflict.entityId,
+      baseRevisionId: currentRevision,
+      operationKind: 'resolve_conflict',
+      payload: {
+        ...chosenSnapshot,
+        '_conflictId': conflict.id,
+        '_conflictRevisions': [
+          conflict.firstRevisionId,
+          conflict.secondRevisionId,
+        ],
+        '_chosenRevisionId': chosenRevisionId,
+      },
+    );
+    await _applySyncSnapshot(
+      conflict.entityType,
+      conflict.entityId,
+      chosenSnapshot,
+      revisionId: change.revisionId,
+      updatedByDevice: change.deviceId,
+      updatedAtUtc: change.now,
+    );
+    await (update(
+      syncConflicts,
+    )..where((row) => row.id.equals(conflict.id))).write(
+      SyncConflictsCompanion(
+        chosenRevisionId: Value(chosenRevisionId),
+        resolutionRevisionId: Value(change.revisionId),
+        resolvedAtUtc: Value(change.now),
+      ),
+    );
+  });
 
   Stream<List<ProductionType>> watchProductionTypes() =>
       (select(productionTypes)
@@ -3336,6 +3866,751 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  Future<void> _applyRemoteProductionType(
+    SyncOperation operation,
+    Map<String, Object?> payload,
+  ) async {
+    final current = await (select(
+      productionTypes,
+    )..where((row) => row.id.equals(operation.entityId))).getSingleOrNull();
+    if (operation.operationKind == 'create') {
+      if (current != null) return;
+      await into(productionTypes).insert(
+        ProductionTypesCompanion.insert(
+          id: operation.entityId,
+          revisionId: operation.newRevisionId,
+          updatedByDevice: operation.originDeviceId,
+          updatedAtUtc: operation.createdAtUtc,
+          name: _syncRequiredText(payload, 'name'),
+          sortOrder: _syncInt(payload, 'sortOrder'),
+          isInactive: Value(_syncBool(payload, 'isInactive', false)),
+        ),
+      );
+      return;
+    }
+    if (current == null) throw StateError('缺少远程制作类型依赖');
+    if (!_syncRevisionMatches(current.revisionId, operation.baseRevisionId)) {
+      await _recordSyncConflict(
+        operation,
+        _productionTypeSnapshot(current),
+        payload,
+      );
+      return;
+    }
+    final deleted = switch (operation.operationKind) {
+      'delete' => true,
+      'restore' => false,
+      'update' => current.isDeleted,
+      _ => throw StateError('远程制作类型操作无效'),
+    };
+    await (update(
+      productionTypes,
+    )..where((row) => row.id.equals(operation.entityId))).write(
+      ProductionTypesCompanion(
+        revisionId: Value(operation.newRevisionId),
+        updatedByDevice: Value(operation.originDeviceId),
+        updatedAtUtc: Value(operation.createdAtUtc),
+        isDeleted: Value(deleted),
+        deletedAtUtc: Value(deleted ? operation.createdAtUtc : null),
+        name: payload.containsKey('name')
+            ? Value(_syncRequiredText(payload, 'name'))
+            : const Value.absent(),
+        sortOrder: payload.containsKey('sortOrder')
+            ? Value(_syncInt(payload, 'sortOrder'))
+            : const Value.absent(),
+        isInactive: payload.containsKey('isInactive')
+            ? Value(_syncBool(payload, 'isInactive', current.isInactive))
+            : const Value.absent(),
+      ),
+    );
+  }
+
+  Future<void> _applyRemoteIngredientCategory(
+    SyncOperation operation,
+    Map<String, Object?> payload,
+  ) async {
+    final current = await (select(
+      ingredientCategories,
+    )..where((row) => row.id.equals(operation.entityId))).getSingleOrNull();
+    if (operation.operationKind == 'create') {
+      if (current != null) return;
+      await into(ingredientCategories).insert(
+        IngredientCategoriesCompanion.insert(
+          id: operation.entityId,
+          revisionId: operation.newRevisionId,
+          updatedByDevice: operation.originDeviceId,
+          updatedAtUtc: operation.createdAtUtc,
+          name: _syncRequiredText(payload, 'name'),
+          sortOrder: _syncInt(payload, 'sortOrder'),
+          isInactive: Value(_syncBool(payload, 'isInactive', false)),
+        ),
+      );
+      return;
+    }
+    if (current == null) throw StateError('缺少远程香料分类依赖');
+    if (!_syncRevisionMatches(current.revisionId, operation.baseRevisionId)) {
+      await _recordSyncConflict(
+        operation,
+        _ingredientCategorySnapshot(current),
+        payload,
+      );
+      return;
+    }
+    final deleted = switch (operation.operationKind) {
+      'delete' => true,
+      'restore' => false,
+      'update' => current.isDeleted,
+      _ => throw StateError('远程香料分类操作无效'),
+    };
+    await (update(
+      ingredientCategories,
+    )..where((row) => row.id.equals(operation.entityId))).write(
+      IngredientCategoriesCompanion(
+        revisionId: Value(operation.newRevisionId),
+        updatedByDevice: Value(operation.originDeviceId),
+        updatedAtUtc: Value(operation.createdAtUtc),
+        isDeleted: Value(deleted),
+        deletedAtUtc: Value(deleted ? operation.createdAtUtc : null),
+        name: payload.containsKey('name')
+            ? Value(_syncRequiredText(payload, 'name'))
+            : const Value.absent(),
+        sortOrder: payload.containsKey('sortOrder')
+            ? Value(_syncInt(payload, 'sortOrder'))
+            : const Value.absent(),
+        isInactive: payload.containsKey('isInactive')
+            ? Value(_syncBool(payload, 'isInactive', current.isInactive))
+            : const Value.absent(),
+      ),
+    );
+  }
+
+  Future<void> _applyRemoteIngredient(
+    SyncOperation operation,
+    Map<String, Object?> payload,
+  ) async {
+    final current = await (select(
+      ingredients,
+    )..where((row) => row.id.equals(operation.entityId))).getSingleOrNull();
+    if (operation.operationKind == 'create') {
+      if (current != null) return;
+      await into(ingredients).insert(
+        IngredientsCompanion.insert(
+          id: operation.entityId,
+          revisionId: operation.newRevisionId,
+          updatedByDevice: operation.originDeviceId,
+          updatedAtUtc: operation.createdAtUtc,
+          categoryId: _syncRequiredText(payload, 'categoryId'),
+          name: _syncRequiredText(payload, 'name'),
+          alias: Value(_syncOptionalText(payload, 'alias')),
+          isInactive: Value(_syncBool(payload, 'isInactive', false)),
+        ),
+      );
+      return;
+    }
+    if (current == null) throw StateError('缺少远程香料依赖');
+    if (!_syncRevisionMatches(current.revisionId, operation.baseRevisionId)) {
+      await _recordSyncConflict(
+        operation,
+        _ingredientSnapshot(current),
+        payload,
+      );
+      return;
+    }
+    final deleted = switch (operation.operationKind) {
+      'delete' => true,
+      'restore' => false,
+      'update' => current.isDeleted,
+      _ => throw StateError('远程香料操作无效'),
+    };
+    await (update(
+      ingredients,
+    )..where((row) => row.id.equals(operation.entityId))).write(
+      IngredientsCompanion(
+        revisionId: Value(operation.newRevisionId),
+        updatedByDevice: Value(operation.originDeviceId),
+        updatedAtUtc: Value(operation.createdAtUtc),
+        isDeleted: Value(deleted),
+        deletedAtUtc: Value(deleted ? operation.createdAtUtc : null),
+        categoryId: payload.containsKey('categoryId')
+            ? Value(_syncRequiredText(payload, 'categoryId'))
+            : const Value.absent(),
+        name: payload.containsKey('name')
+            ? Value(_syncRequiredText(payload, 'name'))
+            : const Value.absent(),
+        alias: payload.containsKey('alias')
+            ? Value(_syncOptionalText(payload, 'alias'))
+            : const Value.absent(),
+        isInactive: payload.containsKey('isInactive')
+            ? Value(_syncBool(payload, 'isInactive', current.isInactive))
+            : const Value.absent(),
+      ),
+    );
+  }
+
+  Future<void> _applyRemoteSku(
+    SyncOperation operation,
+    Map<String, Object?> payload,
+  ) async {
+    final current = await (select(
+      ingredientSkus,
+    )..where((row) => row.id.equals(operation.entityId))).getSingleOrNull();
+    if (operation.operationKind == 'create') {
+      if (current != null) return;
+      await into(ingredientSkus).insert(
+        IngredientSkusCompanion.insert(
+          id: operation.entityId,
+          revisionId: operation.newRevisionId,
+          updatedByDevice: operation.originDeviceId,
+          updatedAtUtc: operation.createdAtUtc,
+          ingredientId: _syncRequiredText(payload, 'ingredientId'),
+          skuCode: Value(_syncOptionalText(payload, 'skuCode')),
+          imageHash: Value(_syncImageHash(payload, 'imageHash')),
+          supplier: Value(_syncOptionalText(payload, 'supplier')),
+          origin: Value(_syncOptionalText(payload, 'origin')),
+          notes: Value(_syncOptionalText(payload, 'notes')),
+          isInactive: Value(_syncBool(payload, 'isInactive', false)),
+        ),
+      );
+      return;
+    }
+    if (current == null) throw StateError('缺少远程 SKU 依赖');
+    if (!_syncRevisionMatches(current.revisionId, operation.baseRevisionId)) {
+      await _recordSyncConflict(operation, _skuSnapshot(current), payload);
+      return;
+    }
+    final deleted = switch (operation.operationKind) {
+      'delete' => true,
+      'restore' => false,
+      'update' => current.isDeleted,
+      _ => throw StateError('远程 SKU 操作无效'),
+    };
+    await (update(
+      ingredientSkus,
+    )..where((row) => row.id.equals(operation.entityId))).write(
+      IngredientSkusCompanion(
+        revisionId: Value(operation.newRevisionId),
+        updatedByDevice: Value(operation.originDeviceId),
+        updatedAtUtc: Value(operation.createdAtUtc),
+        isDeleted: Value(deleted),
+        deletedAtUtc: Value(deleted ? operation.createdAtUtc : null),
+        ingredientId: payload.containsKey('ingredientId')
+            ? Value(_syncRequiredText(payload, 'ingredientId'))
+            : const Value.absent(),
+        skuCode: payload.containsKey('skuCode')
+            ? Value(_syncOptionalText(payload, 'skuCode'))
+            : const Value.absent(),
+        imageHash: payload.containsKey('imageHash')
+            ? Value(_syncImageHash(payload, 'imageHash'))
+            : const Value.absent(),
+        supplier: payload.containsKey('supplier')
+            ? Value(_syncOptionalText(payload, 'supplier'))
+            : const Value.absent(),
+        origin: payload.containsKey('origin')
+            ? Value(_syncOptionalText(payload, 'origin'))
+            : const Value.absent(),
+        notes: payload.containsKey('notes')
+            ? Value(_syncOptionalText(payload, 'notes'))
+            : const Value.absent(),
+        isInactive: payload.containsKey('isInactive')
+            ? Value(_syncBool(payload, 'isInactive', current.isInactive))
+            : const Value.absent(),
+      ),
+    );
+  }
+
+  Future<void> _applyRemotePeerDevice(
+    SyncOperation operation,
+    Map<String, Object?> payload,
+  ) async {
+    final current = await _syncRowSnapshot('devices', operation.entityId);
+    final incomingRevoked = _syncBool(payload, 'isRevoked', false);
+    if (current != null) {
+      if (current['isRevoked'] == true && !incomingRevoked) return;
+      if (operation.operationKind == 'create') return;
+      if (!incomingRevoked &&
+          !_syncRevisionMatches(
+            _syncRequiredText(current, 'revisionId'),
+            operation.baseRevisionId,
+          )) {
+        return;
+      }
+    }
+    final snapshot = current == null
+        ? Map<String, Object?>.from(payload)
+        : (Map<String, Object?>.from(current)..addAll(payload));
+    snapshot
+      ..['id'] = operation.entityId
+      ..['revisionId'] = operation.newRevisionId
+      ..['updatedByDevice'] = operation.originDeviceId
+      ..['updatedAtUtc'] = operation.createdAtUtc.millisecondsSinceEpoch;
+    await _writeGenericSnapshot(
+      'devices',
+      operation.entityId,
+      snapshot,
+      insert: current == null,
+    );
+  }
+
+  Future<void> _applyRemoteGeneric(
+    SyncOperation operation,
+    Map<String, Object?> payload,
+  ) async {
+    final current = await _syncRowSnapshot(
+      operation.entityType,
+      operation.entityId,
+    );
+    if (operation.operationKind != 'create' && current == null) {
+      throw StateError('缺少远程 ${operation.entityType} 依赖');
+    }
+    if (current != null &&
+        !_syncRevisionMatches(
+          _syncRequiredText(current, 'revisionId'),
+          operation.baseRevisionId,
+        )) {
+      await _recordSyncConflict(operation, current, payload);
+      return;
+    }
+    final snapshot = current == null
+        ? Map<String, Object?>.from(payload)
+        : (Map<String, Object?>.from(current)..addAll(payload));
+    final deleted = switch (operation.operationKind) {
+      'delete' => true,
+      'restore' || 'create' => false,
+      _ => current?['isDeleted'] as bool? ?? false,
+    };
+    snapshot
+      ..['id'] = operation.entityId
+      ..['revisionId'] = operation.newRevisionId
+      ..['updatedByDevice'] = operation.originDeviceId
+      ..['updatedAtUtc'] = operation.createdAtUtc.millisecondsSinceEpoch
+      ..['isDeleted'] = deleted
+      ..['deletedAtUtc'] = deleted
+          ? (operation.operationKind == 'delete'
+                ? operation.createdAtUtc.millisecondsSinceEpoch
+                : current?['deletedAtUtc'])
+          : null;
+    await _writeGenericSnapshot(
+      operation.entityType,
+      operation.entityId,
+      snapshot,
+      insert: current == null,
+    );
+  }
+
+  Future<void> _writeGenericSnapshot(
+    String entityType,
+    String entityId,
+    Map<String, Object?> snapshot, {
+    required bool insert,
+  }) async {
+    final table = _syncTable(entityType);
+    if (table == null) throw StateError('暂不支持同步实体：$entityType');
+    final values = <String, Object?>{};
+    for (final column in table.$columns) {
+      final field = _syncJsonField(column.$name);
+      if (!snapshot.containsKey(field)) continue;
+      values[column.$name] = _syncSqlValue(column, snapshot[field], field);
+    }
+    if (insert) {
+      await customInsert(
+        '''INSERT INTO $entityType (${values.keys.join(', ')})
+           VALUES (${List.filled(values.length, '?').join(', ')})''',
+        variables: [for (final value in values.values) Variable(value)],
+        updates: {table},
+      );
+      return;
+    }
+    values.remove('id');
+    await customUpdate(
+      '''UPDATE $entityType
+            SET ${values.keys.map((key) => '$key = ?').join(', ')}
+          WHERE id = ?''',
+      variables: [
+        for (final value in values.values) Variable(value),
+        Variable(entityId),
+      ],
+      updates: {table},
+    );
+  }
+
+  Future<void> _storeRemoteOperation(SyncOperation operation) =>
+      into(syncOperations).insert(
+        SyncOperationsCompanion.insert(
+          operationId: operation.operationId,
+          originDeviceId: operation.originDeviceId,
+          deviceSeq: operation.deviceSeq,
+          entityType: operation.entityType,
+          entityId: operation.entityId,
+          baseRevisionId: Value(operation.baseRevisionId),
+          newRevisionId: operation.newRevisionId,
+          operationKind: operation.operationKind,
+          payloadJson: operation.payloadJson,
+          createdAtUtc: operation.createdAtUtc,
+        ),
+      );
+
+  Future<void> _recordSyncConflict(
+    SyncOperation operation,
+    Map<String, Object?> currentSnapshot,
+    Map<String, Object?> incomingPayload,
+  ) async {
+    if (await _conflictRevisionResolved(
+      operation.entityType,
+      operation.entityId,
+      operation.newRevisionId,
+    )) {
+      return;
+    }
+    final currentRevision = _syncRequiredText(currentSnapshot, 'revisionId');
+    final revisions = [currentRevision, operation.newRevisionId]..sort();
+    final firstIsCurrent = revisions.first == currentRevision;
+    final incomingSnapshot = Map<String, Object?>.from(currentSnapshot)
+      ..addAll(incomingPayload)
+      ..['revisionId'] = operation.newRevisionId
+      ..['isDeleted'] = operation.operationKind == 'delete'
+      ..['deletedAtUtc'] = operation.operationKind == 'delete'
+          ? operation.createdAtUtc.toIso8601String()
+          : null;
+    await into(syncConflicts).insert(
+      SyncConflictsCompanion.insert(
+        id: _syncConflictId(
+          operation.entityType,
+          operation.entityId,
+          revisions.first,
+          revisions.last,
+        ),
+        entityType: operation.entityType,
+        entityId: operation.entityId,
+        firstRevisionId: revisions.first,
+        secondRevisionId: revisions.last,
+        firstSnapshotJson: jsonEncode(
+          firstIsCurrent ? currentSnapshot : incomingSnapshot,
+        ),
+        secondSnapshotJson: jsonEncode(
+          firstIsCurrent ? incomingSnapshot : currentSnapshot,
+        ),
+        createdAtUtc: operation.createdAtUtc,
+      ),
+      mode: InsertMode.insertOrIgnore,
+    );
+    final conflict =
+        await (select(syncConflicts)..where(
+              (row) =>
+                  row.entityType.equals(operation.entityType) &
+                  row.entityId.equals(operation.entityId) &
+                  row.firstRevisionId.equals(revisions.first) &
+                  row.secondRevisionId.equals(revisions.last),
+            ))
+            .getSingle();
+    if (!await _hasLocalOperation('sync_conflicts', conflict.id)) {
+      await _recordOperation(
+        entityType: 'sync_conflicts',
+        entityId: conflict.id,
+        operationKind: 'create',
+        payload: conflict.toJson(),
+      );
+    }
+  }
+
+  Future<bool> _hasLocalOperation(String entityType, String entityId) async {
+    final deviceId = (await localDevice()).id;
+    return (await (select(syncOperations)..where(
+              (row) =>
+                  row.originDeviceId.equals(deviceId) &
+                  row.entityType.equals(entityType) &
+                  row.entityId.equals(entityId),
+            ))
+            .getSingleOrNull()) !=
+        null;
+  }
+
+  Future<void> _applyRemoteSyncConflict(Map<String, Object?> payload) async {
+    final id = _syncRequiredText(payload, 'id');
+    if ((await (select(
+          syncConflicts,
+        )..where((row) => row.id.equals(id))).getSingleOrNull()) !=
+        null) {
+      return;
+    }
+    await _writeGenericSnapshot('sync_conflicts', id, payload, insert: true);
+  }
+
+  Future<bool> _conflictRevisionResolved(
+    String entityType,
+    String entityId,
+    String revisionId,
+  ) async {
+    final rows =
+        await (select(syncConflicts)..where(
+              (row) =>
+                  row.entityType.equals(entityType) &
+                  row.entityId.equals(entityId) &
+                  row.resolvedAtUtc.isNotNull(),
+            ))
+            .get();
+    return rows.any(
+      (row) =>
+          row.firstRevisionId == revisionId ||
+          row.secondRevisionId == revisionId,
+    );
+  }
+
+  Future<void> _applyRemoteConflictResolution(
+    SyncOperation operation,
+    Map<String, Object?> payload,
+  ) async {
+    final conflictId = _syncRequiredText(payload, '_conflictId');
+    final revisionsValue = payload['_conflictRevisions'];
+    if (revisionsValue is! List || revisionsValue.length != 2) {
+      throw const FormatException('冲突修订列表无效');
+    }
+    final revisions = [
+      for (final revision in revisionsValue)
+        if (revision is String && revision.isNotEmpty)
+          revision
+        else
+          throw const FormatException('冲突修订无效'),
+    ]..sort();
+    final chosenRevisionId = _syncRequiredText(payload, '_chosenRevisionId');
+    if (!revisions.contains(chosenRevisionId)) {
+      throw const FormatException('冲突选择无效');
+    }
+    final snapshot = Map<String, Object?>.from(payload)
+      ..remove('_conflictId')
+      ..remove('_conflictRevisions')
+      ..remove('_chosenRevisionId');
+    await _applySyncSnapshot(
+      operation.entityType,
+      operation.entityId,
+      snapshot,
+      revisionId: operation.newRevisionId,
+      updatedByDevice: operation.originDeviceId,
+      updatedAtUtc: operation.createdAtUtc,
+    );
+    final current =
+        await (select(syncConflicts)..where(
+              (row) =>
+                  row.entityType.equals(operation.entityType) &
+                  row.entityId.equals(operation.entityId) &
+                  row.firstRevisionId.equals(revisions.first) &
+                  row.secondRevisionId.equals(revisions.last),
+            ))
+            .getSingleOrNull();
+    if (current == null) {
+      await into(syncConflicts).insert(
+        SyncConflictsCompanion.insert(
+          id: conflictId,
+          entityType: operation.entityType,
+          entityId: operation.entityId,
+          firstRevisionId: revisions.first,
+          secondRevisionId: revisions.last,
+          firstSnapshotJson: jsonEncode(
+            chosenRevisionId == revisions.first ? snapshot : const {},
+          ),
+          secondSnapshotJson: jsonEncode(
+            chosenRevisionId == revisions.last ? snapshot : const {},
+          ),
+          createdAtUtc: operation.createdAtUtc,
+          chosenRevisionId: Value(chosenRevisionId),
+          resolutionRevisionId: Value(operation.newRevisionId),
+          resolvedAtUtc: Value(operation.createdAtUtc),
+        ),
+      );
+    } else if (current.resolvedAtUtc == null) {
+      await (update(
+        syncConflicts,
+      )..where((row) => row.id.equals(current.id))).write(
+        SyncConflictsCompanion(
+          chosenRevisionId: Value(chosenRevisionId),
+          resolutionRevisionId: Value(operation.newRevisionId),
+          resolvedAtUtc: Value(operation.createdAtUtc),
+        ),
+      );
+    }
+  }
+
+  Future<String?> _syncCurrentRevision(
+    String entityType,
+    String entityId,
+  ) async {
+    final row = await customSelect(
+      'SELECT revision_id FROM $entityType WHERE id = ?',
+      variables: [Variable(entityId)],
+    ).getSingleOrNull();
+    return row?.read<String>('revision_id');
+  }
+
+  Future<void> _applySyncSnapshot(
+    String entityType,
+    String entityId,
+    Map<String, Object?> snapshot, {
+    required String revisionId,
+    required String updatedByDevice,
+    required DateTime updatedAtUtc,
+  }) async {
+    final deleted = _syncBool(snapshot, 'isDeleted', false);
+    final operation = SyncOperation(
+      operationId: '',
+      originDeviceId: updatedByDevice,
+      deviceSeq: 0,
+      entityType: entityType,
+      entityId: entityId,
+      baseRevisionId: await _syncCurrentRevision(entityType, entityId),
+      newRevisionId: revisionId,
+      operationKind: deleted ? 'delete' : 'update',
+      payloadJson: jsonEncode(snapshot),
+      createdAtUtc: updatedAtUtc,
+    );
+    switch (entityType) {
+      case 'production_types':
+        await _applyResolvedProductionType(operation, snapshot);
+      case 'ingredient_categories':
+        await _applyResolvedIngredientCategory(operation, snapshot);
+      case 'ingredients':
+        await _applyResolvedIngredient(operation, snapshot);
+      case 'ingredient_skus':
+        await _applyResolvedSku(operation, snapshot);
+      default:
+        await _writeGenericSnapshot(
+          entityType,
+          entityId,
+          {
+            ...snapshot,
+            'id': entityId,
+            'revisionId': revisionId,
+            'updatedByDevice': updatedByDevice,
+            'updatedAtUtc': updatedAtUtc.millisecondsSinceEpoch,
+          },
+          insert: await _syncRowSnapshot(entityType, entityId) == null,
+        );
+    }
+  }
+
+  Future<void> _applyResolvedProductionType(
+    SyncOperation operation,
+    Map<String, Object?> snapshot,
+  ) =>
+      (update(
+        productionTypes,
+      )..where((row) => row.id.equals(operation.entityId))).write(
+        ProductionTypesCompanion(
+          revisionId: Value(operation.newRevisionId),
+          updatedByDevice: Value(operation.originDeviceId),
+          updatedAtUtc: Value(operation.createdAtUtc),
+          isDeleted: Value(_syncBool(snapshot, 'isDeleted', false)),
+          deletedAtUtc: Value(_syncOptionalDate(snapshot, 'deletedAtUtc')),
+          name: Value(_syncRequiredText(snapshot, 'name')),
+          sortOrder: Value(_syncInt(snapshot, 'sortOrder')),
+          isInactive: Value(_syncBool(snapshot, 'isInactive', false)),
+        ),
+      );
+
+  Future<void> _applyResolvedIngredientCategory(
+    SyncOperation operation,
+    Map<String, Object?> snapshot,
+  ) =>
+      (update(
+        ingredientCategories,
+      )..where((row) => row.id.equals(operation.entityId))).write(
+        IngredientCategoriesCompanion(
+          revisionId: Value(operation.newRevisionId),
+          updatedByDevice: Value(operation.originDeviceId),
+          updatedAtUtc: Value(operation.createdAtUtc),
+          isDeleted: Value(_syncBool(snapshot, 'isDeleted', false)),
+          deletedAtUtc: Value(_syncOptionalDate(snapshot, 'deletedAtUtc')),
+          name: Value(_syncRequiredText(snapshot, 'name')),
+          sortOrder: Value(_syncInt(snapshot, 'sortOrder')),
+          isInactive: Value(_syncBool(snapshot, 'isInactive', false)),
+        ),
+      );
+
+  Future<void> _applyResolvedIngredient(
+    SyncOperation operation,
+    Map<String, Object?> snapshot,
+  ) => (update(ingredients)..where((row) => row.id.equals(operation.entityId)))
+      .write(
+        IngredientsCompanion(
+          revisionId: Value(operation.newRevisionId),
+          updatedByDevice: Value(operation.originDeviceId),
+          updatedAtUtc: Value(operation.createdAtUtc),
+          isDeleted: Value(_syncBool(snapshot, 'isDeleted', false)),
+          deletedAtUtc: Value(_syncOptionalDate(snapshot, 'deletedAtUtc')),
+          categoryId: Value(_syncRequiredText(snapshot, 'categoryId')),
+          name: Value(_syncRequiredText(snapshot, 'name')),
+          alias: Value(_syncOptionalText(snapshot, 'alias')),
+          isInactive: Value(_syncBool(snapshot, 'isInactive', false)),
+        ),
+      );
+
+  Future<void> _applyResolvedSku(
+    SyncOperation operation,
+    Map<String, Object?> snapshot,
+  ) =>
+      (update(
+        ingredientSkus,
+      )..where((row) => row.id.equals(operation.entityId))).write(
+        IngredientSkusCompanion(
+          revisionId: Value(operation.newRevisionId),
+          updatedByDevice: Value(operation.originDeviceId),
+          updatedAtUtc: Value(operation.createdAtUtc),
+          isDeleted: Value(_syncBool(snapshot, 'isDeleted', false)),
+          deletedAtUtc: Value(_syncOptionalDate(snapshot, 'deletedAtUtc')),
+          ingredientId: Value(_syncRequiredText(snapshot, 'ingredientId')),
+          skuCode: Value(_syncOptionalText(snapshot, 'skuCode')),
+          imageHash: Value(_syncImageHash(snapshot, 'imageHash')),
+          supplier: Value(_syncOptionalText(snapshot, 'supplier')),
+          origin: Value(_syncOptionalText(snapshot, 'origin')),
+          notes: Value(_syncOptionalText(snapshot, 'notes')),
+          isInactive: Value(_syncBool(snapshot, 'isInactive', false)),
+        ),
+      );
+
+  Map<String, Object?> _productionTypeSnapshot(ProductionType value) => {
+    'id': value.id,
+    'revisionId': value.revisionId,
+    'name': value.name,
+    'sortOrder': value.sortOrder,
+    'isInactive': value.isInactive,
+    'isDeleted': value.isDeleted,
+    'deletedAtUtc': value.deletedAtUtc?.toIso8601String(),
+  };
+
+  Map<String, Object?> _ingredientCategorySnapshot(IngredientCategory value) =>
+      {
+        'id': value.id,
+        'revisionId': value.revisionId,
+        'name': value.name,
+        'sortOrder': value.sortOrder,
+        'isInactive': value.isInactive,
+        'isDeleted': value.isDeleted,
+        'deletedAtUtc': value.deletedAtUtc?.toIso8601String(),
+      };
+
+  Map<String, Object?> _ingredientSnapshot(Ingredient value) => {
+    'id': value.id,
+    'revisionId': value.revisionId,
+    'categoryId': value.categoryId,
+    'name': value.name,
+    'alias': value.alias,
+    'isInactive': value.isInactive,
+    'isDeleted': value.isDeleted,
+    'deletedAtUtc': value.deletedAtUtc?.toIso8601String(),
+  };
+
+  Map<String, Object?> _skuSnapshot(IngredientSkusData value) => {
+    'id': value.id,
+    'revisionId': value.revisionId,
+    'ingredientId': value.ingredientId,
+    'skuCode': value.skuCode,
+    'imageHash': value.imageHash,
+    'supplier': value.supplier,
+    'origin': value.origin,
+    'notes': value.notes,
+    'isInactive': value.isInactive,
+    'isDeleted': value.isDeleted,
+    'deletedAtUtc': value.deletedAtUtc?.toIso8601String(),
+  };
+
   Future<({String deviceId, String revisionId, DateTime now})>
   _recordOperation({
     required String entityType,
@@ -3367,6 +4642,167 @@ class AppDatabase extends _$AppDatabase {
     return (deviceId: device.id, revisionId: revisionId, now: now);
   }
 }
+
+const syncSupportedEntityTypes = {
+  'production_types',
+  'ingredient_categories',
+  'ingredients',
+  'ingredient_skus',
+  'category_ratio_ranges',
+  'ingredient_ratio_ranges',
+  'sku_ratio_overrides',
+  'recommendation_presets',
+  'recommendation_groups',
+  'recommendation_items',
+  'customers',
+  'plaque_types',
+  'asset_categories',
+  'asset_statuses',
+  'assets',
+  'formulas',
+  'formula_drafts',
+  'formula_versions',
+  'formula_items',
+  'mixing_sessions',
+  'mixing_items',
+  'mixing_revisions',
+  'sync_conflicts',
+  'devices',
+};
+
+String _syncJsonField(String sqlName) {
+  final parts = sqlName.split('_');
+  return parts.first +
+      parts
+          .skip(1)
+          .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
+          .join();
+}
+
+Object? _syncSqlValue(GeneratedColumn column, Object? value, String field) {
+  if (value == null) return null;
+  if (column.driftSqlType == DriftSqlType.dateTime) {
+    if (value is int) return value;
+    if (value is String) {
+      final date = DateTime.tryParse(value);
+      if (date != null) return date.millisecondsSinceEpoch;
+    }
+    throw FormatException('$field 无效');
+  }
+  if (column.driftSqlType == DriftSqlType.bool) {
+    if (value is bool) return value ? 1 : 0;
+    if (value is int && (value == 0 || value == 1)) return value;
+    throw FormatException('$field 无效');
+  }
+  return value;
+}
+
+String _syncConflictId(
+  String entityType,
+  String entityId,
+  String firstRevisionId,
+  String secondRevisionId,
+) => '$entityType:$entityId:$firstRevisionId:$secondRevisionId';
+
+Map<String, Object?> syncOperationToJson(SyncOperation operation) => {
+  'operationId': operation.operationId,
+  'originDeviceId': operation.originDeviceId,
+  'deviceSeq': operation.deviceSeq,
+  'entityType': operation.entityType,
+  'entityId': operation.entityId,
+  'baseRevisionId': operation.baseRevisionId,
+  'newRevisionId': operation.newRevisionId,
+  'operationKind': operation.operationKind,
+  'payloadJson': operation.payloadJson,
+  'createdAtUtc': operation.createdAtUtc.toIso8601String(),
+};
+
+SyncOperation _decodeSyncOperation(Map<String, dynamic> value) {
+  final createdAt = DateTime.tryParse(_syncJsonText(value, 'createdAtUtc'));
+  if (createdAt == null) throw const FormatException('远程操作时间无效');
+  final baseRevisionId = value['baseRevisionId'];
+  if (baseRevisionId != null && baseRevisionId is! String) {
+    throw const FormatException('远程操作基线无效');
+  }
+  final operation = SyncOperation(
+    operationId: _syncText(value['operationId'], 'operationId'),
+    originDeviceId: _syncText(value['originDeviceId'], 'originDeviceId'),
+    deviceSeq: _syncInt(value, 'deviceSeq'),
+    entityType: _syncText(value['entityType'], 'entityType'),
+    entityId: _syncText(value['entityId'], 'entityId'),
+    baseRevisionId: baseRevisionId as String?,
+    newRevisionId: _syncText(value['newRevisionId'], 'newRevisionId'),
+    operationKind: _syncText(value['operationKind'], 'operationKind'),
+    payloadJson: _syncJsonText(value, 'payloadJson'),
+    createdAtUtc: createdAt.toUtc(),
+  );
+  _syncPayload(operation.payloadJson);
+  return operation;
+}
+
+Map<String, Object?> _syncPayload(String value) {
+  final decoded = jsonDecode(value);
+  if (decoded is! Map) throw const FormatException('远程操作负载无效');
+  return Map<String, Object?>.from(decoded);
+}
+
+String _syncJsonText(Map<String, dynamic> value, String field) {
+  final raw = value[field];
+  if (raw is! String || raw.trim().isEmpty || raw.length > 64 * 1024) {
+    throw FormatException('$field 无效');
+  }
+  return raw;
+}
+
+String _syncText(Object? value, String field) {
+  if (value is! String) throw FormatException('$field 无效');
+  final normalized = value.trim();
+  if (normalized.isEmpty || normalized.length > 128) {
+    throw FormatException('$field 无效');
+  }
+  return normalized;
+}
+
+String _syncRequiredText(Map<String, Object?> payload, String field) =>
+    _syncText(payload[field], field);
+
+String? _syncOptionalText(Map<String, Object?> payload, String field) {
+  final value = payload[field];
+  if (value == null) return null;
+  return _optionalText(_syncText(value, field));
+}
+
+String? _syncImageHash(Map<String, Object?> payload, String field) {
+  final value = payload[field];
+  if (value == null) return null;
+  return _optionalImageHash(_syncText(value, field));
+}
+
+DateTime? _syncOptionalDate(Map<String, Object?> payload, String field) {
+  final value = payload[field];
+  if (value == null) return null;
+  if (value is int) return DateTime.fromMillisecondsSinceEpoch(value).toUtc();
+  if (value is! String) throw FormatException('$field 无效');
+  final date = DateTime.tryParse(value);
+  if (date == null) throw FormatException('$field 无效');
+  return date.toUtc();
+}
+
+int _syncInt(Map<String, Object?> payload, String field) {
+  final value = payload[field];
+  if (value is! int || value < 0) throw FormatException('$field 无效');
+  return value;
+}
+
+bool _syncBool(Map<String, Object?> payload, String field, bool defaultValue) {
+  final value = payload[field];
+  if (value == null) return defaultValue;
+  if (value is! bool) throw FormatException('$field 无效');
+  return value;
+}
+
+bool _syncRevisionMatches(String current, String? base) =>
+    base == null || current == base;
 
 const _defaultTypes = [
   ('type-zhuanxiang', '篆香'),

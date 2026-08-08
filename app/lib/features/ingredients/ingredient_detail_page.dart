@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../data/app_database.dart';
 import '../../data/media_store.dart';
+import '../../services/peer_sync_runtime.dart';
 import 'ratio_ranges_page.dart';
 
 class IngredientDetailPage extends StatefulWidget {
@@ -10,12 +11,14 @@ class IngredientDetailPage extends StatefulWidget {
     super.key,
     required this.database,
     required this.mediaStore,
+    this.syncRuntime,
     required this.ingredient,
     required this.categoryName,
   });
 
   final AppDatabase database;
   final MediaStore mediaStore;
+  final PeerSyncRuntime? syncRuntime;
   final Ingredient ingredient;
   final String categoryName;
 
@@ -30,6 +33,13 @@ class _IngredientDetailPageState extends State<IngredientDetailPage> {
   void initState() {
     super.initState();
     _skus = widget.database.watchIngredientSkus(widget.ingredient.id);
+    widget.mediaStore.addListener(_mediaChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.mediaStore.removeListener(_mediaChanged);
+    super.dispose();
   }
 
   @override
@@ -99,134 +109,145 @@ class _IngredientDetailPageState extends State<IngredientDetailPage> {
             ),
           ),
           Expanded(
-            child: StreamBuilder<List<IngredientSkusData>>(
-              stream: _skus,
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Center(child: Text('读取失败：${snapshot.error}'));
-                }
-                final items = snapshot.data ?? const [];
-                if (items.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Material(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(13),
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.inventory_2_outlined,
-                              size: 36,
-                              color: Color(0xff636366),
-                            ),
-                            const SizedBox(height: 10),
-                            const Text('还没有 SKU'),
-                            const SizedBox(height: 4),
-                            const Text(
-                              '添加品牌、产地和实物图片',
-                              style: TextStyle(color: Color(0xff636366)),
-                            ),
-                            const SizedBox(height: 12),
-                            FilledButton(
-                              onPressed: () => _editSku(),
-                              child: const Text('添加第一个 SKU'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 112),
-                  itemCount: items.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 10),
-                  itemBuilder: (context, index) {
-                    final sku = items[index];
-                    final details = <String?>[
-                      sku.supplier,
-                      sku.origin,
-                      if (sku.isInactive) '已停用',
-                    ].whereType<String>().join(' · ');
-                    return Material(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(13),
-                      clipBehavior: Clip.antiAlias,
-                      child: ListTile(
-                        minTileHeight: 96,
-                        leading: sku.imageHash == null
-                            ? const SizedBox.square(
-                                dimension: 72,
-                                child: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    color: Color(0xfff2f2f7),
-                                    borderRadius: BorderRadius.all(
-                                      Radius.circular(9),
-                                    ),
-                                  ),
-                                  child: Icon(Icons.inventory_2_outlined),
+            child: RefreshIndicator(
+              onRefresh: _refreshFromPeers,
+              child: StreamBuilder<List<IngredientSkusData>>(
+                stream: _skus,
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return _scrollableFill(
+                      Center(child: Text('读取失败：${snapshot.error}')),
+                    );
+                  }
+                  final items = snapshot.data ?? const [];
+                  if (items.isEmpty) {
+                    return _scrollableFill(
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Material(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(13),
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.inventory_2_outlined,
+                                  size: 36,
+                                  color: Color(0xff636366),
                                 ),
-                              )
-                            : ClipRRect(
-                                borderRadius: BorderRadius.circular(9),
-                                child: ColoredBox(
-                                  color: const Color(0xfff2f2f7),
-                                  child: Image.file(
-                                    widget.mediaStore.fileFor(sku.imageHash!),
-                                    width: 72,
-                                    height: 72,
-                                    fit: BoxFit.contain,
-                                    errorBuilder: (_, _, _) =>
-                                        const SizedBox.square(
-                                          dimension: 72,
-                                          child: Icon(
-                                            Icons.broken_image_outlined,
-                                          ),
-                                        ),
-                                  ),
+                                const SizedBox(height: 10),
+                                const Text('还没有 SKU'),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  '添加品牌、产地和实物图片',
+                                  style: TextStyle(color: Color(0xff636366)),
                                 ),
-                              ),
-                        title: Text(sku.skuCode ?? '未编号 SKU'),
-                        subtitle: details.isEmpty ? null : Text(details),
-                        onTap: () => _editSku(sku),
-                        trailing: PopupMenuButton<String>(
-                          tooltip: '${sku.skuCode ?? '未编号 SKU'}的更多操作',
-                          onSelected: (action) => _skuAction(sku, action),
-                          itemBuilder: (_) => [
-                            const PopupMenuItem(
-                              value: 'edit',
-                              child: Text('编辑'),
+                                const SizedBox(height: 12),
+                                FilledButton(
+                                  onPressed: () => _editSku(),
+                                  child: const Text('添加第一个 SKU'),
+                                ),
+                              ],
                             ),
-                            const PopupMenuItem(
-                              value: 'image',
-                              child: Text('选择图片'),
-                            ),
-                            if (sku.imageHash != null)
-                              const PopupMenuItem(
-                                value: 'removeImage',
-                                child: Text('移除图片'),
-                              ),
-                            const PopupMenuItem(
-                              value: 'ratio',
-                              child: Text('推荐覆盖区间'),
-                            ),
-                            PopupMenuItem(
-                              value: 'inactive',
-                              child: Text(sku.isInactive ? '启用' : '停用'),
-                            ),
-                            const PopupMenuItem(
-                              value: 'delete',
-                              child: Text('删除'),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                     );
-                  },
-                );
-              },
+                  }
+                  return ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 112),
+                    itemCount: items.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      final sku = items[index];
+                      final details = <String?>[
+                        sku.supplier,
+                        sku.origin,
+                        if (sku.isInactive) '已停用',
+                      ].whereType<String>().join(' · ');
+                      return Material(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(13),
+                        clipBehavior: Clip.antiAlias,
+                        child: ListTile(
+                          minTileHeight: 96,
+                          leading: sku.imageHash == null
+                              ? const SizedBox.square(
+                                  dimension: 72,
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: Color(0xfff2f2f7),
+                                      borderRadius: BorderRadius.all(
+                                        Radius.circular(9),
+                                      ),
+                                    ),
+                                    child: Icon(Icons.inventory_2_outlined),
+                                  ),
+                                )
+                              : ClipRRect(
+                                  borderRadius: BorderRadius.circular(9),
+                                  child: ColoredBox(
+                                    color: const Color(0xfff2f2f7),
+                                    child: Image.file(
+                                      widget.mediaStore.fileFor(sku.imageHash!),
+                                      key: ValueKey(
+                                        '${sku.imageHash}-${widget.mediaStore.revision}',
+                                      ),
+                                      width: 72,
+                                      height: 72,
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (_, _, _) =>
+                                          const SizedBox.square(
+                                            dimension: 72,
+                                            child: Icon(
+                                              Icons.broken_image_outlined,
+                                            ),
+                                          ),
+                                    ),
+                                  ),
+                                ),
+                          title: Text(sku.skuCode ?? '未编号 SKU'),
+                          subtitle: details.isEmpty ? null : Text(details),
+                          onTap: () => _editSku(sku),
+                          trailing: PopupMenuButton<String>(
+                            tooltip: '${sku.skuCode ?? '未编号 SKU'}的更多操作',
+                            onSelected: (action) => _skuAction(sku, action),
+                            itemBuilder: (_) => [
+                              const PopupMenuItem(
+                                value: 'edit',
+                                child: Text('编辑'),
+                              ),
+                              const PopupMenuItem(
+                                value: 'image',
+                                child: Text('选择图片'),
+                              ),
+                              if (sku.imageHash != null)
+                                const PopupMenuItem(
+                                  value: 'removeImage',
+                                  child: Text('移除图片'),
+                                ),
+                              const PopupMenuItem(
+                                value: 'ratio',
+                                child: Text('推荐覆盖区间'),
+                              ),
+                              PopupMenuItem(
+                                value: 'inactive',
+                                child: Text(sku.isInactive ? '启用' : '停用'),
+                              ),
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Text('删除'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ),
         ],
@@ -238,6 +259,27 @@ class _IngredientDetailPageState extends State<IngredientDetailPage> {
       ),
     );
   }
+
+  void _mediaChanged() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _refreshFromPeers() async {
+    try {
+      await widget.syncRuntime?.syncAll();
+    } catch (error) {
+      if (mounted) _message(_errorText(error));
+    } finally {
+      if (mounted) setState(() {});
+    }
+  }
+
+  Widget _scrollableFill(Widget child) => LayoutBuilder(
+    builder: (context, constraints) => ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [SizedBox(height: constraints.maxHeight, child: child)],
+    ),
+  );
 
   Future<void> _editSku([IngredientSkusData? sku]) async {
     var skuCode = sku?.skuCode ?? '';

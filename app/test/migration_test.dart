@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:xiangfangbu/data/app_database.dart';
 
 void main() {
-  test('v1 to v3 keeps existing data and creates M2/M3 tables', () async {
+  test('v1 to v5 keeps existing data and creates M2/M3/M5 tables', () async {
     final executor = NativeDatabase.memory(
       setup: (raw) {
         raw.execute('''
@@ -65,6 +65,12 @@ void main() {
     expect(await database.select(database.assets).get(), isEmpty);
     expect(await database.select(database.formulas).get(), isEmpty);
     expect(await database.select(database.mixingSessions).get(), isEmpty);
+    expect(await database.select(database.syncConflicts).get(), isEmpty);
+    expect(await database.select(database.peerDevices).get(), isEmpty);
+    expect(
+      await database.select(database.quarantinedSyncOperations).get(),
+      isEmpty,
+    );
     expect(
       (await database.customSelect('PRAGMA integrity_check').getSingle())
           .read<String>('integrity_check'),

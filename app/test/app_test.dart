@@ -7,8 +7,49 @@ import 'package:xiangfangbu/app.dart';
 import 'package:xiangfangbu/data/app_database.dart';
 import 'package:xiangfangbu/data/media_store.dart';
 import 'package:xiangfangbu/features/recommendations/recommendation_preset_detail_page.dart';
+import 'package:xiangfangbu/services/peer_handshake.dart';
+import 'package:xiangfangbu/services/peer_sync_runtime.dart';
 
 void main() {
+  testWidgets('sync services stop in background and resume in foreground', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    final mediaDirectory = Directory.systemTemp.createTempSync('xiang-ui-');
+    final runtime = _RecordingPeerSyncRuntime(
+      await PeerIdentity.create(
+        deviceId: 'lifecycle-device',
+        deviceName: '生命周期设备',
+      ),
+    );
+    await database.initialize();
+    await tester.pumpWidget(
+      XiangApp(
+        database: database,
+        mediaStore: MediaStore(mediaDirectory),
+        syncRuntime: runtime,
+      ),
+    );
+    await tester.pump();
+    expect(runtime.startCalls, 1);
+    expect(runtime.syncCalls, 1);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    expect(runtime.stopCalls, 1);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    expect(runtime.startCalls, 2);
+    expect(runtime.syncCalls, 2);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+    await runtime.close();
+    await database.close();
+    mediaDirectory.deleteSync(recursive: true);
+  });
+
   testWidgets('product entry selects plaque before formula', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1080, 2400);
@@ -99,6 +140,7 @@ void main() {
       find.widgetWithText(SearchBar, '搜索名称、别名、SKU、供应商或分类'),
       findsOneWidget,
     );
+    expect(find.byType(RefreshIndicator), findsOneWidget);
     expect(find.text('添加第一项'), findsOneWidget);
     expect(find.byTooltip('管理分类'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
@@ -666,4 +708,22 @@ void main() {
     await database.close();
     mediaDirectory.deleteSync(recursive: true);
   });
+}
+
+class _RecordingPeerSyncRuntime extends PeerSyncRuntime {
+  _RecordingPeerSyncRuntime(PeerIdentity identity)
+    : super(identity: identity, groupId: 'store-1');
+
+  int startCalls = 0;
+  int stopCalls = 0;
+  int syncCalls = 0;
+
+  @override
+  Future<void> start() async => startCalls++;
+
+  @override
+  Future<void> stop() async => stopCalls++;
+
+  @override
+  Future<void> syncAll() async => syncCalls++;
 }
