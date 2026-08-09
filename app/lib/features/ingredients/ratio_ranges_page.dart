@@ -55,6 +55,8 @@ class _RatioRangesPageState extends State<RatioRangesPage> {
                   title: Text(item.productionTypeName),
                   subtitle: item.productionTypeInactive
                       ? const Text('制作类型已停用')
+                      : item.inherited
+                      ? const Text('跟随香料大类')
                       : null,
                   trailing: Text(
                     item.minRatio == null
@@ -81,38 +83,46 @@ class _RatioRangesPageState extends State<RatioRangesPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('${setting.productionTypeName}推荐区间'),
-        content: Row(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: TextFormField(
-                initialValue: minText,
-                autofocus: true,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
+            if (setting.inherited) ...[
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '当前跟随香料大类，保存后将改为单独设置。',
+                  style: TextStyle(color: Color(0xff636366), fontSize: 12),
                 ),
-                decoration: const InputDecoration(
-                  labelText: '最低比例',
-                  suffixText: '%',
-                ),
-                onChanged: (value) => minText = value,
               ),
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12),
-              child: Text('至'),
-            ),
-            Expanded(
-              child: TextFormField(
-                initialValue: maxText,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: const InputDecoration(
-                  labelText: '最高比例',
-                  suffixText: '%',
-                ),
-                onChanged: (value) => maxText = value,
+              const SizedBox(height: 12),
+            ],
+            TextFormField(
+              initialValue: minText,
+              autofocus: true,
+              textInputAction: TextInputAction.next,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
               ),
+              decoration: const InputDecoration(
+                labelText: '最低比例',
+                suffixText: '%',
+              ),
+              onChanged: (value) => maxText = value,
+              onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              initialValue: maxText,
+              textInputAction: TextInputAction.done,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: '最高比例',
+                suffixText: '%',
+              ),
+              onChanged: (value) => minText = value,
+              onFieldSubmitted: (_) => Navigator.pop(context, 'save'),
             ),
           ],
         ),
@@ -120,7 +130,11 @@ class _RatioRangesPageState extends State<RatioRangesPage> {
           if (setting.rangeId != null)
             TextButton(
               onPressed: () => Navigator.pop(context, 'clear'),
-              child: const Text('清除区间'),
+              child: Text(
+                widget.target == RatioRangeTarget.ingredient
+                    ? '恢复跟随大类'
+                    : '清除区间',
+              ),
             ),
           TextButton(
             onPressed: () => Navigator.pop(context),

@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 
 import '../../data/app_database.dart';
+import '../../data/media_store.dart';
 import '../../ui/single_modal.dart';
 import '../../services/formula_calculator.dart';
 import '../formulas/formulas_page.dart';
 
 class CustomersPage extends StatefulWidget {
-  const CustomersPage({super.key, required this.database});
+  const CustomersPage({
+    super.key,
+    required this.database,
+    required this.mediaStore,
+  });
 
   final AppDatabase database;
+  final MediaStore mediaStore;
 
   @override
   State<CustomersPage> createState() => _CustomersPageState();
@@ -85,6 +91,7 @@ class _CustomersPageState extends State<CustomersPage> {
                         MaterialPageRoute<void>(
                           builder: (_) => CustomerDetailPage(
                             database: widget.database,
+                            mediaStore: widget.mediaStore,
                             customer: item,
                           ),
                         ),
@@ -249,10 +256,12 @@ class CustomerDetailPage extends StatelessWidget {
   const CustomerDetailPage({
     super.key,
     required this.database,
+    required this.mediaStore,
     required this.customer,
   });
 
   final AppDatabase database;
+  final MediaStore mediaStore;
   final Customer customer;
 
   @override
@@ -286,6 +295,7 @@ class CustomerDetailPage extends StatelessWidget {
                 MaterialPageRoute<void>(
                   builder: (_) => _CustomerFormulaSessionsPage(
                     database: database,
+                    mediaStore: mediaStore,
                     customerId: customer.id,
                     history: item,
                   ),
@@ -347,7 +357,11 @@ class CustomerDetailPage extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute<void>(
-            builder: (_) => MixingPage(database: database, draftId: draft.id),
+            builder: (_) => MixingPage(
+              database: database,
+              mediaStore: mediaStore,
+              draftId: draft.id,
+            ),
           ),
         );
       }
@@ -364,11 +378,13 @@ class CustomerDetailPage extends StatelessWidget {
 class _CustomerFormulaSessionsPage extends StatelessWidget {
   const _CustomerFormulaSessionsPage({
     required this.database,
+    required this.mediaStore,
     required this.customerId,
     required this.history,
   });
 
   final AppDatabase database;
+  final MediaStore mediaStore;
   final String customerId;
   final CustomerFormulaHistory history;
 
@@ -390,8 +406,11 @@ class _CustomerFormulaSessionsPage extends StatelessWidget {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute<void>(
-                  builder: (_) =>
-                      MixingSessionPage(database: database, session: session),
+                  builder: (_) => MixingSessionPage(
+                    database: database,
+                    mediaStore: mediaStore,
+                    session: session,
+                  ),
                 ),
               ),
             ),

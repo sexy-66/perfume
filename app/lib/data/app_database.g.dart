@@ -8580,6 +8580,17 @@ class $FormulasTable extends Formulas with TableInfo<$FormulasTable, Formula> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _imageHashMeta = const VerificationMeta(
+    'imageHash',
+  );
+  @override
+  late final GeneratedColumn<String> imageHash = GeneratedColumn<String>(
+    'image_hash',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _notesMeta = const VerificationMeta('notes');
   @override
   late final GeneratedColumn<String> notes = GeneratedColumn<String>(
@@ -8588,6 +8599,21 @@ class $FormulasTable extends Formulas with TableInfo<$FormulasTable, Formula> {
     true,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isRecommendedMeta = const VerificationMeta(
+    'isRecommended',
+  );
+  @override
+  late final GeneratedColumn<bool> isRecommended = GeneratedColumn<bool>(
+    'is_recommended',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_recommended" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
   );
   static const VerificationMeta _currentVersionIdMeta = const VerificationMeta(
     'currentVersionId',
@@ -8621,7 +8647,9 @@ class $FormulasTable extends Formulas with TableInfo<$FormulasTable, Formula> {
     isDeleted,
     deletedAtUtc,
     name,
+    imageHash,
     notes,
+    isRecommended,
     currentVersionId,
     lastUsedAtUtc,
   ];
@@ -8695,10 +8723,25 @@ class $FormulasTable extends Formulas with TableInfo<$FormulasTable, Formula> {
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
+    if (data.containsKey('image_hash')) {
+      context.handle(
+        _imageHashMeta,
+        imageHash.isAcceptableOrUnknown(data['image_hash']!, _imageHashMeta),
+      );
+    }
     if (data.containsKey('notes')) {
       context.handle(
         _notesMeta,
         notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('is_recommended')) {
+      context.handle(
+        _isRecommendedMeta,
+        isRecommended.isAcceptableOrUnknown(
+          data['is_recommended']!,
+          _isRecommendedMeta,
+        ),
       );
     }
     if (data.containsKey('current_version_id')) {
@@ -8756,10 +8799,18 @@ class $FormulasTable extends Formulas with TableInfo<$FormulasTable, Formula> {
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       )!,
+      imageHash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_hash'],
+      ),
       notes: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
+      isRecommended: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_recommended'],
+      )!,
       currentVersionId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}current_version_id'],
@@ -8785,7 +8836,9 @@ class Formula extends DataClass implements Insertable<Formula> {
   final bool isDeleted;
   final DateTime? deletedAtUtc;
   final String name;
+  final String? imageHash;
   final String? notes;
+  final bool isRecommended;
   final String? currentVersionId;
   final DateTime? lastUsedAtUtc;
   const Formula({
@@ -8796,7 +8849,9 @@ class Formula extends DataClass implements Insertable<Formula> {
     required this.isDeleted,
     this.deletedAtUtc,
     required this.name,
+    this.imageHash,
     this.notes,
+    required this.isRecommended,
     this.currentVersionId,
     this.lastUsedAtUtc,
   });
@@ -8812,9 +8867,13 @@ class Formula extends DataClass implements Insertable<Formula> {
       map['deleted_at_utc'] = Variable<DateTime>(deletedAtUtc);
     }
     map['name'] = Variable<String>(name);
+    if (!nullToAbsent || imageHash != null) {
+      map['image_hash'] = Variable<String>(imageHash);
+    }
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
     }
+    map['is_recommended'] = Variable<bool>(isRecommended);
     if (!nullToAbsent || currentVersionId != null) {
       map['current_version_id'] = Variable<String>(currentVersionId);
     }
@@ -8835,9 +8894,13 @@ class Formula extends DataClass implements Insertable<Formula> {
           ? const Value.absent()
           : Value(deletedAtUtc),
       name: Value(name),
+      imageHash: imageHash == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imageHash),
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
+      isRecommended: Value(isRecommended),
       currentVersionId: currentVersionId == null && nullToAbsent
           ? const Value.absent()
           : Value(currentVersionId),
@@ -8860,7 +8923,9 @@ class Formula extends DataClass implements Insertable<Formula> {
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       deletedAtUtc: serializer.fromJson<DateTime?>(json['deletedAtUtc']),
       name: serializer.fromJson<String>(json['name']),
+      imageHash: serializer.fromJson<String?>(json['imageHash']),
       notes: serializer.fromJson<String?>(json['notes']),
+      isRecommended: serializer.fromJson<bool>(json['isRecommended']),
       currentVersionId: serializer.fromJson<String?>(json['currentVersionId']),
       lastUsedAtUtc: serializer.fromJson<DateTime?>(json['lastUsedAtUtc']),
     );
@@ -8876,7 +8941,9 @@ class Formula extends DataClass implements Insertable<Formula> {
       'isDeleted': serializer.toJson<bool>(isDeleted),
       'deletedAtUtc': serializer.toJson<DateTime?>(deletedAtUtc),
       'name': serializer.toJson<String>(name),
+      'imageHash': serializer.toJson<String?>(imageHash),
       'notes': serializer.toJson<String?>(notes),
+      'isRecommended': serializer.toJson<bool>(isRecommended),
       'currentVersionId': serializer.toJson<String?>(currentVersionId),
       'lastUsedAtUtc': serializer.toJson<DateTime?>(lastUsedAtUtc),
     };
@@ -8890,7 +8957,9 @@ class Formula extends DataClass implements Insertable<Formula> {
     bool? isDeleted,
     Value<DateTime?> deletedAtUtc = const Value.absent(),
     String? name,
+    Value<String?> imageHash = const Value.absent(),
     Value<String?> notes = const Value.absent(),
+    bool? isRecommended,
     Value<String?> currentVersionId = const Value.absent(),
     Value<DateTime?> lastUsedAtUtc = const Value.absent(),
   }) => Formula(
@@ -8901,7 +8970,9 @@ class Formula extends DataClass implements Insertable<Formula> {
     isDeleted: isDeleted ?? this.isDeleted,
     deletedAtUtc: deletedAtUtc.present ? deletedAtUtc.value : this.deletedAtUtc,
     name: name ?? this.name,
+    imageHash: imageHash.present ? imageHash.value : this.imageHash,
     notes: notes.present ? notes.value : this.notes,
+    isRecommended: isRecommended ?? this.isRecommended,
     currentVersionId: currentVersionId.present
         ? currentVersionId.value
         : this.currentVersionId,
@@ -8926,7 +8997,11 @@ class Formula extends DataClass implements Insertable<Formula> {
           ? data.deletedAtUtc.value
           : this.deletedAtUtc,
       name: data.name.present ? data.name.value : this.name,
+      imageHash: data.imageHash.present ? data.imageHash.value : this.imageHash,
       notes: data.notes.present ? data.notes.value : this.notes,
+      isRecommended: data.isRecommended.present
+          ? data.isRecommended.value
+          : this.isRecommended,
       currentVersionId: data.currentVersionId.present
           ? data.currentVersionId.value
           : this.currentVersionId,
@@ -8946,7 +9021,9 @@ class Formula extends DataClass implements Insertable<Formula> {
           ..write('isDeleted: $isDeleted, ')
           ..write('deletedAtUtc: $deletedAtUtc, ')
           ..write('name: $name, ')
+          ..write('imageHash: $imageHash, ')
           ..write('notes: $notes, ')
+          ..write('isRecommended: $isRecommended, ')
           ..write('currentVersionId: $currentVersionId, ')
           ..write('lastUsedAtUtc: $lastUsedAtUtc')
           ..write(')'))
@@ -8962,7 +9039,9 @@ class Formula extends DataClass implements Insertable<Formula> {
     isDeleted,
     deletedAtUtc,
     name,
+    imageHash,
     notes,
+    isRecommended,
     currentVersionId,
     lastUsedAtUtc,
   );
@@ -8977,7 +9056,9 @@ class Formula extends DataClass implements Insertable<Formula> {
           other.isDeleted == this.isDeleted &&
           other.deletedAtUtc == this.deletedAtUtc &&
           other.name == this.name &&
+          other.imageHash == this.imageHash &&
           other.notes == this.notes &&
+          other.isRecommended == this.isRecommended &&
           other.currentVersionId == this.currentVersionId &&
           other.lastUsedAtUtc == this.lastUsedAtUtc);
 }
@@ -8990,7 +9071,9 @@ class FormulasCompanion extends UpdateCompanion<Formula> {
   final Value<bool> isDeleted;
   final Value<DateTime?> deletedAtUtc;
   final Value<String> name;
+  final Value<String?> imageHash;
   final Value<String?> notes;
+  final Value<bool> isRecommended;
   final Value<String?> currentVersionId;
   final Value<DateTime?> lastUsedAtUtc;
   final Value<int> rowid;
@@ -9002,7 +9085,9 @@ class FormulasCompanion extends UpdateCompanion<Formula> {
     this.isDeleted = const Value.absent(),
     this.deletedAtUtc = const Value.absent(),
     this.name = const Value.absent(),
+    this.imageHash = const Value.absent(),
     this.notes = const Value.absent(),
+    this.isRecommended = const Value.absent(),
     this.currentVersionId = const Value.absent(),
     this.lastUsedAtUtc = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -9015,7 +9100,9 @@ class FormulasCompanion extends UpdateCompanion<Formula> {
     this.isDeleted = const Value.absent(),
     this.deletedAtUtc = const Value.absent(),
     required String name,
+    this.imageHash = const Value.absent(),
     this.notes = const Value.absent(),
+    this.isRecommended = const Value.absent(),
     this.currentVersionId = const Value.absent(),
     this.lastUsedAtUtc = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -9032,7 +9119,9 @@ class FormulasCompanion extends UpdateCompanion<Formula> {
     Expression<bool>? isDeleted,
     Expression<DateTime>? deletedAtUtc,
     Expression<String>? name,
+    Expression<String>? imageHash,
     Expression<String>? notes,
+    Expression<bool>? isRecommended,
     Expression<String>? currentVersionId,
     Expression<DateTime>? lastUsedAtUtc,
     Expression<int>? rowid,
@@ -9045,7 +9134,9 @@ class FormulasCompanion extends UpdateCompanion<Formula> {
       if (isDeleted != null) 'is_deleted': isDeleted,
       if (deletedAtUtc != null) 'deleted_at_utc': deletedAtUtc,
       if (name != null) 'name': name,
+      if (imageHash != null) 'image_hash': imageHash,
       if (notes != null) 'notes': notes,
+      if (isRecommended != null) 'is_recommended': isRecommended,
       if (currentVersionId != null) 'current_version_id': currentVersionId,
       if (lastUsedAtUtc != null) 'last_used_at_utc': lastUsedAtUtc,
       if (rowid != null) 'rowid': rowid,
@@ -9060,7 +9151,9 @@ class FormulasCompanion extends UpdateCompanion<Formula> {
     Value<bool>? isDeleted,
     Value<DateTime?>? deletedAtUtc,
     Value<String>? name,
+    Value<String?>? imageHash,
     Value<String?>? notes,
+    Value<bool>? isRecommended,
     Value<String?>? currentVersionId,
     Value<DateTime?>? lastUsedAtUtc,
     Value<int>? rowid,
@@ -9073,7 +9166,9 @@ class FormulasCompanion extends UpdateCompanion<Formula> {
       isDeleted: isDeleted ?? this.isDeleted,
       deletedAtUtc: deletedAtUtc ?? this.deletedAtUtc,
       name: name ?? this.name,
+      imageHash: imageHash ?? this.imageHash,
       notes: notes ?? this.notes,
+      isRecommended: isRecommended ?? this.isRecommended,
       currentVersionId: currentVersionId ?? this.currentVersionId,
       lastUsedAtUtc: lastUsedAtUtc ?? this.lastUsedAtUtc,
       rowid: rowid ?? this.rowid,
@@ -9104,8 +9199,14 @@ class FormulasCompanion extends UpdateCompanion<Formula> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
+    if (imageHash.present) {
+      map['image_hash'] = Variable<String>(imageHash.value);
+    }
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
+    }
+    if (isRecommended.present) {
+      map['is_recommended'] = Variable<bool>(isRecommended.value);
     }
     if (currentVersionId.present) {
       map['current_version_id'] = Variable<String>(currentVersionId.value);
@@ -9129,7 +9230,9 @@ class FormulasCompanion extends UpdateCompanion<Formula> {
           ..write('isDeleted: $isDeleted, ')
           ..write('deletedAtUtc: $deletedAtUtc, ')
           ..write('name: $name, ')
+          ..write('imageHash: $imageHash, ')
           ..write('notes: $notes, ')
+          ..write('isRecommended: $isRecommended, ')
           ..write('currentVersionId: $currentVersionId, ')
           ..write('lastUsedAtUtc: $lastUsedAtUtc, ')
           ..write('rowid: $rowid')
@@ -9286,6 +9389,32 @@ class $FormulaDraftsTable extends FormulaDrafts
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _imageHashMeta = const VerificationMeta(
+    'imageHash',
+  );
+  @override
+  late final GeneratedColumn<String> imageHash = GeneratedColumn<String>(
+    'image_hash',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isRecommendedMeta = const VerificationMeta(
+    'isRecommended',
+  );
+  @override
+  late final GeneratedColumn<bool> isRecommended = GeneratedColumn<bool>(
+    'is_recommended',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_recommended" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _productionTypeIdMeta = const VerificationMeta(
     'productionTypeId',
   );
@@ -9380,6 +9509,8 @@ class $FormulaDraftsTable extends FormulaDrafts
     customerId,
     plaqueTypeId,
     formulaName,
+    imageHash,
+    isRecommended,
     productionTypeId,
     targetWeight,
     notes,
@@ -9494,6 +9625,21 @@ class $FormulaDraftsTable extends FormulaDrafts
         formulaName.isAcceptableOrUnknown(
           data['formula_name']!,
           _formulaNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('image_hash')) {
+      context.handle(
+        _imageHashMeta,
+        imageHash.isAcceptableOrUnknown(data['image_hash']!, _imageHashMeta),
+      );
+    }
+    if (data.containsKey('is_recommended')) {
+      context.handle(
+        _isRecommendedMeta,
+        isRecommended.isAcceptableOrUnknown(
+          data['is_recommended']!,
+          _isRecommendedMeta,
         ),
       );
     }
@@ -9621,6 +9767,14 @@ class $FormulaDraftsTable extends FormulaDrafts
         DriftSqlType.string,
         data['${effectivePrefix}formula_name'],
       )!,
+      imageHash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_hash'],
+      ),
+      isRecommended: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_recommended'],
+      )!,
       productionTypeId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}production_type_id'],
@@ -9671,6 +9825,8 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
   final String? customerId;
   final String? plaqueTypeId;
   final String formulaName;
+  final String? imageHash;
+  final bool isRecommended;
   final String productionTypeId;
   final int targetWeight;
   final String? notes;
@@ -9691,6 +9847,8 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
     this.customerId,
     this.plaqueTypeId,
     required this.formulaName,
+    this.imageHash,
+    required this.isRecommended,
     required this.productionTypeId,
     required this.targetWeight,
     this.notes,
@@ -9724,6 +9882,10 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
       map['plaque_type_id'] = Variable<String>(plaqueTypeId);
     }
     map['formula_name'] = Variable<String>(formulaName);
+    if (!nullToAbsent || imageHash != null) {
+      map['image_hash'] = Variable<String>(imageHash);
+    }
+    map['is_recommended'] = Variable<bool>(isRecommended);
     map['production_type_id'] = Variable<String>(productionTypeId);
     map['target_weight'] = Variable<int>(targetWeight);
     if (!nullToAbsent || notes != null) {
@@ -9760,6 +9922,10 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
           ? const Value.absent()
           : Value(plaqueTypeId),
       formulaName: Value(formulaName),
+      imageHash: imageHash == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imageHash),
+      isRecommended: Value(isRecommended),
       productionTypeId: Value(productionTypeId),
       targetWeight: Value(targetWeight),
       notes: notes == null && nullToAbsent
@@ -9790,6 +9956,8 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
       customerId: serializer.fromJson<String?>(json['customerId']),
       plaqueTypeId: serializer.fromJson<String?>(json['plaqueTypeId']),
       formulaName: serializer.fromJson<String>(json['formulaName']),
+      imageHash: serializer.fromJson<String?>(json['imageHash']),
+      isRecommended: serializer.fromJson<bool>(json['isRecommended']),
       productionTypeId: serializer.fromJson<String>(json['productionTypeId']),
       targetWeight: serializer.fromJson<int>(json['targetWeight']),
       notes: serializer.fromJson<String?>(json['notes']),
@@ -9817,6 +9985,8 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
       'customerId': serializer.toJson<String?>(customerId),
       'plaqueTypeId': serializer.toJson<String?>(plaqueTypeId),
       'formulaName': serializer.toJson<String>(formulaName),
+      'imageHash': serializer.toJson<String?>(imageHash),
+      'isRecommended': serializer.toJson<bool>(isRecommended),
       'productionTypeId': serializer.toJson<String>(productionTypeId),
       'targetWeight': serializer.toJson<int>(targetWeight),
       'notes': serializer.toJson<String?>(notes),
@@ -9840,6 +10010,8 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
     Value<String?> customerId = const Value.absent(),
     Value<String?> plaqueTypeId = const Value.absent(),
     String? formulaName,
+    Value<String?> imageHash = const Value.absent(),
+    bool? isRecommended,
     String? productionTypeId,
     int? targetWeight,
     Value<String?> notes = const Value.absent(),
@@ -9862,6 +10034,8 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
     customerId: customerId.present ? customerId.value : this.customerId,
     plaqueTypeId: plaqueTypeId.present ? plaqueTypeId.value : this.plaqueTypeId,
     formulaName: formulaName ?? this.formulaName,
+    imageHash: imageHash.present ? imageHash.value : this.imageHash,
+    isRecommended: isRecommended ?? this.isRecommended,
     productionTypeId: productionTypeId ?? this.productionTypeId,
     targetWeight: targetWeight ?? this.targetWeight,
     notes: notes.present ? notes.value : this.notes,
@@ -9900,6 +10074,10 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
       formulaName: data.formulaName.present
           ? data.formulaName.value
           : this.formulaName,
+      imageHash: data.imageHash.present ? data.imageHash.value : this.imageHash,
+      isRecommended: data.isRecommended.present
+          ? data.isRecommended.value
+          : this.isRecommended,
       productionTypeId: data.productionTypeId.present
           ? data.productionTypeId.value
           : this.productionTypeId,
@@ -9935,6 +10113,8 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
           ..write('customerId: $customerId, ')
           ..write('plaqueTypeId: $plaqueTypeId, ')
           ..write('formulaName: $formulaName, ')
+          ..write('imageHash: $imageHash, ')
+          ..write('isRecommended: $isRecommended, ')
           ..write('productionTypeId: $productionTypeId, ')
           ..write('targetWeight: $targetWeight, ')
           ..write('notes: $notes, ')
@@ -9947,7 +10127,7 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     revisionId,
     updatedByDevice,
@@ -9960,6 +10140,8 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
     customerId,
     plaqueTypeId,
     formulaName,
+    imageHash,
+    isRecommended,
     productionTypeId,
     targetWeight,
     notes,
@@ -9967,7 +10149,7 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
     actualWeightsJson,
     confirmedWarningsJson,
     createdAtUtc,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -9984,6 +10166,8 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
           other.customerId == this.customerId &&
           other.plaqueTypeId == this.plaqueTypeId &&
           other.formulaName == this.formulaName &&
+          other.imageHash == this.imageHash &&
+          other.isRecommended == this.isRecommended &&
           other.productionTypeId == this.productionTypeId &&
           other.targetWeight == this.targetWeight &&
           other.notes == this.notes &&
@@ -10006,6 +10190,8 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
   final Value<String?> customerId;
   final Value<String?> plaqueTypeId;
   final Value<String> formulaName;
+  final Value<String?> imageHash;
+  final Value<bool> isRecommended;
   final Value<String> productionTypeId;
   final Value<int> targetWeight;
   final Value<String?> notes;
@@ -10027,6 +10213,8 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
     this.customerId = const Value.absent(),
     this.plaqueTypeId = const Value.absent(),
     this.formulaName = const Value.absent(),
+    this.imageHash = const Value.absent(),
+    this.isRecommended = const Value.absent(),
     this.productionTypeId = const Value.absent(),
     this.targetWeight = const Value.absent(),
     this.notes = const Value.absent(),
@@ -10049,6 +10237,8 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
     this.customerId = const Value.absent(),
     this.plaqueTypeId = const Value.absent(),
     this.formulaName = const Value.absent(),
+    this.imageHash = const Value.absent(),
+    this.isRecommended = const Value.absent(),
     required String productionTypeId,
     required int targetWeight,
     this.notes = const Value.absent(),
@@ -10080,6 +10270,8 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
     Expression<String>? customerId,
     Expression<String>? plaqueTypeId,
     Expression<String>? formulaName,
+    Expression<String>? imageHash,
+    Expression<bool>? isRecommended,
     Expression<String>? productionTypeId,
     Expression<int>? targetWeight,
     Expression<String>? notes,
@@ -10102,6 +10294,8 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
       if (customerId != null) 'customer_id': customerId,
       if (plaqueTypeId != null) 'plaque_type_id': plaqueTypeId,
       if (formulaName != null) 'formula_name': formulaName,
+      if (imageHash != null) 'image_hash': imageHash,
+      if (isRecommended != null) 'is_recommended': isRecommended,
       if (productionTypeId != null) 'production_type_id': productionTypeId,
       if (targetWeight != null) 'target_weight': targetWeight,
       if (notes != null) 'notes': notes,
@@ -10127,6 +10321,8 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
     Value<String?>? customerId,
     Value<String?>? plaqueTypeId,
     Value<String>? formulaName,
+    Value<String?>? imageHash,
+    Value<bool>? isRecommended,
     Value<String>? productionTypeId,
     Value<int>? targetWeight,
     Value<String?>? notes,
@@ -10149,6 +10345,8 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
       customerId: customerId ?? this.customerId,
       plaqueTypeId: plaqueTypeId ?? this.plaqueTypeId,
       formulaName: formulaName ?? this.formulaName,
+      imageHash: imageHash ?? this.imageHash,
+      isRecommended: isRecommended ?? this.isRecommended,
       productionTypeId: productionTypeId ?? this.productionTypeId,
       targetWeight: targetWeight ?? this.targetWeight,
       notes: notes ?? this.notes,
@@ -10200,6 +10398,12 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
     if (formulaName.present) {
       map['formula_name'] = Variable<String>(formulaName.value);
     }
+    if (imageHash.present) {
+      map['image_hash'] = Variable<String>(imageHash.value);
+    }
+    if (isRecommended.present) {
+      map['is_recommended'] = Variable<bool>(isRecommended.value);
+    }
     if (productionTypeId.present) {
       map['production_type_id'] = Variable<String>(productionTypeId.value);
     }
@@ -10244,6 +10448,8 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
           ..write('customerId: $customerId, ')
           ..write('plaqueTypeId: $plaqueTypeId, ')
           ..write('formulaName: $formulaName, ')
+          ..write('imageHash: $imageHash, ')
+          ..write('isRecommended: $isRecommended, ')
           ..write('productionTypeId: $productionTypeId, ')
           ..write('targetWeight: $targetWeight, ')
           ..write('notes: $notes, ')
@@ -25610,7 +25816,9 @@ typedef $$FormulasTableCreateCompanionBuilder =
       Value<bool> isDeleted,
       Value<DateTime?> deletedAtUtc,
       required String name,
+      Value<String?> imageHash,
       Value<String?> notes,
+      Value<bool> isRecommended,
       Value<String?> currentVersionId,
       Value<DateTime?> lastUsedAtUtc,
       Value<int> rowid,
@@ -25624,7 +25832,9 @@ typedef $$FormulasTableUpdateCompanionBuilder =
       Value<bool> isDeleted,
       Value<DateTime?> deletedAtUtc,
       Value<String> name,
+      Value<String?> imageHash,
       Value<String?> notes,
+      Value<bool> isRecommended,
       Value<String?> currentVersionId,
       Value<DateTime?> lastUsedAtUtc,
       Value<int> rowid,
@@ -25735,8 +25945,18 @@ class $$FormulasTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get imageHash => $composableBuilder(
+    column: $table.imageHash,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get notes => $composableBuilder(
     column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isRecommended => $composableBuilder(
+    column: $table.isRecommended,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -25870,8 +26090,18 @@ class $$FormulasTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get imageHash => $composableBuilder(
+    column: $table.imageHash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get notes => $composableBuilder(
     column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isRecommended => $composableBuilder(
+    column: $table.isRecommended,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -25924,8 +26154,16 @@ class $$FormulasTableAnnotationComposer
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
 
+  GeneratedColumn<String> get imageHash =>
+      $composableBuilder(column: $table.imageHash, builder: (column) => column);
+
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<bool> get isRecommended => $composableBuilder(
+    column: $table.isRecommended,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get currentVersionId => $composableBuilder(
     column: $table.currentVersionId,
@@ -26052,7 +26290,9 @@ class $$FormulasTableTableManager
                 Value<bool> isDeleted = const Value.absent(),
                 Value<DateTime?> deletedAtUtc = const Value.absent(),
                 Value<String> name = const Value.absent(),
+                Value<String?> imageHash = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<bool> isRecommended = const Value.absent(),
                 Value<String?> currentVersionId = const Value.absent(),
                 Value<DateTime?> lastUsedAtUtc = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -26064,7 +26304,9 @@ class $$FormulasTableTableManager
                 isDeleted: isDeleted,
                 deletedAtUtc: deletedAtUtc,
                 name: name,
+                imageHash: imageHash,
                 notes: notes,
+                isRecommended: isRecommended,
                 currentVersionId: currentVersionId,
                 lastUsedAtUtc: lastUsedAtUtc,
                 rowid: rowid,
@@ -26078,7 +26320,9 @@ class $$FormulasTableTableManager
                 Value<bool> isDeleted = const Value.absent(),
                 Value<DateTime?> deletedAtUtc = const Value.absent(),
                 required String name,
+                Value<String?> imageHash = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<bool> isRecommended = const Value.absent(),
                 Value<String?> currentVersionId = const Value.absent(),
                 Value<DateTime?> lastUsedAtUtc = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -26090,7 +26334,9 @@ class $$FormulasTableTableManager
                 isDeleted: isDeleted,
                 deletedAtUtc: deletedAtUtc,
                 name: name,
+                imageHash: imageHash,
                 notes: notes,
+                isRecommended: isRecommended,
                 currentVersionId: currentVersionId,
                 lastUsedAtUtc: lastUsedAtUtc,
                 rowid: rowid,
@@ -26222,6 +26468,8 @@ typedef $$FormulaDraftsTableCreateCompanionBuilder =
       Value<String?> customerId,
       Value<String?> plaqueTypeId,
       Value<String> formulaName,
+      Value<String?> imageHash,
+      Value<bool> isRecommended,
       required String productionTypeId,
       required int targetWeight,
       Value<String?> notes,
@@ -26245,6 +26493,8 @@ typedef $$FormulaDraftsTableUpdateCompanionBuilder =
       Value<String?> customerId,
       Value<String?> plaqueTypeId,
       Value<String> formulaName,
+      Value<String?> imageHash,
+      Value<bool> isRecommended,
       Value<String> productionTypeId,
       Value<int> targetWeight,
       Value<String?> notes,
@@ -26385,6 +26635,16 @@ class $$FormulaDraftsTableFilterComposer
 
   ColumnFilters<String> get formulaName => $composableBuilder(
     column: $table.formulaName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imageHash => $composableBuilder(
+    column: $table.imageHash,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isRecommended => $composableBuilder(
+    column: $table.isRecommended,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -26565,6 +26825,16 @@ class $$FormulaDraftsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get imageHash => $composableBuilder(
+    column: $table.imageHash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isRecommended => $composableBuilder(
+    column: $table.isRecommended,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get targetWeight => $composableBuilder(
     column: $table.targetWeight,
     builder: (column) => ColumnOrderings(column),
@@ -26736,6 +27006,14 @@ class $$FormulaDraftsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get imageHash =>
+      $composableBuilder(column: $table.imageHash, builder: (column) => column);
+
+  GeneratedColumn<bool> get isRecommended => $composableBuilder(
+    column: $table.isRecommended,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get targetWeight => $composableBuilder(
     column: $table.targetWeight,
     builder: (column) => column,
@@ -26900,6 +27178,8 @@ class $$FormulaDraftsTableTableManager
                 Value<String?> customerId = const Value.absent(),
                 Value<String?> plaqueTypeId = const Value.absent(),
                 Value<String> formulaName = const Value.absent(),
+                Value<String?> imageHash = const Value.absent(),
+                Value<bool> isRecommended = const Value.absent(),
                 Value<String> productionTypeId = const Value.absent(),
                 Value<int> targetWeight = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
@@ -26921,6 +27201,8 @@ class $$FormulaDraftsTableTableManager
                 customerId: customerId,
                 plaqueTypeId: plaqueTypeId,
                 formulaName: formulaName,
+                imageHash: imageHash,
+                isRecommended: isRecommended,
                 productionTypeId: productionTypeId,
                 targetWeight: targetWeight,
                 notes: notes,
@@ -26944,6 +27226,8 @@ class $$FormulaDraftsTableTableManager
                 Value<String?> customerId = const Value.absent(),
                 Value<String?> plaqueTypeId = const Value.absent(),
                 Value<String> formulaName = const Value.absent(),
+                Value<String?> imageHash = const Value.absent(),
+                Value<bool> isRecommended = const Value.absent(),
                 required String productionTypeId,
                 required int targetWeight,
                 Value<String?> notes = const Value.absent(),
@@ -26965,6 +27249,8 @@ class $$FormulaDraftsTableTableManager
                 customerId: customerId,
                 plaqueTypeId: plaqueTypeId,
                 formulaName: formulaName,
+                imageHash: imageHash,
+                isRecommended: isRecommended,
                 productionTypeId: productionTypeId,
                 targetWeight: targetWeight,
                 notes: notes,

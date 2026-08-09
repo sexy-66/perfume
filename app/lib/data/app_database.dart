@@ -164,7 +164,10 @@ class Assets extends Table with SyncColumns {
 
 class Formulas extends Table with SyncColumns {
   TextColumn get name => text().withLength(min: 1, max: 100)();
+  TextColumn get imageHash => text().nullable()();
   TextColumn get notes => text().nullable()();
+  BoolColumn get isRecommended =>
+      boolean().withDefault(const Constant(false))();
   TextColumn get currentVersionId => text().nullable()();
   DateTimeColumn get lastUsedAtUtc => dateTime().nullable()();
 }
@@ -177,6 +180,9 @@ class FormulaDrafts extends Table with SyncColumns {
   TextColumn get plaqueTypeId =>
       text().nullable().references(PlaqueTypes, #id)();
   TextColumn get formulaName => text().withDefault(const Constant(''))();
+  TextColumn get imageHash => text().nullable()();
+  BoolColumn get isRecommended =>
+      boolean().withDefault(const Constant(false))();
   TextColumn get productionTypeId => text().references(ProductionTypes, #id)();
   IntColumn get targetWeight => integer()();
   TextColumn get notes => text().nullable()();
@@ -367,6 +373,7 @@ class RatioRangeSetting {
     required this.productionTypeId,
     required this.productionTypeName,
     required this.productionTypeInactive,
+    this.inherited = false,
     this.rangeId,
     this.minRatio,
     this.maxRatio,
@@ -375,6 +382,7 @@ class RatioRangeSetting {
   final String productionTypeId;
   final String productionTypeName;
   final bool productionTypeInactive;
+  final bool inherited;
   final String? rangeId;
   final int? minRatio;
   final int? maxRatio;
@@ -512,14 +520,27 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) => m.createAll(),
     onUpgrade: (m, from, to) async {
-      if (from < 1 || from > 6 || to != 7) {
+      if (from < 1 || from > 8 || to != 9) {
         throw StateError('缺少数据库迁移：$from → $to');
+      }
+      if (from == 8) {
+        await m.addColumn(formulas, formulas.isRecommended);
+        await m.addColumn(formulaDrafts, formulaDrafts.imageHash);
+        await m.addColumn(formulaDrafts, formulaDrafts.isRecommended);
+        return;
+      }
+      if (from == 7) {
+        await m.addColumn(formulas, formulas.imageHash);
+        await m.addColumn(formulas, formulas.isRecommended);
+        await m.addColumn(formulaDrafts, formulaDrafts.imageHash);
+        await m.addColumn(formulaDrafts, formulaDrafts.isRecommended);
+        return;
       }
       await customStatement('PRAGMA foreign_keys = OFF');
       for (final table in _legacyTableNames) {
@@ -679,9 +700,15 @@ class AppDatabase extends _$AppDatabase {
             '''SELECT 1 WHERE
                  EXISTS (SELECT 1 FROM ingredients WHERE image_hash = ?)
               OR EXISTS (SELECT 1 FROM plaque_types WHERE image_hash = ?)
-              OR EXISTS (SELECT 1 FROM assets WHERE image_hash = ?)''',
-            variables: [Variable(hash), Variable(hash), Variable(hash)],
-            readsFrom: {ingredients, plaqueTypes, assets},
+              OR EXISTS (SELECT 1 FROM assets WHERE image_hash = ?)
+              OR EXISTS (SELECT 1 FROM formulas WHERE image_hash = ?)''',
+            variables: [
+              Variable(hash),
+              Variable(hash),
+              Variable(hash),
+              Variable(hash),
+            ],
+            readsFrom: {ingredients, plaqueTypes, assets, formulas},
           ).getSingleOrNull();
           if (referenced == null) orphaned.add(hash);
         }
@@ -701,7 +728,8 @@ class AppDatabase extends _$AppDatabase {
   bool _imageColumn(TrashEntityType type) =>
       type == TrashEntityType.ingredient ||
       type == TrashEntityType.plaqueType ||
-      type == TrashEntityType.asset;
+      type == TrashEntityType.asset ||
+      type == TrashEntityType.formula;
 
   Future<void> _compactDeletedEntity(
     TrashEntityType type,
@@ -1091,8 +1119,14 @@ class AppDatabase extends _$AppDatabase {
           WHERE image_hash IS NOT NULL AND is_deleted = 0
          UNION
          SELECT image_hash FROM assets
+          WHERE image_hash IS NOT NULL AND is_deleted = 0
+         UNION
+         SELECT image_hash FROM formulas
+          WHERE image_hash IS NOT NULL AND is_deleted = 0
+         UNION
+         SELECT image_hash FROM formula_drafts
           WHERE image_hash IS NOT NULL AND is_deleted = 0''',
-      readsFrom: {ingredients, plaqueTypes, assets},
+      readsFrom: {ingredients, plaqueTypes, assets, formulas, formulaDrafts},
     ).get();
     return {for (final row in rows) row.read<String>('image_hash')};
   }
@@ -2909,42 +2943,67 @@ class AppDatabase extends _$AppDatabase {
     RatioRangeTarget target,
     String targetId,
   ) {
-    final (tableName, foreignKey) = switch (target) {
-      RatioRangeTarget.category => ('category_ratio_ranges', 'category_id'),
-      RatioRangeTarget.ingredient => (
-        'ingredient_ratio_ranges',
-        'ingredient_id',
-      ),
-    };
-    final Set<ResultSetImplementation> readsFrom = switch (target) {
-      RatioRangeTarget.category => {productionTypes, categoryRatioRanges},
-      RatioRangeTarget.ingredient => {productionTypes, ingredientRatioRanges},
-    };
-    return customSelect(
-      '''
+    final query = switch (target) {
+      RatioRangeTarget.category => customSelect(
+        '''
       SELECT pt.id AS production_type_id,
              pt.name AS production_type_name,
              pt.is_inactive AS production_type_inactive,
              rr.id AS range_id,
              rr.min_ratio,
-             rr.max_ratio
+             rr.max_ratio,
+             0 AS inherited
         FROM production_types pt
-        LEFT JOIN $tableName rr
-          ON rr.$foreignKey = ?
+        LEFT JOIN category_ratio_ranges rr
+          ON rr.category_id = ?
          AND rr.production_type_id = pt.id
          AND rr.is_deleted = 0
        WHERE pt.is_deleted = 0
        ORDER BY pt.sort_order, pt.name
       ''',
-      variables: [Variable(targetId)],
-      readsFrom: readsFrom,
-    ).watch().map(
+        variables: [Variable(targetId)],
+        readsFrom: {productionTypes, categoryRatioRanges},
+      ),
+      RatioRangeTarget.ingredient => customSelect(
+        '''
+      SELECT pt.id AS production_type_id,
+             pt.name AS production_type_name,
+             pt.is_inactive AS production_type_inactive,
+             own.id AS range_id,
+             COALESCE(own.min_ratio, inherited.min_ratio) AS min_ratio,
+             COALESCE(own.max_ratio, inherited.max_ratio) AS max_ratio,
+             CASE WHEN own.id IS NULL AND inherited.id IS NOT NULL
+                  THEN 1 ELSE 0 END AS inherited
+        FROM production_types pt
+        JOIN ingredients i ON i.id = ?
+        LEFT JOIN ingredient_ratio_ranges own
+          ON own.ingredient_id = i.id
+         AND own.production_type_id = pt.id
+         AND own.is_deleted = 0
+        LEFT JOIN category_ratio_ranges inherited
+          ON inherited.category_id = i.category_id
+         AND inherited.production_type_id = pt.id
+         AND inherited.is_deleted = 0
+       WHERE pt.is_deleted = 0
+       ORDER BY pt.sort_order, pt.name
+      ''',
+        variables: [Variable(targetId)],
+        readsFrom: {
+          productionTypes,
+          ingredients,
+          ingredientRatioRanges,
+          categoryRatioRanges,
+        },
+      ),
+    };
+    return query.watch().map(
       (rows) => [
         for (final row in rows)
           RatioRangeSetting(
             productionTypeId: row.read('production_type_id'),
             productionTypeName: row.read('production_type_name'),
             productionTypeInactive: row.read<bool>('production_type_inactive'),
+            inherited: row.read<bool>('inherited'),
             rangeId: row.readNullable('range_id'),
             minRatio: row.readNullable('min_ratio'),
             maxRatio: row.readNullable('max_ratio'),

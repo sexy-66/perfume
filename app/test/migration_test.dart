@@ -4,7 +4,88 @@ import 'package:xiangfangbu/data/app_database.dart';
 
 void main() {
   test(
-    'v1 to v7 resets incompatible business data and creates new schema',
+    'v8 to v9 preserves formulas and adds recommendation metadata',
+    () async {
+      final executor = NativeDatabase.memory(
+        setup: (raw) {
+          raw.execute('''
+          CREATE TABLE formulas (
+            id TEXT NOT NULL PRIMARY KEY,
+            revision_id TEXT NOT NULL,
+            updated_by_device TEXT NOT NULL,
+            updated_at_utc INTEGER NOT NULL,
+            is_deleted INTEGER NOT NULL DEFAULT 0,
+            deleted_at_utc INTEGER,
+            name TEXT NOT NULL,
+            image_hash TEXT,
+            notes TEXT,
+            current_version_id TEXT,
+            last_used_at_utc INTEGER
+          )
+        ''');
+          raw.execute('''
+          CREATE TABLE formula_drafts (
+            id TEXT NOT NULL PRIMARY KEY,
+            revision_id TEXT NOT NULL,
+            updated_by_device TEXT NOT NULL,
+            updated_at_utc INTEGER NOT NULL,
+            is_deleted INTEGER NOT NULL DEFAULT 0,
+            deleted_at_utc INTEGER,
+            kind TEXT NOT NULL,
+            formula_id TEXT,
+            source_version_id TEXT,
+            customer_id TEXT,
+            plaque_type_id TEXT,
+            formula_name TEXT NOT NULL DEFAULT '',
+            production_type_id TEXT NOT NULL,
+            target_weight INTEGER NOT NULL,
+            notes TEXT,
+            items_json TEXT NOT NULL,
+            actual_weights_json TEXT NOT NULL,
+            confirmed_warnings_json TEXT NOT NULL DEFAULT '[]',
+            created_at_utc INTEGER NOT NULL
+          )
+        ''');
+          raw.execute('''
+          INSERT INTO formulas (
+            id, revision_id, updated_by_device, updated_at_utc, name, notes
+          ) VALUES ('formula-1', 'revision-1', 'device-1', 0, '旧香方', '旧备注')
+        ''');
+          raw.execute('''
+          INSERT INTO formula_drafts (
+            id, revision_id, updated_by_device, updated_at_utc, kind,
+            formula_name, production_type_id, target_weight, items_json,
+            actual_weights_json, created_at_utc
+          ) VALUES (
+            'draft-1', 'revision-2', 'device-1', 0, 'composing-new',
+            '旧草稿', 'type-zhuanxiang', 1, '{}', '[]', 0
+          )
+        ''');
+          raw.execute('PRAGMA user_version = 8');
+        },
+      );
+      final database = AppDatabase(executor);
+      addTearDown(database.close);
+
+      final formula = await (database.select(
+        database.formulas,
+      )..where((row) => row.id.equals('formula-1'))).getSingle();
+      final draft = await (database.select(
+        database.formulaDrafts,
+      )..where((row) => row.id.equals('draft-1'))).getSingle();
+      expect(
+        (formula.name, formula.notes, formula.isRecommended),
+        ('旧香方', '旧备注', false),
+      );
+      expect(
+        (draft.formulaName, draft.imageHash, draft.isRecommended),
+        ('旧草稿', null, false),
+      );
+    },
+  );
+
+  test(
+    'v1 to v8 resets incompatible business data and creates new schema',
     () async {
       final executor = NativeDatabase.memory(
         setup: (raw) {

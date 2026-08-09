@@ -472,9 +472,12 @@ class _MorePage extends StatelessWidget {
             ),
           ),
         ),
-        '推荐配置' => () => Navigator.of(context).push(
+        '推荐香方' => () => Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder: (_) => RecommendationPresetsPage(database: database),
+            builder: (_) => RecommendationPresetsPage(
+              database: database,
+              mediaStore: mediaStore,
+            ),
           ),
         ),
         '合香珠 / 香牌目录' => () => Navigator.of(context).push(
@@ -485,7 +488,8 @@ class _MorePage extends StatelessWidget {
         ),
         '顾客' => () => Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder: (_) => CustomersPage(database: database),
+            builder: (_) =>
+                CustomersPage(database: database, mediaStore: mediaStore),
           ),
         ),
         '资产清点' => () => Navigator.of(context).push(
@@ -541,7 +545,7 @@ class _MorePage extends StatelessWidget {
         children: [
           Text('更多', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 22),
-          section('资料管理', const ['香料库', '合香珠 / 香牌目录', '顾客', '推荐配置', '资产清点']),
+          section('资料管理', const ['香料库', '合香珠 / 香牌目录', '顾客', '推荐香方', '资产清点']),
           const SizedBox(height: 22),
           section('数据', const ['最近删除', '同步与设备', '备份与恢复']),
           const SizedBox(height: 22),

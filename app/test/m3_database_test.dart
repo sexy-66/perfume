@@ -14,6 +14,62 @@ void main() {
   tearDown(() => database.close());
 
   test(
+    'all mixing records can be searched by formula, customer name, or phone',
+    () async {
+      final category = await database.createIngredientCategory('木类');
+      final ingredient = await database.createIngredient(
+        name: '沉香',
+        categoryId: category.id,
+      );
+      final customer = await database.createCustomer(
+        name: '林女士',
+        phone: '13800138000',
+      );
+      final draft = await database.createFormulaDraft(
+        productionTypeId: 'type-zhuanxiang',
+        targetWeight: 100,
+        formulaName: '晚香玉',
+        customerId: customer.id,
+        items: [
+          FormulaDraftItemInput(
+            ingredientId: ingredient.id,
+            categoryName: category.name,
+            ingredientName: ingredient.name,
+            ratio: 10000,
+            sortOrder: 0,
+          ),
+        ],
+      );
+      final session = await database.completeDraft(draft.id);
+
+      expect(
+        (await database.watchAllMixingSessions(search: '晚香玉').first),
+        hasLength(1),
+      );
+      expect(
+        (await database.watchAllMixingSessions(search: '林女士').first),
+        hasLength(1),
+      );
+      expect(
+        (await database.watchAllMixingSessions(search: '13800138000').first),
+        hasLength(1),
+      );
+      expect(
+        (await database.watchAllMixingSessions(search: '不存在').first),
+        isEmpty,
+      );
+      await database.deleteMixingSession(session.id);
+      expect(await database.watchAllMixingSessions().first, isEmpty);
+      expect(
+        (await (database.select(
+          database.mixingSessions,
+        )..where((row) => row.id.equals(session.id))).getSingle()).isDeleted,
+        isTrue,
+      );
+    },
+  );
+
+  test(
     'new mix creates final formula, snapshots and customer history',
     () async {
       final category = await database.createIngredientCategory('木类');
@@ -50,12 +106,22 @@ void main() {
       await database.setDraftActualWeight(draft.id, 0, 210);
 
       final session = await database.completeDraft(draft.id);
+      final customerSearch = await database.watchFormulas(search: '王女士').first;
+      expect(customerSearch.single.formula.id, session.formulaId);
+      expect(customerSearch.single.customers.single.id, customer.id);
       expect(session.finalWeight, 1010);
       expect(session.formulaName, matches(RegExp(r'^王\d{6}$')));
       final formula = await (database.select(database.formulas)).getSingle();
       final version = await (database.select(
         database.formulaVersions,
       )).getSingle();
+      final ingredientDetails = await database.getFormulaIngredientDetails(
+        version.id,
+      );
+      expect(ingredientDetails.map((value) => value.item.ingredientName), [
+        '沉香',
+        '檀香',
+      ]);
       final formulaItems = await database.select(database.formulaItems).get();
       final mixingItems = await database.select(database.mixingItems).get();
       expect(formula.currentVersionId, version.id);
@@ -122,6 +188,14 @@ void main() {
         1,
       );
       await database.updateFormula(formula.id, name: '改名香方', notes: '备注');
+      const formulaImage =
+          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+      await database.updateFormulaImage(formula.id, formulaImage);
+      expect(
+        (await database.select(database.formulas).getSingle()).imageHash,
+        formulaImage,
+      );
+      expect(await database.referencedImageHashes(), contains(formulaImage));
       expect(
         await database.select(database.formulaVersions).get(),
         hasLength(1),
@@ -163,8 +237,8 @@ void main() {
       categoryId: category.id,
     );
     await database.setRatioRange(
-      target: RatioRangeTarget.ingredient,
-      targetId: ingredient.id,
+      target: RatioRangeTarget.category,
+      targetId: category.id,
       productionTypeId: 'type-zhuanxiang',
       minRatio: 1000,
       maxRatio: 2000,
@@ -211,6 +285,64 @@ void main() {
   });
 
   test(
+    'composer image and recommended protection survive completion',
+    () async {
+      final category = await database.createIngredientCategory('木类');
+      final ingredient = await database.createIngredient(
+        name: '沉香',
+        categoryId: category.id,
+      );
+      const imageHash =
+          'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      final composing = await database.saveComposerDraft(
+        productionTypeId: 'type-zhuanxiang',
+        targetWeightText: '1.00',
+        items: [
+          FormulaDraftItemInput(
+            ingredientId: ingredient.id,
+            categoryName: category.name,
+            ingredientName: ingredient.name,
+            ratio: 10000,
+            sortOrder: 0,
+          ),
+        ],
+        formulaName: '推荐沉香',
+        notes: '门店展示备注',
+        imageHash: imageHash,
+        isRecommended: true,
+      );
+      expect(await database.referencedImageHashes(), contains(imageHash));
+      final mixing = await database.startComposerDraft(composing.id);
+      await database.setDraftActualWeight(mixing.id, 0, 100);
+      await database.completeDraft(mixing.id);
+
+      final formula = await database.select(database.formulas).getSingle();
+      expect(formula.imageHash, imageHash);
+      expect(formula.notes, '门店展示备注');
+      expect(formula.isRecommended, isTrue);
+      expect(
+        (await database.watchFormulas().first).single.formula.id,
+        formula.id,
+      );
+      expect(
+        (await database.watchFormulas(recommendedOnly: true).first)
+            .single
+            .formula
+            .id,
+        formula.id,
+      );
+      await expectLater(database.deleteFormula(formula.id), throwsStateError);
+      await database.deleteFormula(formula.id, allowRecommended: true);
+      expect(
+        (await (database.select(
+          database.formulas,
+        )..where((row) => row.id.equals(formula.id))).getSingle()).isDeleted,
+        isTrue,
+      );
+    },
+  );
+
+  test(
     'composer drafts save incomplete input and resume into mixing',
     () async {
       final category = await database.createIngredientCategory('木类');
@@ -255,6 +387,75 @@ void main() {
       expect((await database.getMixingDraft(draft.id)).plannedWeights, [1000]);
     },
   );
+
+  test(
+    'recommended formula saves without weight customer or mixing session',
+    () async {
+      final category = await database.createIngredientCategory('木类');
+      final ingredient = await database.createIngredient(
+        name: '沉香',
+        categoryId: category.id,
+      );
+      final draft = await database.saveComposerDraft(
+        productionTypeId: 'type-zhuanxiang',
+        targetWeightText: '',
+        items: [
+          FormulaDraftItemInput(
+            ingredientId: ingredient.id,
+            categoryName: category.name,
+            ingredientName: ingredient.name,
+            ratio: 10000,
+            sortOrder: 0,
+          ),
+        ],
+        formulaName: '无克重推荐香方',
+        notes: '只保存比例',
+        isRecommended: true,
+      );
+      final formula = await database.completeRecommendedFormulaDraft(draft.id);
+      expect(formula.isRecommended, isTrue);
+      expect(await database.select(database.mixingSessions).get(), isEmpty);
+      final items = await database.getVersionDraftItems(
+        formula.currentVersionId!,
+      );
+      expect(items.single.ratio, 10000);
+    },
+  );
+
+  test('missing actual weights can be filled from planned weights', () async {
+    final category = await database.createIngredientCategory('木类');
+    final first = await database.createIngredient(
+      name: '沉香',
+      categoryId: category.id,
+    );
+    final second = await database.createIngredient(
+      name: '檀香',
+      categoryId: category.id,
+    );
+    final draft = await database.createFormulaDraft(
+      productionTypeId: 'type-zhuanxiang',
+      targetWeight: 1000,
+      formulaName: '自动补全',
+      items: [
+        FormulaDraftItemInput(
+          ingredientId: first.id,
+          categoryName: category.name,
+          ingredientName: first.name,
+          ratio: 6000,
+          sortOrder: 0,
+        ),
+        FormulaDraftItemInput(
+          ingredientId: second.id,
+          categoryName: category.name,
+          ingredientName: second.name,
+          ratio: 4000,
+          sortOrder: 1,
+        ),
+      ],
+    );
+    expect(await database.fillMissingDraftWeightsFromPlan(draft.id), 2);
+    expect((await database.getMixingDraft(draft.id)).actualWeights, [600, 400]);
+  });
 
   test('confirmed exceedance stays quiet until it clears and recurs', () async {
     final category = await database.createIngredientCategory('木类');

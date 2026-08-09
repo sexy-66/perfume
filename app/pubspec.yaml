@@ -37,6 +37,7 @@ dependencies:
     sdk: flutter
   image: ^4.9.1
   image_picker: ^1.2.3
+  lpinyin: ^2.0.3
   path: ^1.9.1
   path_provider: ^2.1.6
 dev_dependencies:
@@ -63,6 +64,7 @@ flutter:
   assets:
     - assets/home-entry-xiangfang.png
     - assets/home-entry-hexiangzhu.png
+    - assets/home-entry-mixing-records.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

@@ -40,11 +40,15 @@ class FormulaIngredientChoice {
     required this.id,
     required this.categoryName,
     required this.ingredientName,
+    required this.categorySortOrder,
+    this.imageHash,
   });
 
   final String id;
   final String categoryName;
   final String ingredientName;
+  final int categorySortOrder;
+  final String? imageHash;
   String get label => ingredientName;
 }
 
@@ -53,11 +57,20 @@ class FormulaSummary {
     required this.formula,
     required this.productionTypeName,
     required this.topIngredients,
+    this.customers = const [],
   });
 
   final Formula formula;
   final String productionTypeName;
   final String topIngredients;
+  final List<Customer> customers;
+}
+
+class FormulaIngredientSummary {
+  const FormulaIngredientSummary({required this.item, this.imageHash});
+
+  final FormulaItem item;
+  final String? imageHash;
 }
 
 class FormulaVersionSummary {
@@ -111,6 +124,18 @@ class CustomerFormulaHistory {
   final int useCount;
 }
 
+class MixingSessionSummary {
+  const MixingSessionSummary({
+    required this.session,
+    this.customer,
+    this.formulaImageHash,
+  });
+
+  final MixingSession session;
+  final Customer? customer;
+  final String? formulaImageHash;
+}
+
 extension M3Database on AppDatabase {
   Future<FormulaDraft> saveComposerDraft({
     String? draftId,
@@ -119,6 +144,8 @@ extension M3Database on AppDatabase {
     required List<FormulaDraftItemInput> items,
     required String formulaName,
     required String notes,
+    String? imageHash,
+    bool isRecommended = false,
     String? customerId,
     String? plaqueTypeId,
     String? formulaId,
@@ -158,6 +185,8 @@ extension M3Database on AppDatabase {
           customerId: Value(customerId),
           plaqueTypeId: Value(plaqueTypeId),
           formulaName: Value(formulaName.trim()),
+          imageHash: Value(_optionalImageHash(imageHash)),
+          isRecommended: Value(isRecommended),
           productionTypeId: productionTypeId,
           targetWeight: placeholderWeight,
           notes: Value(_optionalText(notes)),
@@ -189,6 +218,8 @@ extension M3Database on AppDatabase {
         customerId: Value(customerId),
         plaqueTypeId: Value(plaqueTypeId),
         formulaName: Value(formulaName.trim()),
+        imageHash: Value(_optionalImageHash(imageHash)),
+        isRecommended: Value(isRecommended),
         productionTypeId: Value(productionTypeId),
         targetWeight: Value(placeholderWeight),
         notes: Value(_optionalText(notes)),
@@ -256,6 +287,81 @@ extension M3Database on AppDatabase {
     )..where((row) => row.id.equals(id))).getSingle();
   });
 
+  Future<Formula> completeRecommendedFormulaDraft(String id) => transaction(
+    () async {
+      final state = await getComposerDraft(id);
+      if (!state.draft.isRecommended) throw StateError('该草稿不是推荐香方');
+      final name = _requiredName(state.draft.formulaName, '香方名称不能为空');
+      _validateDraftItems(state.items);
+      for (final item in state.items) {
+        await _validateDraftIngredient(item.ingredientId);
+      }
+      final formulaId = _newId();
+      final formulaChange = await _recordOperation(
+        entityType: 'formulas',
+        entityId: formulaId,
+        operationKind: 'create',
+        payload: {'id': formulaId, 'name': name, 'isRecommended': true},
+      );
+      await into(formulas).insert(
+        FormulasCompanion.insert(
+          id: formulaId,
+          revisionId: formulaChange.revisionId,
+          updatedByDevice: formulaChange.deviceId,
+          updatedAtUtc: formulaChange.now,
+          name: name,
+          imageHash: Value(state.draft.imageHash),
+          notes: Value(state.draft.notes),
+          isRecommended: const Value(true),
+        ),
+      );
+      final versionId = _newId();
+      final versionChange = await _recordOperation(
+        entityType: 'formula_versions',
+        entityId: versionId,
+        operationKind: 'create',
+        payload: {'id': versionId, 'formulaId': formulaId},
+      );
+      await into(formulaVersions).insert(
+        FormulaVersionsCompanion.insert(
+          id: versionId,
+          revisionId: versionChange.revisionId,
+          updatedByDevice: versionChange.deviceId,
+          updatedAtUtc: versionChange.now,
+          formulaId: formulaId,
+          versionNumber: 1,
+          productionTypeId: state.draft.productionTypeId,
+          createdAtUtc: versionChange.now,
+        ),
+      );
+      for (final item in state.items) {
+        await _insertFormulaItem(versionId, item, item.ratio);
+      }
+      final formula = await (select(
+        formulas,
+      )..where((row) => row.id.equals(formulaId))).getSingle();
+      final updateChange = await _recordOperation(
+        entityType: 'formulas',
+        entityId: formulaId,
+        baseRevisionId: formula.revisionId,
+        operationKind: 'update',
+        payload: {'id': formulaId, 'currentVersionId': versionId},
+      );
+      await (update(formulas)..where((row) => row.id.equals(formulaId))).write(
+        FormulasCompanion(
+          revisionId: Value(updateChange.revisionId),
+          updatedByDevice: Value(updateChange.deviceId),
+          updatedAtUtc: Value(updateChange.now),
+          currentVersionId: Value(versionId),
+        ),
+      );
+      await deleteFormulaDraft(id);
+      return (select(
+        formulas,
+      )..where((row) => row.id.equals(formulaId))).getSingle();
+    },
+  );
+
   Future<void> updateFormula(
     String id, {
     required String name,
@@ -284,28 +390,56 @@ extension M3Database on AppDatabase {
     );
   });
 
-  Future<void> deleteFormula(String id) => transaction(() async {
-    final formula = await (select(
-      formulas,
-    )..where((row) => row.id.equals(id))).getSingle();
-    if (formula.isDeleted) return;
-    final change = await _recordOperation(
-      entityType: 'formulas',
-      entityId: id,
-      baseRevisionId: formula.revisionId,
-      operationKind: 'delete',
-      payload: {'id': id},
-    );
-    await (update(formulas)..where((row) => row.id.equals(id))).write(
-      FormulasCompanion(
-        revisionId: Value(change.revisionId),
-        updatedByDevice: Value(change.deviceId),
-        updatedAtUtc: Value(change.now),
-        isDeleted: const Value(true),
-        deletedAtUtc: Value(change.now),
-      ),
-    );
-  });
+  Future<void> updateFormulaImage(String id, String? imageHash) =>
+      transaction(() async {
+        final formula = await (select(
+          formulas,
+        )..where((row) => row.id.equals(id))).getSingle();
+        if (formula.isDeleted) throw StateError('已删除的香方不能修改');
+        final normalized = _optionalImageHash(imageHash);
+        final change = await _recordOperation(
+          entityType: 'formulas',
+          entityId: id,
+          baseRevisionId: formula.revisionId,
+          operationKind: 'update',
+          payload: {'id': id, 'imageHash': normalized},
+        );
+        await (update(formulas)..where((row) => row.id.equals(id))).write(
+          FormulasCompanion(
+            revisionId: Value(change.revisionId),
+            updatedByDevice: Value(change.deviceId),
+            updatedAtUtc: Value(change.now),
+            imageHash: Value(normalized),
+          ),
+        );
+      });
+
+  Future<void> deleteFormula(String id, {bool allowRecommended = false}) =>
+      transaction(() async {
+        final formula = await (select(
+          formulas,
+        )..where((row) => row.id.equals(id))).getSingle();
+        if (formula.isDeleted) return;
+        if (formula.isRecommended && !allowRecommended) {
+          throw StateError('推荐香方只能在“推荐香方”中删除');
+        }
+        final change = await _recordOperation(
+          entityType: 'formulas',
+          entityId: id,
+          baseRevisionId: formula.revisionId,
+          operationKind: 'delete',
+          payload: {'id': id},
+        );
+        await (update(formulas)..where((row) => row.id.equals(id))).write(
+          FormulasCompanion(
+            revisionId: Value(change.revisionId),
+            updatedByDevice: Value(change.deviceId),
+            updatedAtUtc: Value(change.now),
+            isDeleted: const Value(true),
+            deletedAtUtc: Value(change.now),
+          ),
+        );
+      });
 
   Future<void> deleteFormulaDraft(String id) => transaction(() async {
     final draft = await (select(
@@ -321,6 +455,29 @@ extension M3Database on AppDatabase {
     );
     await (update(formulaDrafts)..where((row) => row.id.equals(id))).write(
       FormulaDraftsCompanion(
+        revisionId: Value(change.revisionId),
+        updatedByDevice: Value(change.deviceId),
+        updatedAtUtc: Value(change.now),
+        isDeleted: const Value(true),
+        deletedAtUtc: Value(change.now),
+      ),
+    );
+  });
+
+  Future<void> deleteMixingSession(String id) => transaction(() async {
+    final session = await (select(
+      mixingSessions,
+    )..where((row) => row.id.equals(id))).getSingle();
+    if (session.isDeleted) return;
+    final change = await _recordOperation(
+      entityType: 'mixing_sessions',
+      entityId: id,
+      baseRevisionId: session.revisionId,
+      operationKind: 'delete',
+      payload: {'id': id},
+    );
+    await (update(mixingSessions)..where((row) => row.id.equals(id))).write(
+      MixingSessionsCompanion(
         revisionId: Value(change.revisionId),
         updatedByDevice: Value(change.deviceId),
         updatedAtUtc: Value(change.now),
@@ -355,6 +512,8 @@ extension M3Database on AppDatabase {
           id: row.readTable(ingredients).id,
           categoryName: row.readTable(ingredientCategories).name,
           ingredientName: row.readTable(ingredients).name,
+          categorySortOrder: row.readTable(ingredientCategories).sortOrder,
+          imageHash: row.readTable(ingredients).imageHash,
         ),
     ];
   }
@@ -544,9 +703,13 @@ extension M3Database on AppDatabase {
     );
   }
 
-  Stream<List<FormulaDraft>> watchOpenDrafts() =>
+  Stream<List<FormulaDraft>> watchOpenDrafts({bool recommendedOnly = false}) =>
       (select(formulaDrafts)
-            ..where((row) => row.isDeleted.equals(false))
+            ..where(
+              (row) =>
+                  row.isDeleted.equals(false) &
+                  row.isRecommended.equals(recommendedOnly),
+            )
             ..orderBy([(row) => OrderingTerm.desc(row.updatedAtUtc)]))
           .watch();
 
@@ -641,6 +804,17 @@ extension M3Database on AppDatabase {
     });
   }
 
+  Future<int> fillMissingDraftWeightsFromPlan(String draftId) async {
+    final state = await getMixingDraft(draftId);
+    var filled = 0;
+    for (var i = 0; i < state.actualWeights.length; i++) {
+      if (state.actualWeights[i] != null) continue;
+      await setDraftActualWeight(draftId, i, state.plannedWeights[i]);
+      filled++;
+    }
+    return filled;
+  }
+
   Future<List<RatioRangeCheck>> getDraftRangeWarnings(String draftId) async {
     final state = await getMixingDraft(draftId);
     final warnings = await _rawDraftRangeWarnings(state);
@@ -657,19 +831,10 @@ extension M3Database on AppDatabase {
     MixingDraftState state,
   ) async {
     final actual = <String, int>{};
-    final categoryRatios = <String, int>{};
-    final categoryLabels = <String, String>{};
     final ranges = <String, ({String label, int minimum, int maximum})>{};
     for (var i = 0; i < state.items.length; i++) {
       final item = state.items[i];
       actual['ingredient:${item.ingredientId}'] = state.projectedRatios[i];
-      final ingredient = await (select(
-        ingredients,
-      )..where((row) => row.id.equals(item.ingredientId))).getSingle();
-      categoryRatios[ingredient.categoryId] =
-          (categoryRatios[ingredient.categoryId] ?? 0) +
-          state.projectedRatios[i];
-      categoryLabels[ingredient.categoryId] = item.categoryName;
       final ingredientRange = await _effectiveIngredientRange(
         item.ingredientId,
         state.draft.productionTypeId,
@@ -679,24 +844,6 @@ extension M3Database on AppDatabase {
           label: item.label,
           minimum: ingredientRange.$1,
           maximum: ingredientRange.$2,
-        );
-      }
-    }
-    for (final entry in categoryRatios.entries) {
-      actual['category:${entry.key}'] = entry.value;
-      final range =
-          await (select(categoryRatioRanges)..where(
-                (row) =>
-                    row.categoryId.equals(entry.key) &
-                    row.productionTypeId.equals(state.draft.productionTypeId) &
-                    row.isDeleted.equals(false),
-              ))
-              .getSingleOrNull();
-      if (range != null) {
-        ranges['category:${entry.key}'] = (
-          label: categoryLabels[entry.key]!,
-          minimum: range.minRatio,
-          maximum: range.maxRatio,
         );
       }
     }
@@ -763,7 +910,9 @@ extension M3Database on AppDatabase {
             updatedByDevice: formulaChange.deviceId,
             updatedAtUtc: formulaChange.now,
             name: formulaName,
+            imageHash: Value(state.draft.imageHash),
             notes: Value(state.draft.notes),
+            isRecommended: Value(state.draft.isRecommended),
             lastUsedAtUtc: Value(now),
           ),
         );
@@ -814,6 +963,8 @@ extension M3Database on AppDatabase {
           updatedByDevice: Value(formulaChange.deviceId),
           updatedAtUtc: Value(formulaChange.now),
           currentVersionId: Value(versionId),
+          imageHash: Value(state.draft.imageHash),
+          notes: Value(state.draft.notes),
           lastUsedAtUtc: Value(now),
         ),
       );
@@ -905,56 +1056,99 @@ extension M3Database on AppDatabase {
   Stream<List<FormulaSummary>> watchFormulas({
     String search = '',
     String? productionTypeId,
-  }) =>
-      (select(formulas)
-            ..where(
-              (row) =>
-                  row.isDeleted.equals(false) &
-                  row.name.lower().like('%${search.trim().toLowerCase()}%'),
-            )
-            ..orderBy([(row) => OrderingTerm.desc(row.lastUsedAtUtc)]))
-          .watch()
-          .asyncMap((rows) async {
-            final result = <FormulaSummary>[];
-            for (final formula in rows) {
-              if (formula.currentVersionId == null) continue;
-              final version =
-                  await (select(formulaVersions)..where(
-                        (row) => row.id.equals(formula.currentVersionId!),
-                      ))
-                      .getSingle();
-              if (productionTypeId != null &&
-                  version.productionTypeId != productionTypeId) {
-                continue;
-              }
-              final type =
-                  await (select(productionTypes)..where(
-                        (row) => row.id.equals(version.productionTypeId),
-                      ))
-                      .getSingle();
-              final items =
-                  await (select(formulaItems)
-                        ..where(
-                          (row) =>
-                              row.versionId.equals(version.id) &
-                              row.isDeleted.equals(false),
-                        )
-                        ..orderBy([(row) => OrderingTerm.desc(row.ratio)]))
-                      .get();
-              result.add(
-                FormulaSummary(
-                  formula: formula,
-                  productionTypeName: type.name,
-                  topIngredients: items
-                      .map((item) => item.ingredientName)
-                      .toSet()
-                      .take(2)
-                      .join('、'),
-                ),
-              );
-            }
-            return result;
-          });
+    bool recommendedOnly = false,
+    bool selfBuiltOnly = false,
+  }) {
+    final term = search.trim().toLowerCase();
+    final pattern = '%$term%';
+    final kindFilter = recommendedOnly
+        ? 'AND f.is_recommended = 1'
+        : selfBuiltOnly
+        ? 'AND f.is_recommended = 0'
+        : '';
+    return customSelect(
+      '''SELECT f.id
+           FROM formulas f
+          WHERE f.is_deleted = 0
+            $kindFilter
+            AND (? = ''
+              OR lower(f.name) LIKE ?
+              OR EXISTS (
+                SELECT 1
+                  FROM mixing_sessions ms
+                  JOIN customers c
+                    ON c.id = ms.customer_id AND c.is_deleted = 0
+                 WHERE ms.formula_id = f.id
+                   AND ms.is_deleted = 0
+                   AND (lower(c.name) LIKE ? OR c.phone LIKE ?)
+              ))
+       ORDER BY f.last_used_at_utc DESC''',
+      variables: [
+        Variable.withString(term),
+        Variable.withString(pattern),
+        Variable.withString(pattern),
+        Variable.withString(pattern),
+      ],
+      readsFrom: {formulas, mixingSessions, customers},
+    ).watch().asyncMap((rows) async {
+      final result = <FormulaSummary>[];
+      for (final row in rows) {
+        final formula = await (select(
+          formulas,
+        )..where((item) => item.id.equals(row.read<String>('id')))).getSingle();
+        if (formula.currentVersionId == null) continue;
+        final version =
+            await (select(formulaVersions)
+                  ..where((row) => row.id.equals(formula.currentVersionId!)))
+                .getSingle();
+        if (productionTypeId != null &&
+            version.productionTypeId != productionTypeId) {
+          continue;
+        }
+        final type = await (select(
+          productionTypes,
+        )..where((row) => row.id.equals(version.productionTypeId))).getSingle();
+        final items =
+            await (select(formulaItems)
+                  ..where(
+                    (row) =>
+                        row.versionId.equals(version.id) &
+                        row.isDeleted.equals(false),
+                  )
+                  ..orderBy([(row) => OrderingTerm.desc(row.ratio)]))
+                .get();
+        final linkedCustomers = await customSelect(
+          '''SELECT DISTINCT c.id
+                     FROM mixing_sessions ms
+                     JOIN customers c
+                       ON c.id = ms.customer_id AND c.is_deleted = 0
+                    WHERE ms.formula_id = ? AND ms.is_deleted = 0
+                 ORDER BY ms.completed_at_utc DESC''',
+          variables: [Variable.withString(formula.id)],
+          readsFrom: {mixingSessions, customers},
+        ).get();
+        result.add(
+          FormulaSummary(
+            formula: formula,
+            productionTypeName: type.name,
+            topIngredients: items
+                .map((item) => item.ingredientName)
+                .toSet()
+                .take(2)
+                .join('、'),
+            customers: [
+              for (final customerRow in linkedCustomers)
+                await (select(customers)..where(
+                      (item) => item.id.equals(customerRow.read<String>('id')),
+                    ))
+                    .getSingle(),
+            ],
+          ),
+        );
+      }
+      return result;
+    });
+  }
 
   Stream<List<FormulaVersionSummary>> watchFormulaVersions(String formulaId) =>
       (select(formulaVersions)
@@ -984,6 +1178,32 @@ extension M3Database on AppDatabase {
   Future<List<FormulaDraftItemInput>> getVersionDraftItems(String versionId) =>
       _versionDraftItems(versionId);
 
+  Future<List<FormulaIngredientSummary>> getFormulaIngredientDetails(
+    String versionId,
+  ) async {
+    final items =
+        await (select(formulaItems)
+              ..where(
+                (row) =>
+                    row.versionId.equals(versionId) &
+                    row.isDeleted.equals(false),
+              )
+              ..orderBy([(row) => OrderingTerm.asc(row.sortOrder)]))
+            .get();
+    return [
+      for (final item in items)
+        FormulaIngredientSummary(
+          item: item,
+          imageHash: item.ingredientId == null
+              ? null
+              : (await (select(ingredients)
+                          ..where((row) => row.id.equals(item.ingredientId!)))
+                        .getSingleOrNull())
+                    ?.imageHash,
+        ),
+    ];
+  }
+
   Stream<List<MixingSession>> watchFormulaSessions(String formulaId) =>
       (select(mixingSessions)
             ..where(
@@ -992,6 +1212,57 @@ extension M3Database on AppDatabase {
             )
             ..orderBy([(row) => OrderingTerm.desc(row.completedAtUtc)]))
           .watch();
+
+  Stream<List<MixingSessionSummary>> watchAllMixingSessions({
+    String search = '',
+  }) {
+    final term = search.trim();
+    final pattern = '%$term%';
+    return customSelect(
+      '''SELECT ms.id
+           FROM mixing_sessions ms
+      LEFT JOIN customers c
+             ON c.id = ms.customer_id AND c.is_deleted = 0
+          WHERE ms.is_deleted = 0
+            AND (? = ''
+              OR ms.formula_name LIKE ?
+              OR c.name LIKE ?
+              OR c.phone LIKE ?)
+       ORDER BY ms.completed_at_utc DESC''',
+      variables: [
+        Variable.withString(term),
+        Variable.withString(pattern),
+        Variable.withString(pattern),
+        Variable.withString(pattern),
+      ],
+      readsFrom: {mixingSessions, customers, formulas},
+    ).watch().asyncMap((rows) async {
+      final result = <MixingSessionSummary>[];
+      for (final row in rows) {
+        final session = await (select(
+          mixingSessions,
+        )..where((item) => item.id.equals(row.read<String>('id')))).getSingle();
+        final customer = session.customerId == null
+            ? null
+            : await (select(customers)
+                    ..where((item) => item.id.equals(session.customerId!)))
+                  .getSingleOrNull();
+        final formula = session.formulaId == null
+            ? null
+            : await (select(formulas)
+                    ..where((item) => item.id.equals(session.formulaId!)))
+                  .getSingleOrNull();
+        result.add(
+          MixingSessionSummary(
+            session: session,
+            customer: customer,
+            formulaImageHash: formula?.imageHash,
+          ),
+        );
+      }
+      return result;
+    });
+  }
 
   Stream<List<MixingItem>> watchMixingItems(String sessionId) =>
       (select(mixingItems)
@@ -1294,15 +1565,29 @@ extension M3Database on AppDatabase {
     String ingredientId,
     String productionTypeId,
   ) async {
-    final range =
-        await (select(ingredientRatioRanges)..where(
-              (row) =>
-                  row.ingredientId.equals(ingredientId) &
-                  row.productionTypeId.equals(productionTypeId) &
-                  row.isDeleted.equals(false),
-            ))
-            .getSingleOrNull();
-    return range == null ? null : (range.minRatio, range.maxRatio);
+    final range = await customSelect(
+      '''SELECT COALESCE(own.min_ratio, inherited.min_ratio) AS min_ratio,
+                COALESCE(own.max_ratio, inherited.max_ratio) AS max_ratio
+           FROM ingredients i
+      LEFT JOIN ingredient_ratio_ranges own
+             ON own.ingredient_id = i.id
+            AND own.production_type_id = ?
+            AND own.is_deleted = 0
+      LEFT JOIN category_ratio_ranges inherited
+             ON inherited.category_id = i.category_id
+            AND inherited.production_type_id = ?
+            AND inherited.is_deleted = 0
+          WHERE i.id = ?''',
+      variables: [
+        Variable(productionTypeId),
+        Variable(productionTypeId),
+        Variable(ingredientId),
+      ],
+      readsFrom: {ingredients, ingredientRatioRanges, categoryRatioRanges},
+    ).getSingleOrNull();
+    final minimum = range?.readNullable<int>('min_ratio');
+    final maximum = range?.readNullable<int>('max_ratio');
+    return minimum == null || maximum == null ? null : (minimum, maximum);
   }
 
   Future<String> _resolveFormulaName(

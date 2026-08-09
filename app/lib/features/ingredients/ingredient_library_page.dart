@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -53,294 +55,308 @@ class _IngredientLibraryPageState extends State<IngredientLibraryPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_selecting ? '已选 ${_selected.length} 项' : '香料'),
-        leading: _selecting
-            ? IconButton(
-                tooltip: '退出多选',
-                onPressed: _batchWorking
+    return PopScope(
+      canPop: !_selecting,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _selecting && !_batchWorking) {
+          setState(_selected.clear);
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(_selecting ? '已选 ${_selected.length} 项' : '香料'),
+          leading: _selecting
+              ? IconButton(
+                  tooltip: '退出多选',
+                  onPressed: _batchWorking
+                      ? null
+                      : () => setState(_selected.clear),
+                  icon: const Icon(Icons.close),
+                )
+              : null,
+          actions: _selecting
+              ? [
+                  IconButton(
+                    tooltip: '停用所选香料',
+                    onPressed: _batchWorking ? null : _disableSelected,
+                    icon: const Icon(Icons.pause_circle_outline),
+                  ),
+                  IconButton(
+                    tooltip: '删除所选香料',
+                    onPressed: _batchWorking ? null : _deleteSelected,
+                    icon: const Icon(Icons.delete_outline),
+                  ),
+                ]
+              : [
+                  IconButton(
+                    tooltip: '添加香料',
+                    onPressed: _addIngredient,
+                    icon: const Icon(Icons.add),
+                  ),
+                  IconButton(
+                    tooltip: '管理分类',
+                    icon: const Icon(Icons.category_outlined),
+                    onPressed: _openCategories,
+                  ),
+                ],
+        ),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: SearchBar(
+                controller: _search,
+                hintText: '搜索名称、别名或分类',
+                leading: const Icon(Icons.search),
+                trailing: _search.text.isEmpty
                     ? null
-                    : () => setState(_selected.clear),
-                icon: const Icon(Icons.close),
-              )
-            : null,
-        actions: _selecting
-            ? [
-                IconButton(
-                  tooltip: '停用所选香料',
-                  onPressed: _batchWorking ? null : _disableSelected,
-                  icon: const Icon(Icons.pause_circle_outline),
-                ),
-                IconButton(
-                  tooltip: '删除所选香料',
-                  onPressed: _batchWorking ? null : _deleteSelected,
-                  icon: const Icon(Icons.delete_outline),
-                ),
-              ]
-            : [
-                IconButton(
-                  tooltip: '添加香料',
-                  onPressed: _addIngredient,
-                  icon: const Icon(Icons.add),
-                ),
-                IconButton(
-                  tooltip: '管理分类',
-                  icon: const Icon(Icons.category_outlined),
-                  onPressed: _openCategories,
-                ),
-              ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: SearchBar(
-              controller: _search,
-              hintText: '搜索名称、别名或分类',
-              leading: const Icon(Icons.search),
-              trailing: _search.text.isEmpty
-                  ? null
-                  : [
-                      IconButton(
-                        tooltip: '清空',
-                        icon: const Icon(Icons.close),
-                        onPressed: () => setState(() {
-                          _search.clear();
-                          _refreshIngredients();
-                        }),
-                      ),
-                    ],
-              onChanged: (_) => setState(_refreshIngredients),
-            ),
-          ),
-          StreamBuilder<List<IngredientCategory>>(
-            stream: _categories,
-            builder: (context, snapshot) {
-              final categories = snapshot.data ?? const [];
-              if (_categoryId != null &&
-                  !categories.any((item) => item.id == _categoryId)) {
-                _categoryId = null;
-              }
-              ChoiceChip categoryChip(String label, String? id) {
-                final selected = _categoryId == id;
-                return ChoiceChip(
-                  label: Text(label),
-                  selected: selected,
-                  showCheckmark: false,
-                  color: WidgetStateProperty.all(
-                    selected ? const Color(0xffdbeafe) : Colors.white,
-                  ),
-                  side: BorderSide(
-                    color: selected
-                        ? const Color(0xff007aff)
-                        : const Color(0xffc6c6c8),
-                  ),
-                  labelStyle: TextStyle(
-                    color: selected
-                        ? const Color(0xff005eb8)
-                        : const Color(0xff1c1c1e),
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                  ),
-                  onSelected: (_) => setState(() {
-                    _categoryId = id;
-                    _refreshIngredients();
-                  }),
-                );
-              }
-
-              return SizedBox(
-                height: 48,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  children: [
-                    categoryChip('全部', null),
-                    for (final category in categories)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: categoryChip(category.name, category.id),
-                      ),
-                  ],
-                ),
-              );
-            },
-          ),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _refreshFromPeers,
-              child: StreamBuilder<List<IngredientSummary>>(
-                stream: _ingredients,
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return _scrollableFill(
-                      Center(child: Text('读取失败：${snapshot.error}')),
-                    );
-                  }
-                  final items = snapshot.data ?? const [];
-                  if (items.isEmpty) {
-                    if (_search.text.trim().isNotEmpty || _categoryId != null) {
-                      return _scrollableFill(
-                        const Center(child: Text('没有匹配的香料')),
-                      );
-                    }
-                    return _scrollableFill(
-                      Center(
-                        child: FilledButton.icon(
-                          onPressed: _addIngredient,
-                          icon: const Icon(Icons.add),
-                          label: const Text('添加第一项'),
+                    : [
+                        IconButton(
+                          tooltip: '清空',
+                          icon: const Icon(Icons.close),
+                          onPressed: () => setState(() {
+                            _search.clear();
+                            _refreshIngredients();
+                          }),
                         ),
-                      ),
-                    );
-                  }
-                  return LayoutBuilder(
-                    builder: (context, constraints) {
-                      final columns = constraints.maxWidth >= 900
-                          ? 4
-                          : constraints.maxWidth >= 600
-                          ? 3
-                          : 2;
-                      return GridView.builder(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: columns,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 14,
-                          childAspectRatio: 0.78,
-                        ),
-                        itemCount: items.length,
-                        itemBuilder: (context, index) {
-                          final item = items[index];
-                          final ingredient = item.ingredient;
-                          final selected = _selected.contains(ingredient.id);
-                          final details = <String?>[
-                            item.categoryName,
-                            ingredient.alias,
-                            if (ingredient.isInactive) '已停用',
-                          ].whereType<String>().join(' · ');
-                          return Material(
-                            color: selected
-                                ? const Color(0xffeaf2ff)
-                                : Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              side: BorderSide(
-                                color: selected
-                                    ? const Color(0xff007aff)
-                                    : Colors.transparent,
-                                width: 2,
-                              ),
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: InkWell(
-                              onTap: () => _selecting
-                                  ? _toggleSelection(ingredient.id)
-                                  : _editIngredient(item),
-                              onLongPress: () =>
-                                  _toggleSelection(ingredient.id),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Expanded(
-                                    child: ingredient.imageHash == null
-                                        ? const ColoredBox(
-                                            color: Color(0xffe6e9e7),
-                                            child: Icon(
-                                              Icons.spa_outlined,
-                                              size: 48,
-                                              color: Color(0xff566158),
-                                            ),
-                                          )
-                                        : Image.file(
-                                            widget.mediaStore.fileFor(
-                                              ingredient.imageHash!,
-                                            ),
-                                            key: ValueKey(
-                                              '${ingredient.imageHash}-${widget.mediaStore.revision}',
-                                            ),
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (_, _, _) =>
-                                                const ColoredBox(
-                                                  color: Color(0xffe6e9e7),
-                                                  child: Icon(
-                                                    Icons.broken_image_outlined,
-                                                    size: 48,
-                                                    color: Color(0xff566158),
-                                                  ),
-                                                ),
-                                          ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.fromLTRB(
-                                      12,
-                                      10,
-                                      12,
-                                      12,
-                                    ),
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                ingredient.name,
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 3),
-                                              Text(
-                                                details,
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(
-                                                  color: Color(0xff636366),
-                                                  fontSize: 11,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        if (selected)
-                                          const Padding(
-                                            padding: EdgeInsets.only(left: 8),
-                                            child: Icon(
-                                              Icons.check_circle,
-                                              color: Color(0xff007aff),
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  );
-                },
+                      ],
+                onChanged: (_) => setState(_refreshIngredients),
               ),
             ),
-          ),
-        ],
-      ),
-      floatingActionButton: _selecting
-          ? null
-          : FloatingActionButton(
-              tooltip: '添加香料',
-              onPressed: _addIngredient,
-              child: const Icon(Icons.add),
+            StreamBuilder<List<IngredientCategory>>(
+              stream: _categories,
+              builder: (context, snapshot) {
+                final categories = snapshot.data ?? const [];
+                if (_categoryId != null &&
+                    !categories.any((item) => item.id == _categoryId)) {
+                  _categoryId = null;
+                }
+                ChoiceChip categoryChip(String label, String? id) {
+                  final selected = _categoryId == id;
+                  return ChoiceChip(
+                    label: Text(label),
+                    selected: selected,
+                    showCheckmark: false,
+                    color: WidgetStateProperty.all(
+                      selected ? const Color(0xffdbeafe) : Colors.white,
+                    ),
+                    side: BorderSide(
+                      color: selected
+                          ? const Color(0xff007aff)
+                          : const Color(0xffc6c6c8),
+                    ),
+                    labelStyle: TextStyle(
+                      color: selected
+                          ? const Color(0xff005eb8)
+                          : const Color(0xff1c1c1e),
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                    ),
+                    onSelected: (_) => setState(() {
+                      _categoryId = id;
+                      _refreshIngredients();
+                    }),
+                  );
+                }
+
+                return SizedBox(
+                  height: 48,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    children: [
+                      categoryChip('全部', null),
+                      for (final category in categories)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: categoryChip(category.name, category.id),
+                        ),
+                    ],
+                  ),
+                );
+              },
             ),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _refreshFromPeers,
+                child: StreamBuilder<List<IngredientSummary>>(
+                  stream: _ingredients,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return _scrollableFill(
+                        Center(child: Text('读取失败：${snapshot.error}')),
+                      );
+                    }
+                    final items = snapshot.data ?? const [];
+                    if (items.isEmpty) {
+                      if (_search.text.trim().isNotEmpty ||
+                          _categoryId != null) {
+                        return _scrollableFill(
+                          const Center(child: Text('没有匹配的香料')),
+                        );
+                      }
+                      return _scrollableFill(
+                        Center(
+                          child: FilledButton.icon(
+                            onPressed: _addIngredient,
+                            icon: const Icon(Icons.add),
+                            label: const Text('添加第一项'),
+                          ),
+                        ),
+                      );
+                    }
+                    return LayoutBuilder(
+                      builder: (context, constraints) {
+                        final columns = constraints.maxWidth >= 900
+                            ? 4
+                            : constraints.maxWidth >= 600
+                            ? 3
+                            : 2;
+                        return GridView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: columns,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 14,
+                                childAspectRatio: 0.78,
+                              ),
+                          itemCount: items.length,
+                          itemBuilder: (context, index) {
+                            final item = items[index];
+                            final ingredient = item.ingredient;
+                            final selected = _selected.contains(ingredient.id);
+                            final details = <String?>[
+                              item.categoryName,
+                              ingredient.alias,
+                              if (ingredient.isInactive) '已停用',
+                            ].whereType<String>().join(' · ');
+                            return Material(
+                              color: selected
+                                  ? const Color(0xffeaf2ff)
+                                  : Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                side: BorderSide(
+                                  color: selected
+                                      ? const Color(0xff007aff)
+                                      : Colors.transparent,
+                                  width: 2,
+                                ),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: InkWell(
+                                onTap: () => _selecting
+                                    ? _toggleSelection(ingredient.id)
+                                    : _editIngredient(item),
+                                onLongPress: () =>
+                                    _toggleSelection(ingredient.id),
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    Expanded(
+                                      child: ingredient.imageHash == null
+                                          ? const ColoredBox(
+                                              color: Color(0xffe6e9e7),
+                                              child: Icon(
+                                                Icons.spa_outlined,
+                                                size: 48,
+                                                color: Color(0xff566158),
+                                              ),
+                                            )
+                                          : Image.file(
+                                              widget.mediaStore.fileFor(
+                                                ingredient.imageHash!,
+                                              ),
+                                              key: ValueKey(
+                                                '${ingredient.imageHash}-${widget.mediaStore.revision}',
+                                              ),
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, _, _) =>
+                                                  const ColoredBox(
+                                                    color: Color(0xffe6e9e7),
+                                                    child: Icon(
+                                                      Icons
+                                                          .broken_image_outlined,
+                                                      size: 48,
+                                                      color: Color(0xff566158),
+                                                    ),
+                                                  ),
+                                            ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        12,
+                                        10,
+                                        12,
+                                        12,
+                                      ),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  ingredient.name,
+                                                  maxLines: 2,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 3),
+                                                Text(
+                                                  details,
+                                                  maxLines: 2,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                    color: Color(0xff636366),
+                                                    fontSize: 11,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          if (selected)
+                                            const Padding(
+                                              padding: EdgeInsets.only(left: 8),
+                                              child: Icon(
+                                                Icons.check_circle,
+                                                color: Color(0xff007aff),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+        floatingActionButton: _selecting
+            ? null
+            : FloatingActionButton(
+                tooltip: '添加香料',
+                onPressed: _addIngredient,
+                child: const Icon(Icons.add),
+              ),
+      ),
     );
   }
 
@@ -447,208 +463,302 @@ class _IngredientLibraryPageState extends State<IngredientLibraryPage> {
         var notes = item?.ingredient.notes ?? '';
         var categoryId = item?.ingredient.categoryId ?? categories.first.id;
         var saving = false;
+        var nameError = false;
+        var nameShake = 0;
         var pickingImage = false;
-        final saved = await showSingleDialog<bool>(
+        final saved = await showModalBottomSheet<bool>(
           context: context,
+          isScrollControlled: true,
+          useSafeArea: true,
+          showDragHandle: true,
           builder: (context) => StatefulBuilder(
-            builder: (context, setDialogState) => AlertDialog(
-              title: Text(item == null ? '添加香料' : '编辑香料'),
-              content: SingleChildScrollView(
+            builder: (context, setDialogState) => Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.viewInsetsOf(context).bottom,
+              ),
+              child: FractionallySizedBox(
+                heightFactor: .92,
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: SizedBox.square(
-                            dimension: 72,
-                            child: imageHash == null
-                                ? const ColoredBox(
-                                    color: Color(0xffe6e9e7),
-                                    child: Icon(Icons.spa_outlined),
-                                  )
-                                : Image.file(
-                                    widget.mediaStore.fileFor(imageHash!),
-                                    fit: BoxFit.cover,
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: pickingImage
-                                ? null
-                                : () async {
-                                    setDialogState(() => pickingImage = true);
-                                    try {
-                                      final selected = await _pickImage(
-                                        context,
-                                      );
-                                      if (selected != null && context.mounted) {
-                                        setDialogState(
-                                          () => imageHash = selected,
-                                        );
-                                      }
-                                    } catch (error) {
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(_errorText(error)),
-                                          ),
-                                        );
-                                      }
-                                    } finally {
-                                      if (context.mounted) {
-                                        setDialogState(
-                                          () => pickingImage = false,
-                                        );
-                                      }
-                                    }
-                                  },
-                            icon: const Icon(
-                              Icons.add_photo_alternate_outlined,
-                            ),
-                            label: Text(imageHash == null ? '选择图片' : '更换图片'),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      initialValue: name,
-                      autofocus: true,
-                      decoration: const InputDecoration(labelText: '名称 *'),
-                      onChanged: (value) => name = value,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      initialValue: alias,
-                      decoration: const InputDecoration(labelText: '别名'),
-                      onChanged: (value) => alias = value,
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Text(
-                          '香料大类',
-                          style: TextStyle(color: Color(0xff636366)),
-                        ),
-                        const Spacer(),
-                        TextButton.icon(
-                          onPressed: () async {
-                            final created = await _quickCreateCategory(context);
-                            if (created != null && context.mounted) {
-                              setDialogState(() {
-                                categories = [...categories, created];
-                                categoryId = created.id;
-                              });
-                            }
-                          },
-                          icon: const Icon(Icons.add, size: 18),
-                          label: const Text('新建大类'),
-                        ),
-                      ],
-                    ),
-                    DropdownButtonFormField<String>(
-                      initialValue: categoryId,
-                      isExpanded: true,
-                      decoration: const InputDecoration(labelText: '选择大类 *'),
-                      items: [
-                        for (final category in categories)
-                          DropdownMenuItem(
-                            value: category.id,
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 12, 8),
+                      child: Row(
+                        children: [
+                          Expanded(
                             child: Text(
-                              category.isInactive
-                                  ? '${category.name}（已停用）'
-                                  : category.name,
+                              item == null ? '添加香料' : '编辑香料',
+                              style: Theme.of(context).textTheme.titleLarge,
                             ),
                           ),
-                      ],
-                      onChanged: (value) => setDialogState(
-                        () => categoryId = value ?? categoryId,
+                          IconButton(
+                            tooltip: '关闭',
+                            onPressed: saving
+                                ? null
+                                : () => Navigator.pop(context, false),
+                            icon: const Icon(Icons.close),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      initialValue: notes,
-                      minLines: 2,
-                      maxLines: 4,
-                      decoration: const InputDecoration(
-                        labelText: '备注',
-                        alignLabelWithHint: true,
-                      ),
-                      onChanged: (value) => notes = value,
-                    ),
-                    if (item != null) ...[
-                      const SizedBox(height: 8),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton.icon(
-                          onPressed: () => Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => RatioRangesPage(
-                                database: widget.database,
-                                target: RatioRangeTarget.ingredient,
-                                targetId: item.ingredient.id,
-                                title: '${item.ingredient.name}推荐区间',
+                    const Divider(height: 1),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: SizedBox.square(
+                                    dimension: 72,
+                                    child: imageHash == null
+                                        ? const ColoredBox(
+                                            color: Color(0xffe6e9e7),
+                                            child: Icon(Icons.spa_outlined),
+                                          )
+                                        : Image.file(
+                                            widget.mediaStore.fileFor(
+                                              imageHash!,
+                                            ),
+                                            fit: BoxFit.cover,
+                                          ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: pickingImage
+                                        ? null
+                                        : () async {
+                                            setDialogState(
+                                              () => pickingImage = true,
+                                            );
+                                            try {
+                                              final selected = await _pickImage(
+                                                context,
+                                              );
+                                              if (selected != null &&
+                                                  context.mounted) {
+                                                setDialogState(
+                                                  () => imageHash = selected,
+                                                );
+                                              }
+                                            } catch (error) {
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      _errorText(error),
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            } finally {
+                                              if (context.mounted) {
+                                                setDialogState(
+                                                  () => pickingImage = false,
+                                                );
+                                              }
+                                            }
+                                          },
+                                    icon: const Icon(
+                                      Icons.add_photo_alternate_outlined,
+                                    ),
+                                    label: Text(
+                                      imageHash == null ? '选择图片' : '更换图片',
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            TweenAnimationBuilder<double>(
+                              key: ValueKey(nameShake),
+                              tween: Tween(begin: nameShake == 0 ? 1 : 0, end: 1),
+                              duration: const Duration(milliseconds: 260),
+                              curve: Curves.easeOut,
+                              builder: (context, value, child) =>
+                                  Transform.translate(
+                                    offset: Offset(
+                                      math.sin(value * math.pi * 6) * 5,
+                                      0,
+                                    ),
+                                    child: child,
+                                  ),
+                              child: TextFormField(
+                                initialValue: name,
+                                autofocus: true,
+                                textInputAction: TextInputAction.next,
+                                decoration: InputDecoration(
+                                  labelText: '名称 *',
+                                  errorText: nameError ? '请输入香料名称' : null,
+                                ),
+                                onChanged: (value) {
+                                  name = value;
+                                  if (nameError && value.trim().isNotEmpty) {
+                                    setDialogState(() => nameError = false);
+                                  }
+                                },
+                                onEditingComplete: () =>
+                                    FocusScope.of(context).nextFocus(),
                               ),
                             ),
-                          ),
-                          icon: const Icon(Icons.tune),
-                          label: const Text('推荐区间'),
+                            const SizedBox(height: 12),
+                            TextFormField(
+                              initialValue: alias,
+                              textInputAction: TextInputAction.next,
+                              decoration: const InputDecoration(
+                                labelText: '别名',
+                              ),
+                              onChanged: (value) => alias = value,
+                              onEditingComplete: () =>
+                                  FocusScope.of(context).nextFocus(),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Text(
+                                  '香料大类',
+                                  style: TextStyle(color: Color(0xff636366)),
+                                ),
+                                const Spacer(),
+                                TextButton.icon(
+                                  onPressed: () async {
+                                    final created = await _quickCreateCategory(
+                                      context,
+                                    );
+                                    if (created != null && context.mounted) {
+                                      setDialogState(() {
+                                        categories = [...categories, created];
+                                        categoryId = created.id;
+                                      });
+                                    }
+                                  },
+                                  icon: const Icon(Icons.add, size: 18),
+                                  label: const Text('新建大类'),
+                                ),
+                              ],
+                            ),
+                            DropdownButtonFormField<String>(
+                              initialValue: categoryId,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: '选择大类 *',
+                              ),
+                              items: [
+                                for (final category in categories)
+                                  DropdownMenuItem(
+                                    value: category.id,
+                                    child: Text(
+                                      category.isInactive
+                                          ? '${category.name}（已停用）'
+                                          : category.name,
+                                    ),
+                                  ),
+                              ],
+                              onChanged: (value) => setDialogState(
+                                () => categoryId = value ?? categoryId,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            TextFormField(
+                              initialValue: notes,
+                              minLines: 2,
+                              maxLines: 4,
+                              textInputAction: TextInputAction.done,
+                              decoration: const InputDecoration(
+                                labelText: '备注',
+                                alignLabelWithHint: true,
+                              ),
+                              onChanged: (value) => notes = value,
+                            ),
+                            if (item != null) ...[
+                              const SizedBox(height: 8),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: TextButton.icon(
+                                  onPressed: () => Navigator.of(context).push(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => RatioRangesPage(
+                                        database: widget.database,
+                                        target: RatioRangeTarget.ingredient,
+                                        targetId: item.ingredient.id,
+                                        title: '${item.ingredient.name}推荐区间',
+                                      ),
+                                    ),
+                                  ),
+                                  icon: const Icon(Icons.tune),
+                                  label: const Text('推荐区间'),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
-                    ],
+                    ),
+                    const Divider(height: 1),
+                    SafeArea(
+                      top: false,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                        child: FilledButton(
+                          onPressed: saving
+                              ? null
+                              : () async {
+                                  if (name.trim().isEmpty) {
+                                    setDialogState(() {
+                                      nameError = true;
+                                      nameShake++;
+                                    });
+                                    return;
+                                  }
+                                  setDialogState(() => saving = true);
+                                  try {
+                                    if (item == null) {
+                                      await widget.database.createIngredient(
+                                        name: name,
+                                        imageHash: imageHash,
+                                        alias: alias,
+                                        notes: notes,
+                                        categoryId: categoryId,
+                                      );
+                                    } else {
+                                      await widget.database.updateIngredient(
+                                        item.ingredient.id,
+                                        name: name,
+                                        imageHash: imageHash,
+                                        alias: alias,
+                                        notes: notes,
+                                        categoryId: categoryId,
+                                      );
+                                    }
+                                    if (context.mounted) {
+                                      Navigator.pop(context, true);
+                                    }
+                                  } catch (error) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(_errorText(error)),
+                                        ),
+                                      );
+                                      setDialogState(() => saving = false);
+                                    }
+                                  }
+                                },
+                          child: Text(saving ? '保存中…' : '保存'),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: saving
-                      ? null
-                      : () => Navigator.pop(context, false),
-                  child: const Text('取消'),
-                ),
-                FilledButton(
-                  onPressed: saving
-                      ? null
-                      : () async {
-                          setDialogState(() => saving = true);
-                          try {
-                            if (item == null) {
-                              await widget.database.createIngredient(
-                                name: name,
-                                imageHash: imageHash,
-                                alias: alias,
-                                notes: notes,
-                                categoryId: categoryId,
-                              );
-                            } else {
-                              await widget.database.updateIngredient(
-                                item.ingredient.id,
-                                name: name,
-                                imageHash: imageHash,
-                                alias: alias,
-                                notes: notes,
-                                categoryId: categoryId,
-                              );
-                            }
-                            if (context.mounted) Navigator.pop(context, true);
-                          } catch (error) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(_errorText(error))),
-                              );
-                              setDialogState(() => saving = false);
-                            }
-                          }
-                        },
-                  child: Text(saving ? '保存中…' : '保存'),
-                ),
-              ],
             ),
           ),
         );
@@ -802,29 +912,48 @@ class IngredientCategoriesPage extends StatelessWidget {
               ),
             );
           }
-          return ListView.builder(
+          return ReorderableListView.builder(
+            buildDefaultDragHandles: false,
             itemCount: items.length,
+            onReorderItem: (oldIndex, newIndex) =>
+                _reorder(items, oldIndex, newIndex),
             itemBuilder: (context, index) {
               final item = items[index];
               return ListTile(
+                key: ValueKey(item.id),
                 title: Text(item.name),
                 subtitle: item.isInactive ? const Text('已停用') : null,
                 onTap: () => _edit(context, item),
-                trailing: PopupMenuButton<String>(
-                  tooltip: '${item.name}的更多操作',
-                  onSelected: (action) => _action(context, item, action),
-                  itemBuilder: (_) => [
-                    const PopupMenuItem(value: 'edit', child: Text('编辑')),
-                    if (index > 0)
-                      const PopupMenuItem(value: 'up', child: Text('上移')),
-                    if (index < items.length - 1)
-                      const PopupMenuItem(value: 'down', child: Text('下移')),
-                    const PopupMenuItem(value: 'ratio', child: Text('推荐区间')),
-                    PopupMenuItem(
-                      value: 'inactive',
-                      child: Text(item.isInactive ? '启用' : '停用'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    PopupMenuButton<String>(
+                      tooltip: '${item.name}的更多操作',
+                      onSelected: (action) => _action(context, item, action),
+                      itemBuilder: (_) => [
+                        const PopupMenuItem(value: 'edit', child: Text('编辑')),
+                        const PopupMenuItem(
+                          value: 'ratio',
+                          child: Text('推荐区间'),
+                        ),
+                        PopupMenuItem(
+                          value: 'inactive',
+                          child: Text(item.isInactive ? '启用' : '停用'),
+                        ),
+                        const PopupMenuItem(value: 'delete', child: Text('删除')),
+                      ],
                     ),
-                    const PopupMenuItem(value: 'delete', child: Text('删除')),
+                    ReorderableDelayedDragStartListener(
+                      index: index,
+                      child: Semantics(
+                        button: true,
+                        label: '长按拖动${item.name}',
+                        child: const SizedBox.square(
+                          dimension: 48,
+                          child: Icon(Icons.drag_handle),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               );
@@ -838,6 +967,18 @@ class IngredientCategoriesPage extends StatelessWidget {
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  Future<void> _reorder(
+    List<IngredientCategory> items,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    if (oldIndex == newIndex) return;
+    final direction = newIndex > oldIndex ? 1 : -1;
+    for (var i = 0; i < (newIndex - oldIndex).abs(); i++) {
+      await database.moveIngredientCategory(items[oldIndex].id, direction);
+    }
   }
 
   Future<void> _edit(

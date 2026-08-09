@@ -532,12 +532,19 @@ void main() {
         productionTypeId,
       );
       expect(
-        (await database
-                .watchRatioRanges(RatioRangeTarget.ingredient, ingredient.id)
-                .first)
-            .first
-            .minRatio,
-        isNull,
+        (
+          (await database
+                  .watchRatioRanges(RatioRangeTarget.ingredient, ingredient.id)
+                  .first)
+              .first
+              .minRatio,
+          (await database
+                  .watchRatioRanges(RatioRangeTarget.ingredient, ingredient.id)
+                  .first)
+              .first
+              .inherited,
+        ),
+        (1250, true),
       );
       await database.setRatioRange(
         target: RatioRangeTarget.ingredient,

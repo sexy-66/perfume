@@ -225,6 +225,9 @@ void main() {
         warnings.map((warning) => warning.key),
       );
       final session = await source.completeDraft(draft.id);
+      const formulaImage =
+          'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      await source.updateFormulaImage(session.formulaId!, formulaImage);
 
       for (var i = 0; i < 8; i++) {
         final operations = await source.syncOperationsMissingFrom(
@@ -270,7 +273,13 @@ void main() {
             .then((value) => value.formulaName),
         '测试香方',
       );
-      expect(await target.select(target.formulas).get(), hasLength(1));
+      expect(
+        await target
+            .select(target.formulas)
+            .getSingle()
+            .then((value) => value.imageHash),
+        formulaImage,
+      );
       expect(await target.select(target.formulaVersions).get(), hasLength(1));
       expect(await target.select(target.formulaItems).get(), hasLength(1));
       expect(
