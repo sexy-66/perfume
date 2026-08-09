@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -122,6 +121,7 @@ class _Shell extends StatefulWidget {
 
 class _ShellState extends State<_Shell> with WidgetsBindingObserver {
   var _index = 0;
+  final _visitedPages = [true, false, false];
   PeerSyncRuntime? _runtime;
   Future<PeerSyncRuntime?>? _syncInitialization;
   Object? _syncInitializationError;
@@ -138,10 +138,14 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver {
     _runtime = widget.syncRuntime;
     if (_runtime != null || widget.syncRuntimeLoader != null) {
       WidgetsBinding.instance.addObserver(this);
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) unawaited(_initializeSync());
-      });
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() => _visitedPages.fillRange(0, _visitedPages.length, true));
+      if (_runtime != null || widget.syncRuntimeLoader != null) {
+        unawaited(_initializeSync());
+      }
+    });
   }
 
   @override
@@ -261,10 +265,19 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver {
         if (!didPop) _handleBack();
       },
       child: Scaffold(
-        body: IndexedStack(index: _index, children: pages),
+        body: IndexedStack(
+          index: _index,
+          children: [
+            for (var i = 0; i < pages.length; i++)
+              _visitedPages[i] ? pages[i] : const SizedBox.shrink(),
+          ],
+        ),
         bottomNavigationBar: _GlassNavigationBar(
           index: _index,
-          onChanged: (index) => setState(() => _index = index),
+          onChanged: (index) => setState(() {
+            _visitedPages[index] = true;
+            _index = index;
+          }),
         ),
       ),
     );
@@ -352,75 +365,72 @@ class _GlassNavigationBar extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(32),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: .72),
-                border: Border.all(color: Colors.white.withValues(alpha: .84)),
-                borderRadius: BorderRadius.circular(32),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x22000000),
-                    blurRadius: 22,
-                    offset: Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  for (var i = 0; i < items.length; i++)
-                    Expanded(
-                      child: Semantics(
-                        button: true,
-                        selected: index == i,
-                        label: items[i].$2,
-                        excludeSemantics: true,
-                        child: InkWell(
-                          onTap: () => onChanged(i),
-                          borderRadius: BorderRadius.circular(28),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 180),
-                            curve: Curves.easeOut,
-                            margin: const EdgeInsets.all(4),
-                            padding: const EdgeInsets.symmetric(vertical: 5),
-                            decoration: BoxDecoration(
-                              color: index == i
-                                  ? const Color(0x1f007aff)
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(28),
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  items[i].$1,
-                                  size: 20,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: const Color(0xf2ffffff),
+              border: Border.all(color: Colors.white),
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x22000000),
+                  blurRadius: 22,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                for (var i = 0; i < items.length; i++)
+                  Expanded(
+                    child: Semantics(
+                      button: true,
+                      selected: index == i,
+                      label: items[i].$2,
+                      excludeSemantics: true,
+                      child: InkWell(
+                        onTap: () => onChanged(i),
+                        borderRadius: BorderRadius.circular(28),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          curve: Curves.easeOut,
+                          margin: const EdgeInsets.all(4),
+                          padding: const EdgeInsets.symmetric(vertical: 5),
+                          decoration: BoxDecoration(
+                            color: index == i
+                                ? const Color(0x1f007aff)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(28),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                items[i].$1,
+                                size: 20,
+                                color: index == i
+                                    ? const Color(0xff007aff)
+                                    : const Color(0xff636366),
+                              ),
+                              const SizedBox(height: 1),
+                              Text(
+                                items[i].$2,
+                                style: TextStyle(
+                                  fontSize: 11,
                                   color: index == i
                                       ? const Color(0xff007aff)
                                       : const Color(0xff636366),
+                                  fontWeight: index == i
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
                                 ),
-                                const SizedBox(height: 1),
-                                Text(
-                                  items[i].$2,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: index == i
-                                        ? const Color(0xff007aff)
-                                        : const Color(0xff636366),
-                                    fontWeight: index == i
-                                        ? FontWeight.w600
-                                        : FontWeight.w400,
-                                  ),
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
         ),

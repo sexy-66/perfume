@@ -11,8 +11,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final database = AppDatabase.defaults();
   final mediaStore = await MediaStore.defaults();
-  await database.initialize();
-  await mediaStore.initialize();
+  await Future.wait([database.initialize(), mediaStore.initialize()]);
   runApp(
     XiangApp(
       database: database,

@@ -1099,6 +1099,7 @@ class _FormulaCoverCard extends StatelessWidget {
                       name: item.formula.name,
                       imageHash: item.formula.imageHash,
                       mediaStore: mediaStore,
+                      cacheWidth: 720,
                     ),
                     if (selected)
                       const Align(
@@ -1169,12 +1170,14 @@ class _FormulaArtwork extends StatelessWidget {
     required this.mediaStore,
     this.imageHash,
     this.borderRadius = 14,
+    this.cacheWidth,
   });
 
   final String name;
   final String? imageHash;
   final MediaStore mediaStore;
   final double borderRadius;
+  final int? cacheWidth;
 
   @override
   Widget build(BuildContext context) => ClipRRect(
@@ -1211,6 +1214,7 @@ class _FormulaArtwork extends StatelessWidget {
             key: ValueKey('$imageHash-${mediaStore.revision}'),
             width: double.infinity,
             fit: BoxFit.cover,
+            cacheWidth: cacheWidth,
             errorBuilder: (_, _, _) => const ColoredBox(
               color: Color(0xffe6e9e7),
               child: Center(child: Icon(Icons.broken_image_outlined)),
