@@ -8,6 +8,7 @@ import 'package:xiangfangbu/app.dart';
 import 'package:xiangfangbu/data/app_database.dart';
 import 'package:xiangfangbu/data/media_store.dart';
 import 'package:xiangfangbu/features/formulas/formulas_page.dart';
+import 'package:xiangfangbu/features/ingredients/ratio_ranges_page.dart';
 import 'package:xiangfangbu/features/recommendations/recommendation_preset_detail_page.dart';
 import 'package:xiangfangbu/services/peer_handshake.dart';
 import 'package:xiangfangbu/services/peer_sync_runtime.dart';
@@ -109,6 +110,45 @@ void main() {
     mediaDirectory.deleteSync(recursive: true);
   });
 
+  testWidgets('opening sync entry restarts an existing stopped runtime', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    final mediaDirectory = Directory.systemTemp.createTempSync('xiang-ui-');
+    final runtime = _RecordingPeerSyncRuntime(
+      await PeerIdentity.create(
+        deviceId: 'sync-restart-device',
+        deviceName: '同步恢复设备',
+      ),
+    );
+    await database.initialize();
+    await tester.pumpWidget(
+      XiangApp(
+        database: database,
+        mediaStore: MediaStore(mediaDirectory),
+        syncRuntime: runtime,
+      ),
+    );
+    await tester.pump();
+    expect(runtime.startCalls, 1);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    expect(runtime.stopCalls, 1);
+
+    await tester.tap(find.text('更多'));
+    await tester.pump();
+    await tester.tap(find.text('同步与设备'));
+    await tester.pumpAndSettle();
+    expect(runtime.startCalls, 2);
+    expect(find.widgetWithText(AppBar, '同步与设备'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+    await database.close();
+    mediaDirectory.deleteSync(recursive: true);
+  });
+
   testWidgets('product entry selects plaque before formula', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1080, 2400);
@@ -118,7 +158,12 @@ void main() {
     final mediaDirectory = Directory.systemTemp.createTempSync('xiang-ui-');
     final mediaStore = MediaStore(mediaDirectory);
     await database.initialize();
-    await database.createPlaqueType(name: '圆牌');
+    const plaqueImageHash =
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    final plaque = await database.createPlaqueType(
+      name: '圆牌',
+      imageHash: plaqueImageHash,
+    );
     await tester.pumpWidget(
       XiangApp(database: database, mediaStore: mediaStore),
     );
@@ -127,8 +172,45 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
     expect(find.text('选择成品'), findsOneWidget);
-    expect(find.text('作为同一种成品统一选择'), findsOneWidget);
+    expect(find.text('作为同一种成品统一选择'), findsNothing);
     expect(find.text('圆牌'), findsOneWidget);
+
+    final image = find.byKey(ValueKey('plaque-pinch-image-${plaque.id}'));
+    final center = tester.getCenter(image);
+    final first = await tester.createGesture(pointer: 1);
+    final second = await tester.createGesture(pointer: 2);
+    await first.down(center - const Offset(30, 0));
+    await second.down(center + const Offset(30, 0));
+    await first.moveTo(center - const Offset(80, 0));
+    await second.moveTo(center + const Offset(80, 0));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('plaque-pinch-overlay')), findsOneWidget);
+    expect(
+      tester
+          .widget<Transform>(
+            find.byKey(const ValueKey('plaque-pinch-overlay-transform')),
+          )
+          .transform
+          .getMaxScaleOnAxis(),
+      greaterThan(1),
+    );
+    await first.up();
+    await tester.pump();
+    expect(find.byKey(const ValueKey('plaque-pinch-overlay')), findsOneWidget);
+    expect(
+      tester
+          .widget<Transform>(
+            find.byKey(const ValueKey('plaque-pinch-overlay-transform')),
+          )
+          .transform
+          .getMaxScaleOnAxis(),
+      greaterThan(1),
+    );
+    await second.up();
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.byKey(const ValueKey('plaque-pinch-overlay')), findsNothing);
+    expect(find.text('选择成品'), findsOneWidget);
+
     await tester.tap(find.text('圆牌'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
@@ -136,8 +218,13 @@ void main() {
     expect(find.widgetWithText(FilledButton, '新建香方'), findsOneWidget);
     await tester.tap(find.widgetWithText(FilledButton, '新建香方'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('新建香方'), findsWidgets);
+    expect(find.textContaining('选择香料（'), findsNothing);
+    expect(find.widgetWithText(FilledButton, '从香料库选择'), findsOneWidget);
     expect(find.text('香牌（可选）'), findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -184,6 +271,161 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1));
     await database.close();
     mediaDirectory.deleteSync(recursive: true);
+  });
+
+  testWidgets('plaque formula selection shows formula artwork', (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    final mediaDirectory = Directory.systemTemp.createTempSync('xiang-ui-');
+    await database.initialize();
+    final category = await database.createIngredientCategory('木类');
+    final ingredient = await database.createIngredient(
+      name: '沉香',
+      categoryId: category.id,
+    );
+    final plaque = await database.createPlaqueType(name: '方牌');
+    final draft = await database.saveComposerDraft(
+      productionTypeId: combinedProductionTypeId,
+      targetWeightText: '',
+      items: [
+        FormulaDraftItemInput(
+          ingredientId: ingredient.id,
+          categoryName: category.name,
+          ingredientName: ingredient.name,
+          ratio: 10000,
+          sortOrder: 0,
+        ),
+      ],
+      formulaName: '有封面的香方',
+      notes: '',
+      imageHash:
+          'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+      isRecommended: true,
+    );
+    final formula = await database.completeRecommendedFormulaDraft(draft.id);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FormulaSelectionPage(
+          database: database,
+          mediaStore: MediaStore(mediaDirectory),
+          plaque: plaque,
+        ),
+      ),
+    );
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('有封面的香方'), findsOneWidget);
+    expect(
+      find.byKey(ValueKey('formula-selection-image-${formula.id}')),
+      findsOneWidget,
+    );
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+    await database.close();
+    mediaDirectory.deleteSync(recursive: true);
+  });
+
+  testWidgets(
+    'ingredient picker filters categories and preserves library order',
+    (tester) async {
+      final mediaDirectory = Directory.systemTemp.createTempSync('xiang-ui-');
+      const flower = FormulaIngredientChoice(
+        id: 'flower-1',
+        categoryId: 'category-flower',
+        categoryName: '花类',
+        ingredientName: '玫瑰',
+        categorySortOrder: 1,
+      );
+      const wood = FormulaIngredientChoice(
+        id: 'wood-1',
+        categoryId: 'category-wood',
+        categoryName: '木类',
+        ingredientName: '沉香',
+        categorySortOrder: 0,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FormulaIngredientPickerPage(
+            choices: const [flower, wood],
+            mediaStore: MediaStore(mediaDirectory),
+            initiallySelected: const {},
+          ),
+        ),
+      );
+
+      expect(find.widgetWithText(FilterChip, '全部大类'), findsOneWidget);
+      expect(find.widgetWithText(FilterChip, '木类'), findsOneWidget);
+      expect(find.widgetWithText(FilterChip, '花类'), findsOneWidget);
+      expect(
+        tester
+            .getTopLeft(find.byKey(const ValueKey('ingredient-choice-wood-1')))
+            .dx,
+        lessThan(
+          tester
+              .getTopLeft(
+                find.byKey(const ValueKey('ingredient-choice-flower-1')),
+              )
+              .dx,
+        ),
+      );
+
+      await tester.tap(find.widgetWithText(FilterChip, '花类'));
+      await tester.pump();
+      expect(find.text('玫瑰'), findsOneWidget);
+      expect(find.text('沉香'), findsNothing);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      mediaDirectory.deleteSync(recursive: true);
+    },
+  );
+
+  testWidgets('ratio range editor preserves minimum and maximum fields', (
+    tester,
+  ) async {
+    final database = _RatioRangeCaptureDatabase(
+      const RatioRangeSetting(
+        productionTypeId: 'type-zhuanxiang',
+        productionTypeName: '篆香',
+        productionTypeInactive: false,
+        rangeId: 'range-1',
+        minRatio: 1250,
+        maxRatio: 2500,
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RatioRangesPage(
+          database: database,
+          target: RatioRangeTarget.category,
+          targetId: 'category-1',
+          title: '木类推荐区间',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('篆香'));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final minimum = find.widgetWithText(TextFormField, '12.50');
+    final maximum = find.widgetWithText(TextFormField, '25.00');
+    expect(minimum, findsOneWidget);
+    expect(maximum, findsOneWidget);
+    await tester.enterText(minimum, '10.25');
+    await tester.enterText(maximum, '30.75');
+    tester.testTextInput.hide();
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, '保存'));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect((database.minRatio, database.maxRatio), (1025, 3075));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
   });
 
   testWidgets('shows the three destinations and ordered more page', (
@@ -307,8 +549,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('篆香'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField).first, '25');
-    await tester.enterText(find.byType(TextFormField).last, '12.5');
+    await tester.enterText(find.byType(TextFormField).first, '12.5');
+    await tester.enterText(find.byType(TextFormField).last, '25');
     await tester.tap(find.widgetWithText(FilledButton, '保存'));
     await tester.pumpAndSettle();
     expect(find.text('12.50%–25.00%'), findsOneWidget);
@@ -1375,7 +1617,7 @@ void main() {
     await tester.pageBack();
     await tester.pump(const Duration(milliseconds: 500));
 
-    await tester.tap(find.widgetWithText(FilledButton, '再次调配'));
+    await tester.tap(find.widgetWithText(FilledButton, '开始调配'));
     await tester.pump();
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 100)),
@@ -1383,7 +1625,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     await tester.enterText(find.byType(TextField).last, '1.00');
-    await tester.tap(find.text('再次调配').last);
+    await tester.tap(find.text('开始调配').last);
     await tester.pump();
     expect(tester.takeException(), isNull);
     await tester.tap(find.widgetWithText(FilledButton, '进入调配'));
@@ -1487,5 +1729,31 @@ class _DelayedAssetDatabase extends AppDatabase {
   Future<List<AssetStatuse>> getActiveAssetStatuses({String? includeId}) async {
     statusQueries++;
     return super.getActiveAssetStatuses(includeId: includeId);
+  }
+}
+
+class _RatioRangeCaptureDatabase extends AppDatabase {
+  _RatioRangeCaptureDatabase(this.setting) : super(NativeDatabase.memory());
+
+  final RatioRangeSetting setting;
+  int? minRatio;
+  int? maxRatio;
+
+  @override
+  Stream<List<RatioRangeSetting>> watchRatioRanges(
+    RatioRangeTarget target,
+    String targetId,
+  ) => Stream.value([setting]);
+
+  @override
+  Future<void> setRatioRange({
+    required RatioRangeTarget target,
+    required String targetId,
+    required String productionTypeId,
+    required int minRatio,
+    required int maxRatio,
+  }) async {
+    this.minRatio = minRatio;
+    this.maxRatio = maxRatio;
   }
 }

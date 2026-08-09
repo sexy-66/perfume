@@ -146,6 +146,145 @@ void main() {
     expect(await clientMedia.fileFor(secondHash).readAsBytes(), secondImage);
   });
 
+  test('first sync drains large batches beyond 256 operations', () async {
+    final serverDatabase = AppDatabase(NativeDatabase.memory());
+    final clientDatabase = AppDatabase(NativeDatabase.memory());
+    await serverDatabase.initialize();
+    await clientDatabase.initialize();
+    final serverIdentity = await PeerIdentity.create(
+      deviceId: 'z-server-device',
+      deviceName: 'Xiaomi 15 Pro',
+    );
+    final clientIdentity = await PeerIdentity.create(
+      deviceId: 'a-client-device',
+      deviceName: 'Redmi Pad',
+    );
+    final server = PeerSyncRuntime(
+      identity: serverIdentity,
+      groupId: 'store-1',
+      database: serverDatabase,
+      bindAddress: InternetAddress.loopbackIPv4,
+      discoveryBindPort: 0,
+      announceImmediately: false,
+    );
+    final client = PeerSyncRuntime(
+      identity: clientIdentity,
+      groupId: 'store-1',
+      database: clientDatabase,
+      bindAddress: InternetAddress.loopbackIPv4,
+      discoveryBindPort: 0,
+      announceImmediately: false,
+    );
+    addTearDown(server.close);
+    addTearDown(client.close);
+    addTearDown(serverDatabase.close);
+    addTearDown(clientDatabase.close);
+    await server.start();
+    await client.start();
+
+    final category = await serverDatabase.createIngredientCategory('木类');
+    final notes = List.filled(2048, '香').join();
+    for (var i = 0; i < 260; i++) {
+      await serverDatabase.createIngredient(
+        name: '香料$i',
+        categoryId: category.id,
+        notes: notes,
+      );
+    }
+
+    await client.pair(
+      PeerDiscoveryPeer(
+        advertisement: PeerDiscoveryAdvertisement(
+          groupId: 'store-1',
+          deviceId: serverIdentity.deviceId,
+          deviceName: serverIdentity.deviceName,
+          httpPort: server.localHttpPort,
+          nonce: List<int>.filled(16, 4),
+        ),
+        address: InternetAddress.loopbackIPv4,
+        lastSeenUtc: DateTime.now().toUtc(),
+      ),
+      server.pairingCode!.value,
+    );
+
+    expect(
+      await clientDatabase.select(clientDatabase.ingredients).get(),
+      hasLength(260),
+    );
+  });
+
+  test('permanent sync failures pause automatic retries', () async {
+    final serverDatabase = AppDatabase(NativeDatabase.memory());
+    final clientDatabase = AppDatabase(NativeDatabase.memory());
+    await serverDatabase.initialize();
+    await clientDatabase.initialize();
+    final serverIdentity = await PeerIdentity.create(
+      deviceId: 'server-device',
+      deviceName: 'Redmi Pad',
+    );
+    final clientIdentity = await PeerIdentity.create(
+      deviceId: 'client-device',
+      deviceName: 'Xiaomi 15 Pro',
+    );
+    var syncRequests = 0;
+    final server = PeerHttpServer(
+      identity: serverIdentity,
+      groupId: 'store-1',
+      pairingCode: PairingCode.issue(),
+      expectedRemoteDeviceName: clientIdentity.deviceName,
+      onMessage: (_, payload) async {
+        if (payload is Map && payload['kind'] == 'peer-status') {
+          return {
+            'kind': 'peer-status-result',
+            'requiresRejoin': false,
+            'vector': const <String, int>{},
+          };
+        }
+        if (payload is Map && payload['kind'] == 'sync-batch') {
+          syncRequests++;
+          throw const FormatException('测试数据错误');
+        }
+        return {'kind': 'echo', 'payload': payload};
+      },
+    );
+    final client = PeerSyncRuntime(
+      identity: clientIdentity,
+      groupId: 'store-1',
+      database: clientDatabase,
+      bindAddress: InternetAddress.loopbackIPv4,
+      discoveryBindPort: 0,
+      announceImmediately: false,
+      syncInterval: const Duration(milliseconds: 30),
+    );
+    addTearDown(server.close);
+    addTearDown(client.close);
+    addTearDown(serverDatabase.close);
+    addTearDown(clientDatabase.close);
+    await server.start();
+    await client.start();
+
+    final peer = PeerDiscoveryPeer(
+      advertisement: PeerDiscoveryAdvertisement(
+        groupId: 'store-1',
+        deviceId: serverIdentity.deviceId,
+        deviceName: serverIdentity.deviceName,
+        httpPort: server.uri.port,
+        nonce: List<int>.filled(16, 5),
+      ),
+      address: InternetAddress.loopbackIPv4,
+      lastSeenUtc: DateTime.now().toUtc(),
+    );
+    await client.pair(peer, server.pairingCode.value);
+    for (var i = 0; i < 20 && syncRequests == 0; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+    expect(syncRequests, 1);
+
+    await clientDatabase.createIngredientCategory('本地变更');
+    await Future<void>.delayed(const Duration(milliseconds: 160));
+    expect(syncRequests, 1);
+  });
+
   test('trusted devices reconnect from discovery without a PIN', () async {
     final directory = await Directory.systemTemp.createTemp('xiang-trust-');
     addTearDown(() => directory.delete(recursive: true));

@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:lpinyin/lpinyin.dart';
 
 import '../../data/app_database.dart';
 import '../../data/media_store.dart';
 import '../../services/formula_calculator.dart';
+import '../../ui/image_picker_cropper.dart';
 import '../../ui/single_modal.dart';
 import '../settings/sync_conflicts_page.dart';
 
@@ -276,9 +276,10 @@ class _HomeEntryCard extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: pinchZoom
-            ? _PinchZoomHomeImage(
-                image: image,
+            ? _PinchZoomImage(
+                image: Image.asset(image, fit: BoxFit.cover),
                 semanticsLabel: '$title首页图片，支持双指缩放',
+                transformKey: const ValueKey('home-plaque-pinch-image'),
                 onTap: onTap,
                 onPinchActiveChanged: onPinchActiveChanged,
                 child: label,
@@ -296,26 +297,30 @@ class _HomeEntryCard extends StatelessWidget {
   }
 }
 
-class _PinchZoomHomeImage extends StatefulWidget {
-  const _PinchZoomHomeImage({
+class _PinchZoomImage extends StatefulWidget {
+  const _PinchZoomImage({
     required this.image,
     required this.semanticsLabel,
     required this.onTap,
     required this.child,
+    required this.transformKey,
     this.onPinchActiveChanged,
+    this.overlayOnPinch = false,
   });
 
-  final String image;
+  final Widget image;
   final String semanticsLabel;
   final VoidCallback onTap;
   final Widget child;
+  final Key transformKey;
   final ValueChanged<bool>? onPinchActiveChanged;
+  final bool overlayOnPinch;
 
   @override
-  State<_PinchZoomHomeImage> createState() => _PinchZoomHomeImageState();
+  State<_PinchZoomImage> createState() => _PinchZoomImageState();
 }
 
-class _PinchZoomHomeImageState extends State<_PinchZoomHomeImage> {
+class _PinchZoomImageState extends State<_PinchZoomImage> {
   static const _maxScale = 4.0;
 
   final Map<int, Offset> _pointers = {};
@@ -325,13 +330,18 @@ class _PinchZoomHomeImageState extends State<_PinchZoomHomeImage> {
   double _gestureStartDistance = 1;
   Offset _gestureStartTranslation = Offset.zero;
   Offset _gestureStartFocalPoint = Offset.zero;
+  Offset _singlePointerStart = Offset.zero;
   bool _suppressTap = false;
   bool _pinchActive = false;
   Timer? _tapResetTimer;
+  OverlayEntry? _overlayEntry;
+  Offset _overlayOrigin = Offset.zero;
+  Size _overlaySize = Size.zero;
 
   @override
   void dispose() {
     _tapResetTimer?.cancel();
+    _overlayEntry?.remove();
     super.dispose();
   }
 
@@ -341,12 +351,22 @@ class _PinchZoomHomeImageState extends State<_PinchZoomHomeImage> {
       _suppressTap = true;
       _setPinchActive(true);
       _startPinch();
+      if (widget.overlayOnPinch) _showOverlay();
     }
   }
 
   void _pointerMove(PointerMoveEvent event, Size size) {
     if (!_pointers.containsKey(event.pointer)) return;
     _pointers[event.pointer] = event.localPosition;
+    if (_pointers.length == 1 && _overlayEntry != null && _scale > 1) {
+      final nextTranslation =
+          _gestureStartTranslation + event.localPosition - _singlePointerStart;
+      setState(() {
+        _translation = _clampTranslation(nextTranslation, size, _scale);
+      });
+      _overlayEntry?.markNeedsBuild();
+      return;
+    }
     if (_pointers.length < 2) return;
     final points = _pointers.values.take(2).toList(growable: false);
     final focalPoint = (points[0] + points[1]) / 2;
@@ -362,14 +382,25 @@ class _PinchZoomHomeImageState extends State<_PinchZoomHomeImage> {
       _scale = nextScale;
       _translation = _clampTranslation(nextTranslation, size, nextScale);
     });
+    _overlayEntry?.markNeedsBuild();
   }
 
   void _pointerEnd(PointerEvent event) {
     _pointers.remove(event.pointer);
-    if (_pointers.length < 2) _setPinchActive(false);
+    if (_pointers.isEmpty) {
+      _setPinchActive(false);
+      if (widget.overlayOnPinch) {
+        _hideOverlay();
+        setState(() {
+          _scale = 1;
+          _translation = Offset.zero;
+        });
+      }
+    }
     if (_pointers.length == 1) {
       _gestureStartScale = _scale;
       _gestureStartTranslation = _translation;
+      _singlePointerStart = _pointers.values.single;
     }
     _tapResetTimer?.cancel();
     _tapResetTimer = Timer(const Duration(milliseconds: 180), () {
@@ -391,6 +422,45 @@ class _PinchZoomHomeImageState extends State<_PinchZoomHomeImage> {
     if (_pinchActive == active) return;
     _pinchActive = active;
     widget.onPinchActiveChanged?.call(active);
+  }
+
+  void _showOverlay() {
+    if (_overlayEntry != null) return;
+    final box = context.findRenderObject()! as RenderBox;
+    _overlayOrigin = box.localToGlobal(Offset.zero);
+    _overlaySize = box.size;
+    final overlay = Overlay.of(context, rootOverlay: true);
+    _overlayEntry = OverlayEntry(
+      builder: (_) => IgnorePointer(
+        child: Stack(
+          key: const ValueKey('plaque-pinch-overlay'),
+          fit: StackFit.expand,
+          children: [
+            const ColoredBox(color: Color(0xcc000000)),
+            Positioned(
+              left: _overlayOrigin.dx,
+              top: _overlayOrigin.dy,
+              width: _overlaySize.width,
+              height: _overlaySize.height,
+              child: Transform(
+                key: const ValueKey('plaque-pinch-overlay-transform'),
+                alignment: Alignment.topLeft,
+                transform: Matrix4.identity()
+                  ..translateByDouble(_translation.dx, _translation.dy, 0, 1)
+                  ..scaleByDouble(_scale, _scale, 1, 1),
+                child: widget.image,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    overlay.insert(_overlayEntry!);
+  }
+
+  void _hideOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
   }
 
   Offset _clampTranslation(Offset value, Size size, double scale) => Offset(
@@ -422,12 +492,15 @@ class _PinchZoomHomeImageState extends State<_PinchZoomHomeImage> {
               fit: StackFit.expand,
               children: [
                 Transform(
-                  key: const ValueKey('home-plaque-pinch-image'),
+                  key: widget.transformKey,
                   alignment: Alignment.topLeft,
                   transform: Matrix4.identity()
                     ..translateByDouble(_translation.dx, _translation.dy, 0, 1)
                     ..scaleByDouble(_scale, _scale, 1, 1),
-                  child: Image.asset(widget.image, fit: BoxFit.cover),
+                  child: Opacity(
+                    opacity: _overlayEntry == null ? 1 : 0,
+                    child: widget.image,
+                  ),
                 ),
                 InkWell(onTap: _tap, child: widget.child),
               ],
@@ -816,7 +889,7 @@ class _DeleteSelectionSheet extends StatelessWidget {
   );
 }
 
-class PlaqueProductionStartPage extends StatelessWidget {
+class PlaqueProductionStartPage extends StatefulWidget {
   const PlaqueProductionStartPage({
     super.key,
     required this.database,
@@ -827,10 +900,16 @@ class PlaqueProductionStartPage extends StatelessWidget {
   final MediaStore mediaStore;
 
   @override
+  State<PlaqueProductionStartPage> createState() =>
+      _PlaqueProductionStartPageState();
+}
+
+class _PlaqueProductionStartPageState extends State<PlaqueProductionStartPage> {
+  @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('选择成品')),
     body: StreamBuilder<List<PlaqueType>>(
-      stream: database.watchPlaqueTypes(),
+      stream: widget.database.watchPlaqueTypes(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(child: Text('读取失败：${snapshot.error}'));
@@ -848,34 +927,19 @@ class PlaqueProductionStartPage extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           children: [
             Text('合香珠 / 香牌', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 4),
-            const Text(
-              '作为同一种成品统一选择',
-              style: TextStyle(color: Color(0xff636366)),
-            ),
             const SizedBox(height: 16),
             for (final plaque in items) ...[
               Material(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => FormulaSelectionPage(
-                        database: database,
-                        mediaStore: mediaStore,
-                        plaque: plaque,
-                      ),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      AspectRatio(
-                        aspectRatio: 4 / 3,
-                        child: ColoredBox(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AspectRatio(
+                      aspectRatio: 4 / 3,
+                      child: _PinchZoomImage(
+                        image: ColoredBox(
                           color: const Color(0xffe6e9e7),
                           child: plaque.imageHash == null
                               ? const Center(
@@ -893,25 +957,33 @@ class PlaqueProductionStartPage extends StatelessWidget {
                                   ),
                                 )
                               : Image.file(
-                                  mediaStore.fileFor(plaque.imageHash!),
+                                  widget.mediaStore.fileFor(plaque.imageHash!),
                                   fit: BoxFit.contain,
                                   errorBuilder: (_, _, _) =>
                                       const Icon(Icons.broken_image_outlined),
                                 ),
                         ),
-                      ),
-                      ListTile(
-                        title: Text(plaque.name),
-                        subtitle: plaque.specification == null
-                            ? null
-                            : Text(plaque.specification!),
-                        trailing: const Icon(
-                          Icons.chevron_right,
-                          color: Color(0xffc7c7cc),
+                        semanticsLabel: '${plaque.name}成品图片，支持双指缩放',
+                        transformKey: ValueKey(
+                          'plaque-pinch-image-${plaque.id}',
                         ),
+                        overlayOnPinch: plaque.imageHash != null,
+                        onTap: () => _openPlaque(plaque),
+                        child: const SizedBox.expand(),
                       ),
-                    ],
-                  ),
+                    ),
+                    ListTile(
+                      title: Text(plaque.name),
+                      subtitle: plaque.specification == null
+                          ? null
+                          : Text(plaque.specification!),
+                      trailing: const Icon(
+                        Icons.chevron_right,
+                        color: Color(0xffc7c7cc),
+                      ),
+                      onTap: () => _openPlaque(plaque),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 14),
@@ -919,6 +991,17 @@ class PlaqueProductionStartPage extends StatelessWidget {
           ],
         );
       },
+    ),
+  );
+
+  void _openPlaque(PlaqueType plaque) => Navigator.push(
+    context,
+    MaterialPageRoute<void>(
+      builder: (_) => FormulaSelectionPage(
+        database: widget.database,
+        mediaStore: widget.mediaStore,
+        plaque: plaque,
+      ),
     ),
   );
 }
@@ -985,19 +1068,40 @@ class FormulaSelectionPage extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(13),
               clipBehavior: Clip.antiAlias,
-              child: ListTile(
-                title: Text(summary.formula.name),
-                subtitle: Text(
-                  [
-                    summary.productionTypeName,
-                    summary.topIngredients,
-                  ].where((value) => value.isNotEmpty).join(' · '),
-                ),
-                trailing: const Text(
-                  '选择',
-                  style: TextStyle(color: Color(0xff007aff)),
-                ),
+              child: InkWell(
                 onTap: () => _startMixing(context, summary),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      key: ValueKey(
+                        'formula-selection-image-${summary.formula.id}',
+                      ),
+                      width: 96,
+                      height: 82,
+                      child: _FormulaArtwork(
+                        name: summary.formula.name,
+                        imageHash: summary.formula.imageHash,
+                        mediaStore: mediaStore,
+                        borderRadius: 0,
+                      ),
+                    ),
+                    Expanded(
+                      child: ListTile(
+                        title: Text(summary.formula.name),
+                        subtitle: Text(
+                          [
+                            summary.productionTypeName,
+                            summary.topIngredients,
+                          ].where((value) => value.isNotEmpty).join(' · '),
+                        ),
+                        trailing: const Text(
+                          '选择',
+                          style: TextStyle(color: Color(0xff007aff)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -1681,16 +1785,9 @@ class _FormulaComposerPageState extends State<FormulaComposerPage> {
         _plaqueTypeId = saved.draft.plaqueTypeId;
         _items = saved.items;
       }
+      _sortItemsByLibraryOrder();
       _loading = false;
     });
-    if (widget.draftId == null &&
-        widget.formula == null &&
-        _items.isEmpty &&
-        _ingredients.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _addItem();
-      });
-    }
   }
 
   @override
@@ -2377,6 +2474,19 @@ class _FormulaComposerPageState extends State<FormulaComposerPage> {
         ),
     ];
   }
+
+  void _sortItemsByLibraryOrder() {
+    final choices = {for (final choice in _ingredients) choice.id: choice};
+    _items.sort((left, right) {
+      final leftChoice = choices[left.ingredientId];
+      final rightChoice = choices[right.ingredientId];
+      if (leftChoice == null || rightChoice == null) {
+        return left.sortOrder.compareTo(right.sortOrder);
+      }
+      return _compareIngredientChoices(leftChoice, rightChoice);
+    });
+    _reorderItems();
+  }
 }
 
 int _compareIngredientChoices(
@@ -2463,6 +2573,7 @@ class _FormulaIngredientPickerPageState
     extends State<FormulaIngredientPickerPage> {
   final _search = TextEditingController();
   late final Set<String> _selected = {...widget.initiallySelected};
+  String? _categoryId;
 
   @override
   void dispose() {
@@ -2473,17 +2584,33 @@ class _FormulaIngredientPickerPageState
   @override
   Widget build(BuildContext context) {
     final query = _search.text.trim().toLowerCase();
+    final categories = <({String id, String name, int sortOrder})>[];
+    final seenCategories = <String>{};
+    for (final choice in widget.choices) {
+      if (seenCategories.add(choice.categoryId)) {
+        categories.add((
+          id: choice.categoryId,
+          name: choice.categoryName,
+          sortOrder: choice.categorySortOrder,
+        ));
+      }
+    }
+    categories.sort((left, right) {
+      final order = left.sortOrder.compareTo(right.sortOrder);
+      return order != 0 ? order : left.name.compareTo(right.name);
+    });
     final choices =
         widget.choices
             .where(
               (item) =>
-                  query.isEmpty ||
-                  item.ingredientName.toLowerCase().contains(query) ||
-                  item.categoryName.toLowerCase().contains(query) ||
-                  PinyinHelper.getPinyinE(
-                    item.ingredientName,
-                    separator: '',
-                  ).toLowerCase().contains(query),
+                  (_categoryId == null || item.categoryId == _categoryId) &&
+                  (query.isEmpty ||
+                      item.ingredientName.toLowerCase().contains(query) ||
+                      item.categoryName.toLowerCase().contains(query) ||
+                      PinyinHelper.getPinyinE(
+                        item.ingredientName,
+                        separator: '',
+                      ).toLowerCase().contains(query)),
             )
             .toList()
           ..sort(_compareIngredientChoices);
@@ -2510,6 +2637,24 @@ class _FormulaIngredientPickerPageState
               onChanged: (_) => setState(() {}),
             ),
           ),
+          SizedBox(
+            height: 48,
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              scrollDirection: Axis.horizontal,
+              itemCount: categories.length + 1,
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final category = index == 0 ? null : categories[index - 1];
+                final id = category?.id;
+                return FilterChip(
+                  label: Text(category?.name ?? '全部大类'),
+                  selected: _categoryId == id,
+                  onSelected: (_) => setState(() => _categoryId = id),
+                );
+              },
+            ),
+          ),
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -2531,6 +2676,7 @@ class _FormulaIngredientPickerPageState
                     final choice = choices[index];
                     final selected = _selected.contains(choice.id);
                     return Material(
+                      key: ValueKey('ingredient-choice-${choice.id}'),
                       color: selected ? const Color(0xffeaf2ff) : Colors.white,
                       clipBehavior: Clip.antiAlias,
                       shape: RoundedRectangleBorder(
@@ -2840,36 +2986,113 @@ class _MixingPageState extends State<MixingPage> {
                     children: [
                       Row(
                         children: [
-                          Expanded(
+                          Container(
+                            width: 44,
+                            height: 44,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: const Color(0xffeef1ef),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             child: Text(
-                              state.items[i].label,
+                              '${i + 1}',
                               style: const TextStyle(
+                                color: Color(0xff354139),
                                 fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  state.items[i].label,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  '预计比例 ${formatFixed(state.projectedRatios[i])}%',
+                                  style: const TextStyle(
+                                    color: Color(0xff636366),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              const Text(
+                                '计划克重',
+                                style: TextStyle(
+                                  color: Color(0xff636366),
+                                  fontSize: 11,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text.rich(
+                                TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: formatFixed(
+                                        state.plannedWeights[i],
+                                      ),
+                                      style: const TextStyle(
+                                        color: Color(0xff243129),
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    const TextSpan(
+                                      text: ' g',
+                                      style: TextStyle(
+                                        color: Color(0xff636366),
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                key: ValueKey(
+                                  'planned-weight-${state.draft.id}-$i',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Container(height: 1, color: const Color(0xffe5e5ea)),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              '实际称量',
+                              style: TextStyle(
+                                color: Color(0xff354139),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xffeef1ef),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              '计划 ${formatFixed(state.plannedWeights[i])}g',
-                              style: const TextStyle(
-                                color: Color(0xff354139),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
+                          Text(
+                            '按计划称量 ${formatFixed(state.plannedWeights[i])}g',
+                            style: const TextStyle(
+                              color: Color(0xff636366),
+                              fontSize: 11,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
                       TextFormField(
                         key: ValueKey('${state.draft.id}-$i'),
                         initialValue: state.actualWeights[i] == null
@@ -2883,8 +3106,6 @@ class _MixingPageState extends State<MixingPage> {
                             : TextInputAction.next,
                         decoration: InputDecoration(
                           hintText: '输入实际克重',
-                          helperText:
-                              '当前预计比例 ${formatFixed(state.projectedRatios[i])}%',
                           suffixText: 'g',
                         ),
                         onChanged: (text) => _queueWeight(i, text),
@@ -3320,7 +3541,7 @@ class _FormulaDetailPageState extends State<FormulaDetailPage> {
             const SizedBox(height: 16),
             FilledButton(
               onPressed: () => _repeat(context),
-              child: const Text('再次调配'),
+              child: const Text('开始调配'),
             ),
             OutlinedButton(
               onPressed: () => _adjust(context),
@@ -4271,7 +4492,7 @@ class _MixingOptionsSheetState extends State<_MixingOptionsSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('再次调配', style: Theme.of(context).textTheme.titleLarge),
+          Text('开始调配', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 16),
           TextField(
             controller: _weight,
@@ -4531,40 +4752,8 @@ String _customerLabel(Customer? customer) {
   return '${customer.name} · ${customer.phone}';
 }
 
-Future<String?> _pickStoredImage(
-  BuildContext context,
-  MediaStore mediaStore,
-) async {
-  final source = await showSingleModalBottomSheet<ImageSource>(
-    context: context,
-    builder: (context) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.photo_camera_outlined),
-            title: const Text('拍照'),
-            onTap: () => Navigator.pop(context, ImageSource.camera),
-          ),
-          ListTile(
-            leading: const Icon(Icons.photo_library_outlined),
-            title: const Text('从相册选择'),
-            onTap: () => Navigator.pop(context, ImageSource.gallery),
-          ),
-        ],
-      ),
-    ),
-  );
-  if (source == null) return null;
-  final picked = await ImagePicker().pickImage(
-    source: source,
-    maxWidth: 2400,
-    imageQuality: 92,
-  );
-  return picked == null
-      ? null
-      : mediaStore.putImage(await picked.readAsBytes());
-}
+Future<String?> _pickStoredImage(BuildContext context, MediaStore mediaStore) =>
+    pickAndCropStoredImage(context, mediaStore, aspectRatio: 4 / 3);
 
 void _message(BuildContext context, String text) =>
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));

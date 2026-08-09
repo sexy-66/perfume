@@ -621,6 +621,13 @@ class AppDatabase extends _$AppDatabase {
     );
   });
 
+  Future<Map<String, int>> peerSyncVector(String peerDeviceId) async {
+    final rows = await (select(
+      syncCursors,
+    )..where((row) => row.peerDeviceId.equals(peerDeviceId))).get();
+    return {for (final row in rows) row.originDeviceId: row.lastDeviceSeq};
+  }
+
   Future<Set<String>> purgeAcknowledgedDeletions({DateTime? now}) =>
       transaction(() async {
         final cutoff = (now ?? DateTime.now()).toUtc().subtract(
@@ -1027,6 +1034,11 @@ class AppDatabase extends _$AppDatabase {
   }) async {
     if (limit <= 0 || limit > 128) throw ArgumentError.value(limit, 'limit');
     final operations = await select(syncOperations).get();
+    final creates = <String, SyncOperation>{
+      for (final operation in operations)
+        if (operation.operationKind == 'create')
+          _syncEntityKey(operation.entityType, operation.entityId): operation,
+    };
     final result =
         operations
             .where(
@@ -1042,14 +1054,92 @@ class AppDatabase extends _$AppDatabase {
             final origin = a.originDeviceId.compareTo(b.originDeviceId);
             return origin != 0 ? origin : a.deviceSeq.compareTo(b.deviceSeq);
           });
-    return [
-      for (final operation in result.take(limit))
-        await _operationWithCurrentSnapshot(operation),
-    ];
+    final pendingByOrigin = <String, List<SyncOperation>>{};
+    for (final operation in result) {
+      pendingByOrigin
+          .putIfAbsent(operation.originDeviceId, () => [])
+          .add(operation);
+    }
+    final origins = pendingByOrigin.keys.toList()..sort();
+    final nextByOrigin = {for (final origin in origins) origin: 0};
+    final selected = <SyncOperation>[];
+    final selectedCreates = <String>{};
+    final snapshots = <String, SyncOperation>{};
+    while (selected.length < limit) {
+      var progressed = false;
+      for (final origin in origins) {
+        final pending = pendingByOrigin[origin]!;
+        var next = nextByOrigin[origin]!;
+        while (next < pending.length) {
+          final original = pending[next];
+          final current = snapshots[original.operationId] ??=
+              await _operationWithCurrentSnapshot(original, creates);
+          if (!_syncOperationCanLeaveDevice(original, current)) {
+            nextByOrigin[origin] = ++next;
+            continue;
+          }
+          if (!_syncDependenciesReady(
+            current,
+            vector,
+            creates,
+            selectedCreates,
+          )) {
+            break;
+          }
+          selected.add(current);
+          nextByOrigin[origin] = next + 1;
+          if (current.operationKind == 'create') {
+            selectedCreates.add(
+              _syncEntityKey(current.entityType, current.entityId),
+            );
+          }
+          progressed = true;
+          break;
+        }
+        if (selected.length == limit) break;
+      }
+      if (!progressed) break;
+    }
+    return selected;
+  }
+
+  bool _syncDependenciesReady(
+    SyncOperation operation,
+    Map<String, int> vector,
+    Map<String, SyncOperation> creates,
+    Set<String> selectedCreates,
+  ) {
+    final payload = _syncPayload(operation.payloadJson);
+    for (final dependency
+        in _syncDependencies[operation.entityType]?.entries ??
+            const Iterable<MapEntry<String, String>>.empty()) {
+      final dependencyId = payload[dependency.key];
+      if (dependencyId is! String || dependencyId.isEmpty) continue;
+      final key = _syncEntityKey(dependency.value, dependencyId);
+      final create = creates[key];
+      if (create == null ||
+          selectedCreates.contains(key) ||
+          (vector[create.originDeviceId] ?? 0) >= create.deviceSeq) {
+        continue;
+      }
+      return false;
+    }
+    return true;
+  }
+
+  bool _syncOperationCanLeaveDevice(
+    SyncOperation original,
+    SyncOperation current,
+  ) {
+    if (original.entityType != 'devices') return true;
+    if (original.operationKind != 'update') return false;
+    return _syncPayload(original.payloadJson)['isRevoked'] == true &&
+        _syncPayload(current.payloadJson)['isRevoked'] == true;
   }
 
   Future<SyncOperation> _operationWithCurrentSnapshot(
     SyncOperation operation,
+    Map<String, SyncOperation> creates,
   ) async {
     if (operation.originDeviceId != (await localDevice()).id) return operation;
     final snapshot = await _syncRowSnapshot(
@@ -1058,7 +1148,28 @@ class AppDatabase extends _$AppDatabase {
     );
     if (snapshot == null) return operation;
     if (operation.entityType == 'devices') snapshot.remove('lastSyncAtUtc');
-    final payload = _syncPayload(operation.payloadJson)..addAll(snapshot);
+    final originalPayload = _syncPayload(operation.payloadJson);
+    final payload = Map<String, Object?>.from(originalPayload)
+      ..addAll(snapshot);
+    for (final dependency
+        in _syncDependencies[operation.entityType]?.entries ??
+            const Iterable<MapEntry<String, String>>.empty()) {
+      if (originalPayload.containsKey(dependency.key)) {
+        payload[dependency.key] = originalPayload[dependency.key];
+      }
+      final dependencyId = payload[dependency.key];
+      if (dependencyId is! String || dependencyId.isEmpty) continue;
+      final create = creates[_syncEntityKey(dependency.value, dependencyId)];
+      if (create != null &&
+          create.originDeviceId == operation.originDeviceId &&
+          create.deviceSeq > operation.deviceSeq) {
+        if (originalPayload.containsKey(dependency.key)) {
+          payload[dependency.key] = originalPayload[dependency.key];
+        } else {
+          payload.remove(dependency.key);
+        }
+      }
+    }
     payload['revisionId'] = operation.newRevisionId;
     if (operation.operationKind == 'delete') {
       payload['isDeleted'] = true;
@@ -4624,6 +4735,58 @@ const syncSupportedEntityTypes = {
   'devices',
 };
 
+const _syncDependencies = <String, Map<String, String>>{
+  'ingredients': {'categoryId': 'ingredient_categories'},
+  'category_ratio_ranges': {
+    'categoryId': 'ingredient_categories',
+    'productionTypeId': 'production_types',
+  },
+  'ingredient_ratio_ranges': {
+    'ingredientId': 'ingredients',
+    'productionTypeId': 'production_types',
+  },
+  'recommendation_presets': {'productionTypeId': 'production_types'},
+  'recommendation_groups': {
+    'presetId': 'recommendation_presets',
+    'categoryId': 'ingredient_categories',
+  },
+  'recommendation_items': {
+    'groupId': 'recommendation_groups',
+    'ingredientId': 'ingredients',
+  },
+  'assets': {'categoryId': 'asset_categories', 'statusId': 'asset_statuses'},
+  'formula_drafts': {
+    'formulaId': 'formulas',
+    'sourceVersionId': 'formula_versions',
+    'customerId': 'customers',
+    'plaqueTypeId': 'plaque_types',
+    'productionTypeId': 'production_types',
+  },
+  'formula_versions': {
+    'formulaId': 'formulas',
+    'sourceVersionId': 'formula_versions',
+    'productionTypeId': 'production_types',
+  },
+  'formula_items': {
+    'versionId': 'formula_versions',
+    'ingredientId': 'ingredients',
+  },
+  'mixing_sessions': {
+    'formulaId': 'formulas',
+    'versionId': 'formula_versions',
+    'customerId': 'customers',
+    'plaqueTypeId': 'plaque_types',
+  },
+  'mixing_items': {
+    'sessionId': 'mixing_sessions',
+    'ingredientId': 'ingredients',
+  },
+  'mixing_revisions': {'sessionId': 'mixing_sessions'},
+};
+
+String _syncEntityKey(String entityType, String entityId) =>
+    '$entityType\u0000$entityId';
+
 String _syncJsonField(String sqlName) {
   final parts = sqlName.split('_');
   return parts.first +
@@ -4723,7 +4886,10 @@ String _syncRequiredText(Map<String, Object?> payload, String field) =>
 String? _syncOptionalText(Map<String, Object?> payload, String field) {
   final value = payload[field];
   if (value == null) return null;
-  return _optionalText(_syncText(value, field));
+  if (value is! String || value.length > 64 * 1024) {
+    throw FormatException('$field 无效');
+  }
+  return _optionalText(value);
 }
 
 String? _syncImageHash(Map<String, Object?> payload, String field) {
@@ -4809,12 +4975,19 @@ String _newId() {
 String _requiredName(String value, String message) {
   final normalized = value.trim();
   if (normalized.isEmpty) throw ArgumentError.value(value, 'name', message);
+  if (normalized.length > 128) {
+    throw ArgumentError.value(value, 'name', '名称不能超过 128 个字符');
+  }
   return normalized;
 }
 
 String? _optionalText(String? value) {
   final normalized = value?.trim();
-  return normalized == null || normalized.isEmpty ? null : normalized;
+  if (normalized == null || normalized.isEmpty) return null;
+  if (normalized.length > 64 * 1024) {
+    throw ArgumentError.value(value, 'text', '内容过长');
+  }
+  return normalized;
 }
 
 String? _optionalImageHash(String? value) {

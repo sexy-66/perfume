@@ -38,6 +38,7 @@ class FormulaDraftItemInput {
 class FormulaIngredientChoice {
   const FormulaIngredientChoice({
     required this.id,
+    required this.categoryId,
     required this.categoryName,
     required this.ingredientName,
     required this.categorySortOrder,
@@ -45,6 +46,7 @@ class FormulaIngredientChoice {
   });
 
   final String id;
+  final String categoryId;
   final String categoryName;
   final String ingredientName;
   final int categorySortOrder;
@@ -510,6 +512,7 @@ extension M3Database on AppDatabase {
       for (final row in rows)
         FormulaIngredientChoice(
           id: row.readTable(ingredients).id,
+          categoryId: row.readTable(ingredientCategories).id,
           categoryName: row.readTable(ingredientCategories).name,
           ingredientName: row.readTable(ingredients).name,
           categorySortOrder: row.readTable(ingredientCategories).sortOrder,

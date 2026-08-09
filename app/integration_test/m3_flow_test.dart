@@ -46,6 +46,15 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(TextButton, '新建香方'));
     await tester.pumpAndSettle();
+    expect(find.textContaining('选择香料（'), findsNothing);
+    await tester.scrollUntilVisible(
+      find.widgetWithText(FilledButton, '从香料库选择'),
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.widgetWithText(FilledButton, '从香料库选择'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, '从香料库选择'));
+    await tester.pumpAndSettle();
     for (final code in ['A', 'B', 'C']) {
       await tester.tap(find.text('powder $code'));
     }

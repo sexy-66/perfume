@@ -115,7 +115,7 @@ class PeerDiscoveryService {
   StreamSubscription<RawSocketEvent>? _subscription;
   Timer? _announceTimer;
   Timer? _pruneTimer;
-  InternetAddress? _announceAddress;
+  List<InternetAddress> _defaultAnnounceAddresses = const [];
   int? _announcePort;
 
   Stream<PeerDiscoveryPeer> get peers => _peers.stream;
@@ -156,7 +156,9 @@ class PeerDiscoveryService {
     );
     socket.broadcastEnabled = true;
     _socket = socket;
-    _announceAddress = announceAddress;
+    _defaultAnnounceAddresses = announceAddress == null
+        ? await _lanBroadcastAddresses()
+        : [announceAddress];
     _announcePort = announcePort ?? discoveryPort;
     _subscription = socket.listen((event) {
       if (event == RawSocketEvent.read) _receive(socket);
@@ -173,10 +175,9 @@ class PeerDiscoveryService {
   void announce({InternetAddress? destinationAddress, int? destinationPort}) {
     final socket = _socket;
     if (socket == null) throw StateError('UDP发现服务尚未启动');
-    final address =
-        destinationAddress ??
-        _announceAddress ??
-        InternetAddress('255.255.255.255');
+    final addresses = destinationAddress == null
+        ? _defaultAnnounceAddresses
+        : [destinationAddress];
     final port = destinationPort ?? _announcePort ?? discoveryPort;
     final packet = utf8.encode(
       jsonEncode(
@@ -189,7 +190,15 @@ class PeerDiscoveryService {
         ).toJson(),
       ),
     );
-    if (socket.send(packet, address, port) != packet.length) {
+    var sent = false;
+    for (final address in addresses) {
+      try {
+        sent = socket.send(packet, address, port) == packet.length || sent;
+      } on SocketException {
+        continue;
+      }
+    }
+    if (!sent) {
       throw StateError('UDP发现包发送失败');
     }
   }
@@ -203,6 +212,7 @@ class PeerDiscoveryService {
     _subscription = null;
     _socket?.close();
     _socket = null;
+    _defaultAnnounceAddresses = const [];
   }
 
   Future<void> dispose() async {
@@ -253,18 +263,39 @@ class PeerDiscoveryService {
   }
 }
 
+Future<List<InternetAddress>> _lanBroadcastAddresses() async {
+  final addresses = <String>{'255.255.255.255'};
+  try {
+    for (final interface in await NetworkInterface.list(
+      type: InternetAddressType.IPv4,
+      includeLoopback: false,
+    )) {
+      for (final address in interface.addresses) {
+        final broadcast = ipv4Subnet24BroadcastAddress(address);
+        if (broadcast != null) addresses.add(broadcast.address);
+      }
+    }
+  } on SocketException {
+    // Keep the global broadcast fallback when interfaces cannot be listed.
+  }
+  return [for (final address in addresses) InternetAddress(address)];
+}
+
+InternetAddress? ipv4Subnet24BroadcastAddress(InternetAddress address) {
+  // ponytail: Dart exposes interface addresses but not Android netmasks here;
+  // /24 covers the target home LAN. Add a native netmask lookup if needed.
+  if (address.type != InternetAddressType.IPv4) return null;
+  final parts = address.address.split('.');
+  if (parts.length != 4 || parts.any((part) => int.tryParse(part) == null)) {
+    return null;
+  }
+  return InternetAddress('${parts[0]}.${parts[1]}.${parts[2]}.255');
+}
+
 bool _samePeer(PeerDiscoveryPeer a, PeerDiscoveryPeer b) {
   return a.address.address == b.address.address &&
       a.advertisement.httpPort == b.advertisement.httpPort &&
-      _sameBytes(a.advertisement.nonce, b.advertisement.nonce);
-}
-
-bool _sameBytes(List<int> a, List<int> b) {
-  if (a.length != b.length) return false;
-  for (var i = 0; i < a.length; i++) {
-    if (a[i] != b[i]) return false;
-  }
-  return true;
+      a.advertisement.deviceName == b.advertisement.deviceName;
 }
 
 String _text(String value, String field) {

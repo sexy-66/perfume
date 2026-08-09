@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -6,7 +7,8 @@ import 'package:cryptography/helpers.dart';
 
 import 'peer_handshake.dart';
 
-const _maxJsonBodyBytes = 64 * 1024;
+const _maxJsonBodyBytes = 2 * 1024 * 1024;
+const _requestTimeout = Duration(seconds: 15);
 
 class PeerHttpFailure implements Exception {
   const PeerHttpFailure(this.statusCode, this.message);
@@ -155,6 +157,10 @@ class PeerHttpServer {
       }
       await _writeJson(request.response, 200, response);
     } on _PeerHttpFailure catch (error) {
+      await _writeJson(request.response, error.statusCode, {
+        'error': error.message,
+      });
+    } on PeerHttpFailure catch (error) {
       await _writeJson(request.response, error.statusCode, {
         'error': error.message,
       });
@@ -346,6 +352,12 @@ class PeerHttpServer {
       rethrow;
     } on SecretBoxAuthenticationError {
       throw const _PeerHttpFailure(401, '消息认证失败');
+    } on FormatException catch (error) {
+      throw _PeerHttpFailure(400, error.message);
+    } on StateError catch (error) {
+      throw _PeerHttpFailure(409, error.message);
+    } on ArgumentError catch (error) {
+      throw _PeerHttpFailure(400, error.message.toString());
     } on Object {
       throw const _PeerHttpFailure(400, '消息无效');
     }
@@ -408,7 +420,7 @@ class PeerHttpClient {
     }
     if (trustedToken != null) _validateTrustToken(trustedToken);
     if (rememberToken != null) _validateTrustToken(rememberToken);
-    final client = HttpClient();
+    final client = HttpClient()..connectionTimeout = _requestTimeout;
     PeerSession? session;
     try {
       final handshake = await PeerHandshake.create(
@@ -507,7 +519,7 @@ Future<Map<String, dynamic>> _postJson(
   request.headers.contentType = ContentType.json;
   request.contentLength = bytes.length;
   request.add(bytes);
-  final response = await request.close();
+  final response = await request.close().timeout(_requestTimeout);
   final responseBody = await _readJson(response);
   if (response.statusCode < 200 || response.statusCode >= 300) {
     throw PeerHttpFailure(
@@ -522,7 +534,7 @@ Future<Map<String, dynamic>> _readJson(Stream<List<int>> stream) async {
   final bytes = <int>[];
   await for (final chunk in stream) {
     if (bytes.length + chunk.length > _maxJsonBodyBytes) {
-      throw const _PeerHttpFailure(413, '请求体过大');
+      throw const PeerHttpFailure(413, '同步数据批次过大');
     }
     bytes.addAll(chunk);
   }

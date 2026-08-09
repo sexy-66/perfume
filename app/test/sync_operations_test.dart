@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:drift/drift.dart' show Variable;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:xiangfangbu/data/app_database.dart';
@@ -336,6 +337,174 @@ void main() {
       expect((await replica.peerDevice('device-b'))?.isRevoked, isTrue);
     },
   );
+
+  test(
+    'keeps device authorization local and exports only revocation',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      await database.initialize();
+
+      await database.rememberPeerDevice(
+        deviceId: 'device-b',
+        deviceName: 'Redmi Pad',
+        identityPublicKey: List<int>.filled(32, 5),
+      );
+      expect(
+        await database.syncOperationsMissingFrom({}),
+        isNot(
+          contains(
+            predicate<SyncOperation>((item) => item.entityType == 'devices'),
+          ),
+        ),
+      );
+
+      await database.revokePeerDevice('device-b');
+      final exported = await database.syncOperationsMissingFrom({});
+      final deviceOperations = exported
+          .where((item) => item.entityType == 'devices')
+          .toList();
+      expect(deviceOperations, hasLength(1));
+      expect(
+        jsonDecode(deviceOperations.single.payloadJson)['isRevoked'],
+        isTrue,
+      );
+    },
+  );
+
+  test(
+    'does not add a future customer foreign key to earlier draft operations',
+    () async {
+      final source = AppDatabase(NativeDatabase.memory());
+      final target = AppDatabase(NativeDatabase.memory());
+      addTearDown(source.close);
+      addTearDown(target.close);
+      await source.initialize();
+      await target.initialize();
+
+      final productionType = (await source.watchProductionTypes().first).first;
+      var draft = await source.saveComposerDraft(
+        productionTypeId: productionType.id,
+        targetWeightText: '',
+        items: const [],
+        formulaName: '测试香方',
+        notes: '',
+      );
+      for (var i = 0; i < 10; i++) {
+        draft = await source.saveComposerDraft(
+          draftId: draft.id,
+          productionTypeId: productionType.id,
+          targetWeightText: '',
+          items: const [],
+          formulaName: '测试香方',
+          notes: '',
+        );
+      }
+      final customer = await source.createCustomer(name: '王先生', phone: '');
+      await source.saveComposerDraft(
+        draftId: draft.id,
+        productionTypeId: productionType.id,
+        targetWeightText: '',
+        items: const [],
+        formulaName: '测试香方',
+        notes: '',
+        customerId: customer.id,
+      );
+
+      final firstBatch = await source.syncOperationsMissingFrom({}, limit: 8);
+      expect(
+        firstBatch
+            .where((operation) => operation.entityType == 'formula_drafts')
+            .map((operation) => jsonDecode(operation.payloadJson))
+            .every((payload) => payload['customerId'] == null),
+        isTrue,
+      );
+      await target.applyRemoteSyncOperations([
+        for (final operation in firstBatch)
+          Map<String, dynamic>.from(syncOperationToJson(operation)),
+      ]);
+      expect(
+        await (target.select(target.formulaDrafts)
+              ..where((row) => row.id.equals(draft.id)))
+            .getSingle()
+            .then((value) => value.customerId),
+        isNull,
+      );
+
+      for (var i = 0; i < 4; i++) {
+        final remaining = await source.syncOperationsMissingFrom(
+          await target.syncVector(),
+          limit: 8,
+        );
+        if (remaining.isEmpty) break;
+        await target.applyRemoteSyncOperations([
+          for (final operation in remaining)
+            Map<String, dynamic>.from(syncOperationToJson(operation)),
+        ]);
+      }
+      expect(
+        await (target.select(target.formulaDrafts)
+              ..where((row) => row.id.equals(draft.id)))
+            .getSingle()
+            .then((value) => value.customerId),
+        customer.id,
+      );
+    },
+  );
+
+  test('sends cross-device foreign key creates before dependents', () async {
+    final authority = AppDatabase(NativeDatabase.memory());
+    final relay = AppDatabase(NativeDatabase.memory());
+    final target = AppDatabase(NativeDatabase.memory());
+    addTearDown(authority.close);
+    addTearDown(relay.close);
+    addTearDown(target.close);
+    await authority.initialize();
+    await relay.initialize();
+    await target.initialize();
+    await authority.customUpdate(
+      'UPDATE local_devices SET id = ?',
+      variables: [Variable('z-authority')],
+      updates: {authority.localDevices},
+    );
+    await relay.customUpdate(
+      'UPDATE local_devices SET id = ?',
+      variables: [Variable('a-relay')],
+      updates: {relay.localDevices},
+    );
+
+    final customer = await authority.createCustomer(name: '跨设备顾客', phone: '');
+    await relay.applyRemoteSyncOperations([
+      for (final operation in await authority.syncOperationsMissingFrom({}))
+        Map<String, dynamic>.from(syncOperationToJson(operation)),
+    ]);
+    final productionType = (await relay.watchProductionTypes().first).first;
+    final draft = await relay.saveComposerDraft(
+      productionTypeId: productionType.id,
+      targetWeightText: '',
+      items: const [],
+      formulaName: '跨设备香方',
+      notes: '',
+      customerId: customer.id,
+    );
+
+    final batch = await relay.syncOperationsMissingFrom({}, limit: 8);
+    expect(batch.map((operation) => operation.entityType), [
+      'customers',
+      'formula_drafts',
+    ]);
+    await target.applyRemoteSyncOperations([
+      for (final operation in batch)
+        Map<String, dynamic>.from(syncOperationToJson(operation)),
+    ]);
+    expect(
+      await (target.select(target.formulaDrafts)
+            ..where((row) => row.id.equals(draft.id)))
+          .getSingle()
+          .then((value) => value.customerId),
+      customer.id,
+    );
+  });
 
   test(
     'quarantines existing edits, merges new rows and completes rejoin',

@@ -126,7 +126,6 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver {
   Future<PeerSyncRuntime?>? _syncInitialization;
   Object? _syncInitializationError;
   var _syncInitializing = false;
-  var _syncRuntimeStarted = false;
   var _openingSyncDevices = false;
   var _exitArmed = false;
   Timer? _exitTimer;
@@ -179,10 +178,7 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver {
   Future<PeerSyncRuntime?> _initializeSyncOnce() async {
     final current = _runtime;
     if (current != null) {
-      if (!_syncRuntimeStarted) {
-        await _resumeSync(current);
-        _syncRuntimeStarted = true;
-      }
+      await _resumeSync(current);
       return current;
     }
     final loader = widget.syncRuntimeLoader;
@@ -201,7 +197,6 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver {
       }
       setState(() => _runtime = runtime);
       await _resumeSync(runtime);
-      _syncRuntimeStarted = true;
       return runtime;
     } catch (error, stackTrace) {
       debugPrint('Failed to initialize sync runtime: $error\n$stackTrace');

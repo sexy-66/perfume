@@ -968,4 +968,20 @@ void main() {
       '无状态',
     );
   });
+
+  test('peer sync vector restores the last acknowledged watermarks', () async {
+    await database.recordPeerSyncState('peer-a', {
+      'device-a': 12,
+      'device-b': 7,
+    });
+    await database.recordPeerSyncState('peer-a', {
+      'device-a': 9,
+      'device-b': 8,
+    });
+
+    expect(await database.peerSyncVector('peer-a'), {
+      'device-a': 12,
+      'device-b': 8,
+    });
+  });
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../../data/app_database.dart';
 import '../../data/media_store.dart';
+import '../../ui/image_picker_cropper.dart';
 import '../../ui/single_modal.dart';
 
 class PlaqueCatalogPage extends StatefulWidget {
@@ -268,33 +268,13 @@ class _PlaqueCatalogPageState extends State<PlaqueCatalogPage> {
   }
 
   Future<void> _pickImage(PlaqueType item) async {
-    final source = await showSingleModalBottomSheet<ImageSource>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_camera_outlined),
-              title: const Text('拍照'),
-              onTap: () => Navigator.pop(context, ImageSource.camera),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('从相册选择'),
-              onTap: () => Navigator.pop(context, ImageSource.gallery),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (source == null) return;
     try {
-      final selected = await ImagePicker().pickImage(source: source);
-      if (selected == null) return;
-      final hash = await widget.mediaStore.putImage(
-        await selected.readAsBytes(),
+      final hash = await pickAndCropStoredImage(
+        context,
+        widget.mediaStore,
+        aspectRatio: 4 / 3,
       );
+      if (hash == null) return;
       await widget.database.updatePlaqueType(
         item.id,
         name: item.name,
@@ -479,33 +459,13 @@ class _PlaqueEditorPageState extends State<_PlaqueEditorPage> {
   );
 
   Future<void> _pickImage() async {
-    final source = await showSingleModalBottomSheet<ImageSource>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_camera_outlined),
-              title: const Text('拍照'),
-              onTap: () => Navigator.pop(context, ImageSource.camera),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('从相册选择'),
-              onTap: () => Navigator.pop(context, ImageSource.gallery),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (source == null) return;
     try {
-      final selected = await ImagePicker().pickImage(source: source);
-      if (selected == null) return;
-      final hash = await widget.mediaStore.putImage(
-        await selected.readAsBytes(),
+      final hash = await pickAndCropStoredImage(
+        context,
+        widget.mediaStore,
+        aspectRatio: 4 / 3,
       );
+      if (hash == null) return;
       if (mounted) setState(() => _imageHash = hash);
     } catch (error) {
       if (mounted) _message(_errorText(error));

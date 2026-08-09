@@ -1,11 +1,11 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../../data/app_database.dart';
 import '../../data/media_store.dart';
 import '../../services/peer_sync_runtime.dart';
+import '../../ui/image_picker_cropper.dart';
 import '../../ui/single_modal.dart';
 import 'ratio_ranges_page.dart';
 
@@ -578,7 +578,10 @@ class _IngredientLibraryPageState extends State<IngredientLibraryPage> {
                             const SizedBox(height: 12),
                             TweenAnimationBuilder<double>(
                               key: ValueKey(nameShake),
-                              tween: Tween(begin: nameShake == 0 ? 1 : 0, end: 1),
+                              tween: Tween(
+                                begin: nameShake == 0 ? 1 : 0,
+                                end: 1,
+                              ),
                               duration: const Duration(milliseconds: 260),
                               curve: Curves.easeOut,
                               builder: (context, value, child) =>
@@ -768,30 +771,7 @@ class _IngredientLibraryPageState extends State<IngredientLibraryPage> {
   }
 
   Future<String?> _pickImage(BuildContext context) async {
-    final source = await showSingleModalBottomSheet<ImageSource>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_camera_outlined),
-              title: const Text('拍照'),
-              onTap: () => Navigator.pop(context, ImageSource.camera),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('从相册选择'),
-              onTap: () => Navigator.pop(context, ImageSource.gallery),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (source == null) return null;
-    final selected = await ImagePicker().pickImage(source: source);
-    if (selected == null) return null;
-    return widget.mediaStore.putImage(await selected.readAsBytes());
+    return pickAndCropStoredImage(context, widget.mediaStore, aspectRatio: 1);
   }
 
   Future<IngredientCategory?> _quickCreateCategory([
@@ -890,17 +870,31 @@ class _IngredientLibraryPageState extends State<IngredientLibraryPage> {
       false;
 }
 
-class IngredientCategoriesPage extends StatelessWidget {
+class IngredientCategoriesPage extends StatefulWidget {
   const IngredientCategoriesPage({super.key, required this.database});
 
   final AppDatabase database;
+
+  @override
+  State<IngredientCategoriesPage> createState() =>
+      _IngredientCategoriesPageState();
+}
+
+class _IngredientCategoriesPageState extends State<IngredientCategoriesPage> {
+  late final Stream<List<IngredientCategory>> _categories;
+
+  @override
+  void initState() {
+    super.initState();
+    _categories = widget.database.watchIngredientCategories();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('香料分类')),
       body: StreamBuilder<List<IngredientCategory>>(
-        stream: database.watchIngredientCategories(),
+        stream: _categories,
         builder: (context, snapshot) {
           final items = snapshot.data ?? const [];
           if (items.isEmpty) {
@@ -913,48 +907,67 @@ class IngredientCategoriesPage extends StatelessWidget {
             );
           }
           return ReorderableListView.builder(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 96),
             buildDefaultDragHandles: false,
             itemCount: items.length,
             onReorderItem: (oldIndex, newIndex) =>
                 _reorder(items, oldIndex, newIndex),
             itemBuilder: (context, index) {
               final item = items[index];
-              return ListTile(
+              return Padding(
                 key: ValueKey(item.id),
-                title: Text(item.name),
-                subtitle: item.isInactive ? const Text('已停用') : null,
-                onTap: () => _edit(context, item),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    PopupMenuButton<String>(
-                      tooltip: '${item.name}的更多操作',
-                      onSelected: (action) => _action(context, item, action),
-                      itemBuilder: (_) => [
-                        const PopupMenuItem(value: 'edit', child: Text('编辑')),
-                        const PopupMenuItem(
-                          value: 'ratio',
-                          child: Text('推荐区间'),
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Material(
+                  key: ValueKey('ingredient-category-card-${item.id}'),
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  clipBehavior: Clip.antiAlias,
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.fromLTRB(16, 8, 4, 8),
+                    minTileHeight: 64,
+                    title: Text(item.name),
+                    subtitle: item.isInactive ? const Text('已停用') : null,
+                    onTap: () => _edit(context, item),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        PopupMenuButton<String>(
+                          tooltip: '${item.name}的更多操作',
+                          onSelected: (action) =>
+                              _action(context, item, action),
+                          itemBuilder: (_) => [
+                            const PopupMenuItem(
+                              value: 'edit',
+                              child: Text('编辑'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'ratio',
+                              child: Text('推荐区间'),
+                            ),
+                            PopupMenuItem(
+                              value: 'inactive',
+                              child: Text(item.isInactive ? '启用' : '停用'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Text('删除'),
+                            ),
+                          ],
                         ),
-                        PopupMenuItem(
-                          value: 'inactive',
-                          child: Text(item.isInactive ? '启用' : '停用'),
+                        ReorderableDelayedDragStartListener(
+                          index: index,
+                          child: Semantics(
+                            button: true,
+                            label: '长按拖动${item.name}',
+                            child: const SizedBox.square(
+                              dimension: 48,
+                              child: Icon(Icons.drag_handle),
+                            ),
+                          ),
                         ),
-                        const PopupMenuItem(value: 'delete', child: Text('删除')),
                       ],
                     ),
-                    ReorderableDelayedDragStartListener(
-                      index: index,
-                      child: Semantics(
-                        button: true,
-                        label: '长按拖动${item.name}',
-                        child: const SizedBox.square(
-                          dimension: 48,
-                          child: Icon(Icons.drag_handle),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               );
             },
@@ -977,7 +990,10 @@ class IngredientCategoriesPage extends StatelessWidget {
     if (oldIndex == newIndex) return;
     final direction = newIndex > oldIndex ? 1 : -1;
     for (var i = 0; i < (newIndex - oldIndex).abs(); i++) {
-      await database.moveIngredientCategory(items[oldIndex].id, direction);
+      await widget.database.moveIngredientCategory(
+        items[oldIndex].id,
+        direction,
+      );
     }
   }
 
@@ -1023,9 +1039,9 @@ class IngredientCategoriesPage extends StatelessWidget {
   ) async {
     try {
       if (category == null) {
-        await database.createIngredientCategory(name);
+        await widget.database.createIngredientCategory(name);
       } else {
-        await database.updateIngredientCategory(category.id, name: name);
+        await widget.database.updateIngredientCategory(category.id, name: name);
       }
       if (context.mounted) Navigator.pop(context, true);
     } catch (error) {
@@ -1047,7 +1063,7 @@ class IngredientCategoriesPage extends StatelessWidget {
       await Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => RatioRangesPage(
-            database: database,
+            database: widget.database,
             target: RatioRangeTarget.category,
             targetId: category.id,
             title: '${category.name}推荐区间',
@@ -1058,12 +1074,12 @@ class IngredientCategoriesPage extends StatelessWidget {
     }
     try {
       if (action == 'up' || action == 'down') {
-        await database.moveIngredientCategory(
+        await widget.database.moveIngredientCategory(
           category.id,
           action == 'up' ? -1 : 1,
         );
       } else if (action == 'inactive') {
-        await database.updateIngredientCategory(
+        await widget.database.updateIngredientCategory(
           category.id,
           isInactive: !category.isInactive,
         );
@@ -1101,7 +1117,7 @@ class IngredientCategoriesPage extends StatelessWidget {
           ),
         );
         if (confirmed == true) {
-          await database.deleteIngredientCategory(category.id);
+          await widget.database.deleteIngredientCategory(category.id);
         }
       }
     } catch (error) {

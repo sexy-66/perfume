@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../../data/app_database.dart';
@@ -152,6 +155,8 @@ class _SyncDevicesPageState extends State<SyncDevicesPage> {
                     ? '正在同步'
                     : runtime.isSyncing
                     ? '自动同步中'
+                    : runtime.syncError != null
+                    ? '自动同步已暂停：${_errorText(runtime.syncError!)}，可点击立即同步重试'
                     : runtime.lastSyncAtUtc == null
                     ? '尚未同步'
                     : '最近同步：${_syncTime(runtime.lastSyncAtUtc!)}',
@@ -237,7 +242,7 @@ class _SyncDevicesPageState extends State<SyncDevicesPage> {
   }
 
   Widget _memberTile(BuildContext context, PeerDevice device) {
-    final connected = runtime.isPaired(device.id);
+    final connected = runtime.canSyncPeer(device.id);
     final lastSync = runtime.lastSyncFor(device.id) ?? device.lastSyncAtUtc;
     final state = device.isRevoked
         ? '已移除，旧授权已撤销'
@@ -278,7 +283,7 @@ class _SyncDevicesPageState extends State<SyncDevicesPage> {
     PeerDiscoveryPeer peer,
     PeerDevice? device,
   ) {
-    final paired = runtime.isPaired(peer.advertisement.deviceId);
+    final paired = runtime.canSyncPeer(peer.advertisement.deviceId);
     final authorized =
         device != null && !device.isRevoked && !device.isPendingRejoin;
     return ListTile(
@@ -297,7 +302,10 @@ class _SyncDevicesPageState extends State<SyncDevicesPage> {
           : device?.isPendingRejoin == true
           ? const Chip(label: Text('待处理'))
           : authorized
-          ? const Chip(label: Text('自动连接'))
+          ? FilledButton.tonal(
+              onPressed: () => _pair(context, peer),
+              child: const Text('重新连接'),
+            )
           : FilledButton.tonal(
               onPressed: () => _pair(context, peer),
               child: Text(device?.isRevoked == true ? '重新加入' : '连接'),
@@ -715,7 +723,10 @@ void _message(BuildContext context, String text) {
 
 String _errorText(Object error) {
   if (error is ArgumentError) return error.message.toString();
+  if (error is FormatException) return error.message;
   if (error is StateError) return error.message;
   if (error is PeerHttpFailure) return error.message;
+  if (error is SocketException) return '无法连接对方设备，请确认两台设备在同一 Wi-Fi 且应用保持前台';
+  if (error is TimeoutException) return '连接超时，请确认对方设备应用保持前台';
   return '操作失败，请重试';
 }

@@ -55,6 +55,16 @@ void main() {
       expect(discoveredFirst.advertisement.httpPort, 41001);
       expect(discoveredFirst.httpUri.port, 41001);
 
+      var repeatedEvents = 0;
+      final repeated = receiver.peers.listen((_) => repeatedEvents++);
+      first.announce(
+        destinationAddress: InternetAddress.loopbackIPv4,
+        destinationPort: receiver.localPort,
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+      await repeated.cancel();
+      expect(repeatedEvents, 0, reason: '同一设备周期广播不应反复刷新界面或触发自动连接');
+
       final secondPeer = receiver.peers.first;
       second.announce(
         destinationAddress: InternetAddress.loopbackIPv4,
@@ -97,5 +107,13 @@ void main() {
       }),
       throwsFormatException,
     );
+  });
+
+  test('derives the common home LAN directed broadcast address', () {
+    expect(
+      ipv4Subnet24BroadcastAddress(InternetAddress('192.168.31.172'))?.address,
+      '192.168.31.255',
+    );
+    expect(ipv4Subnet24BroadcastAddress(InternetAddress.loopbackIPv6), isNull);
   });
 }

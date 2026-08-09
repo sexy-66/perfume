@@ -17,7 +17,36 @@ import 'peer_identity_store.dart';
 
 const _mediaChunkBytes = 24 * 1024;
 const _maxMediaBytes = 16 * 1024 * 1024;
+const _syncOperationBatchLimit = 16;
+const _maxSyncRounds = 64;
+const _autoReconnectDelays = <Duration>[
+  Duration(seconds: 5),
+  Duration(seconds: 15),
+  Duration(seconds: 30),
+  Duration(minutes: 1),
+  Duration(minutes: 5),
+];
 final _imageHashPattern = RegExp(r'^[0-9a-f]{64}$');
+
+bool _isPermanentPeerFailure(Object error) {
+  if (error is IOException || error is TimeoutException) return false;
+  if (error is PeerHttpFailure) {
+    return error.statusCode >= 400 &&
+        error.statusCode < 500 &&
+        error.statusCode != 408 &&
+        error.statusCode != 429;
+  }
+  return true;
+}
+
+Object _autoConnectError(Object error) {
+  if (error is IOException || error is TimeoutException) return error;
+  if (error is PeerHttpFailure &&
+      !const {400, 401, 409, 410}.contains(error.statusCode)) {
+    return error;
+  }
+  return StateError('自动授权验证失败，请使用对方设备显示的配对码重新连接');
+}
 
 enum PeerSyncStatus { stopped, starting, running, stopping, error }
 
@@ -74,7 +103,11 @@ class PeerSyncRuntime extends ChangeNotifier {
   Future<void>? _startFuture;
   Future<void>? _stopFuture;
   Future<int>? _syncFuture;
+  bool _syncRequestedWhileRunning = false;
   Timer? _syncTimer;
+  final Map<String, Timer> _autoReconnectTimers = {};
+  final Map<String, int> _autoReconnectFailures = {};
+  final Set<String> _automaticSyncPaused = {};
   final Map<String, PeerHttpClient> _clients = {};
   final Set<String> _autoConnecting = {};
   final Set<String> _pendingRejoinClients = {};
@@ -110,6 +143,8 @@ class PeerSyncRuntime extends ChangeNotifier {
   bool get lastSyncWasManual => _lastSyncWasManual;
   Set<String> get connectedDeviceIds =>
       Set.unmodifiable({..._clients.keys, ...?_httpServer?.pairedDeviceIds});
+
+  bool canSyncPeer(String deviceId) => _clients.containsKey(deviceId);
 
   DateTime? lastSyncFor(String deviceId) => _lastSyncByDevice[deviceId];
 
@@ -275,9 +310,15 @@ class PeerSyncRuntime extends ChangeNotifier {
     _setStatus(PeerSyncStatus.stopping);
     _syncTimer?.cancel();
     _syncTimer = null;
+    for (final timer in _autoReconnectTimers.values.toList()) {
+      timer.cancel();
+    }
+    _autoReconnectTimers.clear();
+    _autoReconnectFailures.clear();
+    _automaticSyncPaused.clear();
     await _localChanges?.cancel();
     _localChanges = null;
-    for (final client in _clients.values) {
+    for (final client in _clients.values.toList()) {
       client.close();
     }
     _clients.clear();
@@ -300,6 +341,7 @@ class PeerSyncRuntime extends ChangeNotifier {
     if (!isRunning) throw StateError('同步服务尚未启动');
     final previous = _clients.remove(peer.advertisement.deviceId);
     previous?.close();
+    _clearPeerFailure(peer.advertisement.deviceId);
     final trustToken = trustStore == null ? null : PeerTrustStore.issueToken();
     final client = await PeerHttpClient.connect(
       identity: identity,
@@ -327,7 +369,7 @@ class PeerSyncRuntime extends ChangeNotifier {
     final rejoining = await _preparePairedClient(client);
     _syncError = null;
     notifyListeners();
-    if (!rejoining) await syncAll();
+    if (!rejoining) await _scheduleSync(peer.advertisement.deviceId);
   }
 
   PairingCode _activePairingCode() {
@@ -372,7 +414,7 @@ class PeerSyncRuntime extends ChangeNotifier {
       }
       final rejoining = await _preparePairedClient(client);
       notifyListeners();
-      if (!rejoining) await syncAll();
+      if (!rejoining) _triggerSync(pairing.deviceId);
     } catch (error) {
       _syncError = error;
       notifyListeners();
@@ -384,11 +426,14 @@ class PeerSyncRuntime extends ChangeNotifier {
     final deviceId = peer.advertisement.deviceId;
     if (!isRunning ||
         store == null ||
+        _automaticSyncPaused.contains(deviceId) ||
+        _autoReconnectTimers.containsKey(deviceId) ||
         _clients.containsKey(deviceId) ||
         !_autoConnecting.add(deviceId)) {
       return;
     }
     PeerHttpClient? client;
+    var connected = false;
     try {
       final trust = await store.find(deviceId);
       if (trust == null ||
@@ -416,16 +461,71 @@ class PeerSyncRuntime extends ChangeNotifier {
       }
       _clients[deviceId] = client;
       client = null;
+      connected = true;
       _syncError = null;
       notifyListeners();
-      await syncAll();
-    } catch (error) {
+    } catch (error, stackTrace) {
       client?.close();
-      _syncError = error;
+      if (kDebugMode) {
+        debugPrint(
+          'Peer auto-connect failed: ${_debugError(error)}\n$stackTrace',
+        );
+      }
+      _syncError = _autoConnectError(error);
       notifyListeners();
+      _handlePeerFailure(deviceId, error);
     } finally {
       _autoConnecting.remove(deviceId);
     }
+    if (!connected) return;
+    try {
+      await _scheduleSync(deviceId);
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint(
+          'Peer initial sync failed: ${_debugError(error)}\n$stackTrace',
+        );
+      }
+      _syncError = error;
+      notifyListeners();
+    }
+  }
+
+  void _scheduleAutoReconnect(String deviceId) {
+    if (_automaticSyncPaused.contains(deviceId)) return;
+    _autoReconnectTimers.remove(deviceId)?.cancel();
+    final failures = (_autoReconnectFailures[deviceId] ?? 0) + 1;
+    _autoReconnectFailures[deviceId] = failures;
+    final delay =
+        _autoReconnectDelays[min(
+          failures - 1,
+          _autoReconnectDelays.length - 1,
+        )];
+    _autoReconnectTimers[deviceId] = Timer(delay, () {
+      _autoReconnectTimers.remove(deviceId);
+      if (!isRunning || _clients.containsKey(deviceId)) return;
+      for (final peer in knownPeers) {
+        if (peer.advertisement.deviceId == deviceId) {
+          unawaited(_autoConnect(peer));
+          return;
+        }
+      }
+    });
+  }
+
+  void _handlePeerFailure(String deviceId, Object error) {
+    if (_isPermanentPeerFailure(error)) {
+      _autoReconnectTimers.remove(deviceId)?.cancel();
+      _automaticSyncPaused.add(deviceId);
+      return;
+    }
+    _scheduleAutoReconnect(deviceId);
+  }
+
+  void _clearPeerFailure(String deviceId) {
+    _autoReconnectTimers.remove(deviceId)?.cancel();
+    _autoReconnectFailures.remove(deviceId);
+    _automaticSyncPaused.remove(deviceId);
   }
 
   Future<void> _rememberTrust(
@@ -502,7 +602,12 @@ class PeerSyncRuntime extends ChangeNotifier {
 
   Future<void> syncAll() async => _runSync();
 
-  Future<int> manualSync() => _runSync(manual: true);
+  Future<int> manualSync() {
+    for (final deviceId in _clients.keys) {
+      _clearPeerFailure(deviceId);
+    }
+    return _runSync(manual: true);
+  }
 
   Future<int> _runSync({bool manual = false}) async {
     if (manual) {
@@ -520,8 +625,11 @@ class PeerSyncRuntime extends ChangeNotifier {
       return 0;
     }
     final current = _syncFuture;
-    if (current != null) return current;
-    final future = _syncAll();
+    if (current != null) {
+      _syncRequestedWhileRunning = true;
+      return current;
+    }
+    final future = _drainSyncRequests();
     _syncFuture = future;
     notifyListeners();
     try {
@@ -534,6 +642,32 @@ class PeerSyncRuntime extends ChangeNotifier {
       _manualSyncRequested = false;
       notifyListeners();
     }
+  }
+
+  Future<int> _drainSyncRequests() async {
+    var transferred = 0;
+    do {
+      _syncRequestedWhileRunning = false;
+      transferred += await _syncAll();
+    } while (_syncRequestedWhileRunning && _clients.isNotEmpty);
+    return transferred;
+  }
+
+  void _triggerSync(String remoteDeviceId) {
+    unawaited(
+      _scheduleSync(remoteDeviceId).catchError((Object error) {
+        _syncError = error;
+        notifyListeners();
+      }),
+    );
+  }
+
+  Future<void> _scheduleSync(String remoteDeviceId) async {
+    final delay = identity.deviceId.compareTo(remoteDeviceId) < 0
+        ? const Duration(milliseconds: 200)
+        : const Duration(milliseconds: 650);
+    await Future<void>.delayed(delay);
+    if (_clients.isNotEmpty) await syncAll();
   }
 
   Future<void> syncPeer(String deviceId) async {
@@ -549,6 +683,7 @@ class PeerSyncRuntime extends ChangeNotifier {
     Object? firstError;
     var transferred = 0;
     for (final deviceId in _clients.keys.toList()..sort()) {
+      if (_automaticSyncPaused.contains(deviceId)) continue;
       final client = _clients[deviceId]!;
       try {
         if (await database?.isPeerRevoked(deviceId) == true) {
@@ -561,8 +696,13 @@ class PeerSyncRuntime extends ChangeNotifier {
         }
         transferred += await _syncWithClient(client);
       } catch (error) {
-        client.close();
-        _clients.remove(deviceId);
+        if (_isPermanentPeerFailure(error)) {
+          _handlePeerFailure(deviceId, error);
+        } else {
+          client.close();
+          _clients.remove(deviceId);
+          _handlePeerFailure(deviceId, error);
+        }
         firstError ??= error;
       }
     }
@@ -576,19 +716,42 @@ class PeerSyncRuntime extends ChangeNotifier {
   Future<int> _syncWithClient(PeerHttpClient client) async {
     final db = database;
     if (db == null) return 0;
-    var remoteVector = <String, int>{};
+    var remoteVector = await db.peerSyncVector(client.session.remoteDeviceId);
     var transferred = 0;
-    for (var round = 0; round < 4; round++) {
+    for (var round = 0; round < _maxSyncRounds; round++) {
       final localVector = await db.syncVector();
-      final outgoing = await db.syncOperationsMissingFrom(remoteVector);
+      final outgoing = await db.syncOperationsMissingFrom(
+        remoteVector,
+        limit: _syncOperationBatchLimit,
+      );
       final localMediaHashes = (await db.referencedImageHashes()).toList()
         ..sort();
-      final response = await client.request({
-        'kind': 'sync-batch',
-        'vector': localVector,
-        'operations': [for (final item in outgoing) syncOperationToJson(item)],
-        'mediaHashes': localMediaHashes,
-      });
+      late final Object? response;
+      try {
+        response = await client.request({
+          'kind': 'sync-batch',
+          'vector': localVector,
+          'operations': [
+            for (final item in outgoing) syncOperationToJson(item),
+          ],
+          'mediaHashes': localMediaHashes,
+        });
+      } catch (error) {
+        if (kDebugMode) {
+          final operations = outgoing
+              .map(
+                (item) =>
+                    '${item.originDeviceId.substring(0, 8)}#${item.deviceSeq}:'
+                    '${item.entityType}/${item.operationKind}',
+              )
+              .join(',');
+          debugPrint(
+            'Peer sync request failed: ${_debugError(error)}; '
+            'operations=[$operations]',
+          );
+        }
+        rethrow;
+      }
       final result = _syncResult(response);
       remoteVector = _syncVector(result['vector']);
       final incoming = _syncOperations(result['operations']);
@@ -604,11 +767,15 @@ class PeerSyncRuntime extends ChangeNotifier {
       );
       await _downloadMedia(client, _syncImageHashes(result['mediaHashes']));
       if (outgoing.isEmpty && incoming.isEmpty) break;
+      if (round == _maxSyncRounds - 1) {
+        throw StateError('同步资料过多，请再次点击立即同步继续');
+      }
     }
     await db.recordPeerSyncState(client.session.remoteDeviceId, remoteVector);
     await _cleanupAcknowledgedDeletions();
     _lastSyncAtUtc = DateTime.now().toUtc();
     _lastSyncByDevice[client.session.remoteDeviceId] = _lastSyncAtUtc!;
+    _clearPeerFailure(client.session.remoteDeviceId);
     _syncError = null;
     notifyListeners();
     return transferred;
@@ -620,9 +787,10 @@ class PeerSyncRuntime extends ChangeNotifier {
   ) async {
     final db = database;
     if (db == null) return;
-    for (var round = 0; round < 16; round++) {
+    for (var round = 0; round < _maxSyncRounds; round++) {
       final outgoing = await db.syncOperationsMissingFrom(
         remoteVector,
+        limit: _syncOperationBatchLimit,
         forRejoin: true,
       );
       if (outgoing.isEmpty) break;
@@ -711,6 +879,7 @@ class PeerSyncRuntime extends ChangeNotifier {
       final request = Map<String, dynamic>.from(payload);
       final operations = await db.syncOperationsMissingFrom(
         _syncVector(request['vector']),
+        limit: _syncOperationBatchLimit,
         forRejoin: true,
       );
       final localMediaHashes = (await db.referencedImageHashes()).toList()
@@ -729,11 +898,14 @@ class PeerSyncRuntime extends ChangeNotifier {
       final request = Map<String, dynamic>.from(payload);
       final vector = _syncVector(request['vector']);
       final remoteMediaHashes = _syncImageHashes(request['mediaHashes']);
-      await db.recordPeerSyncState(remoteDeviceId, vector);
       final applied = await db.applyRemoteSyncOperations(
         _syncOperations(request['operations']),
       );
-      final operations = await db.syncOperationsMissingFrom(vector);
+      await db.recordPeerSyncState(remoteDeviceId, vector);
+      final operations = await db.syncOperationsMissingFrom(
+        vector,
+        limit: _syncOperationBatchLimit,
+      );
       final localMediaHashes = (await db.referencedImageHashes()).toList()
         ..sort();
       final missingMediaHashes = <String>[];
@@ -1052,6 +1224,14 @@ class PeerSyncRuntime extends ChangeNotifier {
     notifyListeners();
   }
 }
+
+String _debugError(Object error) => switch (error) {
+  PeerHttpFailure() => 'PeerHttpFailure(${error.statusCode}): ${error.message}',
+  FormatException() => 'FormatException: ${error.message}',
+  StateError() => 'StateError: ${error.message}',
+  ArgumentError() => 'ArgumentError: ${error.message}',
+  _ => error.runtimeType.toString(),
+};
 
 class _MediaUpload {
   _MediaUpload(this.totalBytes);
