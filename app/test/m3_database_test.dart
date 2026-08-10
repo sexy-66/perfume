@@ -64,6 +64,65 @@ void main() {
     expect(repeatState.plannedWeights, [600, 400]);
   });
 
+  test('zero-ratio ingredients stay hidden per production type', () async {
+    final category = await database.createIngredientCategory('木类');
+    final agarwood = await database.createIngredient(
+      name: '沉香',
+      categoryId: category.id,
+    );
+    final sandalwood = await database.createIngredient(
+      name: '檀香',
+      categoryId: category.id,
+    );
+    final composing = await database.saveComposerDraft(
+      productionTypeId: 'type-zhuanxiang',
+      productionTypeIds: const ['type-zhuanxiang', 'type-xianxiang'],
+      productionTypeRatios: const {
+        'type-zhuanxiang': [10000, 0],
+        'type-xianxiang': [0, 10000],
+      },
+      configuredProductionTypeIds: const ['type-zhuanxiang', 'type-xianxiang'],
+      targetWeightText: '1.00',
+      formulaName: '零比例香方',
+      notes: '',
+      items: [
+        FormulaDraftItemInput(
+          ingredientId: agarwood.id,
+          categoryName: category.name,
+          ingredientName: agarwood.name,
+          ratio: 10000,
+          sortOrder: 0,
+        ),
+        FormulaDraftItemInput(
+          ingredientId: sandalwood.id,
+          categoryName: category.name,
+          ingredientName: sandalwood.name,
+          ratio: 0,
+          sortOrder: 1,
+        ),
+      ],
+    );
+    final mixing = await database.startComposerDraft(composing.id);
+    expect((await database.getMixingDraft(mixing.id)).items, hasLength(1));
+    final session = await database.completeDraft(mixing.id);
+    expect(
+      (await database.getFormulaIngredientDetails(
+        session.versionId!,
+      )).map((item) => item.item.ingredientName),
+      ['沉香'],
+    );
+    final repeat = await database.createDraftFromVersion(
+      versionId: session.versionId!,
+      productionTypeId: 'type-xianxiang',
+      targetWeight: 100,
+    );
+    expect((await database.getMixingDraft(repeat.id)).items, hasLength(1));
+    expect(
+      (await database.getMixingDraft(repeat.id)).items.single.ingredientName,
+      '檀香',
+    );
+  });
+
   test(
     'all mixing records can be searched by formula, customer name, or phone',
     () async {

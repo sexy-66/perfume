@@ -9453,6 +9453,18 @@ class $FormulaDraftsTable extends FormulaDrafts
         requiredDuringInsert: false,
         defaultValue: const Constant('{}'),
       );
+  static const VerificationMeta _allItemsJsonMeta = const VerificationMeta(
+    'allItemsJson',
+  );
+  @override
+  late final GeneratedColumn<String> allItemsJson = GeneratedColumn<String>(
+    'all_items_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
   static const VerificationMeta _targetWeightMeta = const VerificationMeta(
     'targetWeight',
   );
@@ -9538,6 +9550,7 @@ class $FormulaDraftsTable extends FormulaDrafts
     productionTypeId,
     productionTypeIdsJson,
     productionTypeRatiosJson,
+    allItemsJson,
     targetWeight,
     notes,
     itemsJson,
@@ -9698,6 +9711,15 @@ class $FormulaDraftsTable extends FormulaDrafts
         ),
       );
     }
+    if (data.containsKey('all_items_json')) {
+      context.handle(
+        _allItemsJsonMeta,
+        allItemsJson.isAcceptableOrUnknown(
+          data['all_items_json']!,
+          _allItemsJsonMeta,
+        ),
+      );
+    }
     if (data.containsKey('target_weight')) {
       context.handle(
         _targetWeightMeta,
@@ -9831,6 +9853,10 @@ class $FormulaDraftsTable extends FormulaDrafts
         DriftSqlType.string,
         data['${effectivePrefix}production_type_ratios_json'],
       )!,
+      allItemsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}all_items_json'],
+      )!,
       targetWeight: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}target_weight'],
@@ -9882,6 +9908,7 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
   final String productionTypeId;
   final String productionTypeIdsJson;
   final String productionTypeRatiosJson;
+  final String allItemsJson;
   final int targetWeight;
   final String? notes;
   final String itemsJson;
@@ -9906,6 +9933,7 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
     required this.productionTypeId,
     required this.productionTypeIdsJson,
     required this.productionTypeRatiosJson,
+    required this.allItemsJson,
     required this.targetWeight,
     this.notes,
     required this.itemsJson,
@@ -9947,6 +9975,7 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
     map['production_type_ratios_json'] = Variable<String>(
       productionTypeRatiosJson,
     );
+    map['all_items_json'] = Variable<String>(allItemsJson);
     map['target_weight'] = Variable<int>(targetWeight);
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
@@ -9989,6 +10018,7 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
       productionTypeId: Value(productionTypeId),
       productionTypeIdsJson: Value(productionTypeIdsJson),
       productionTypeRatiosJson: Value(productionTypeRatiosJson),
+      allItemsJson: Value(allItemsJson),
       targetWeight: Value(targetWeight),
       notes: notes == null && nullToAbsent
           ? const Value.absent()
@@ -10027,6 +10057,7 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
       productionTypeRatiosJson: serializer.fromJson<String>(
         json['productionTypeRatiosJson'],
       ),
+      allItemsJson: serializer.fromJson<String>(json['allItemsJson']),
       targetWeight: serializer.fromJson<int>(json['targetWeight']),
       notes: serializer.fromJson<String?>(json['notes']),
       itemsJson: serializer.fromJson<String>(json['itemsJson']),
@@ -10060,6 +10091,7 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
       'productionTypeRatiosJson': serializer.toJson<String>(
         productionTypeRatiosJson,
       ),
+      'allItemsJson': serializer.toJson<String>(allItemsJson),
       'targetWeight': serializer.toJson<int>(targetWeight),
       'notes': serializer.toJson<String?>(notes),
       'itemsJson': serializer.toJson<String>(itemsJson),
@@ -10087,6 +10119,7 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
     String? productionTypeId,
     String? productionTypeIdsJson,
     String? productionTypeRatiosJson,
+    String? allItemsJson,
     int? targetWeight,
     Value<String?> notes = const Value.absent(),
     String? itemsJson,
@@ -10114,6 +10147,7 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
     productionTypeIdsJson: productionTypeIdsJson ?? this.productionTypeIdsJson,
     productionTypeRatiosJson:
         productionTypeRatiosJson ?? this.productionTypeRatiosJson,
+    allItemsJson: allItemsJson ?? this.allItemsJson,
     targetWeight: targetWeight ?? this.targetWeight,
     notes: notes.present ? notes.value : this.notes,
     itemsJson: itemsJson ?? this.itemsJson,
@@ -10164,6 +10198,9 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
       productionTypeRatiosJson: data.productionTypeRatiosJson.present
           ? data.productionTypeRatiosJson.value
           : this.productionTypeRatiosJson,
+      allItemsJson: data.allItemsJson.present
+          ? data.allItemsJson.value
+          : this.allItemsJson,
       targetWeight: data.targetWeight.present
           ? data.targetWeight.value
           : this.targetWeight,
@@ -10201,6 +10238,7 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
           ..write('productionTypeId: $productionTypeId, ')
           ..write('productionTypeIdsJson: $productionTypeIdsJson, ')
           ..write('productionTypeRatiosJson: $productionTypeRatiosJson, ')
+          ..write('allItemsJson: $allItemsJson, ')
           ..write('targetWeight: $targetWeight, ')
           ..write('notes: $notes, ')
           ..write('itemsJson: $itemsJson, ')
@@ -10230,6 +10268,7 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
     productionTypeId,
     productionTypeIdsJson,
     productionTypeRatiosJson,
+    allItemsJson,
     targetWeight,
     notes,
     itemsJson,
@@ -10258,6 +10297,7 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
           other.productionTypeId == this.productionTypeId &&
           other.productionTypeIdsJson == this.productionTypeIdsJson &&
           other.productionTypeRatiosJson == this.productionTypeRatiosJson &&
+          other.allItemsJson == this.allItemsJson &&
           other.targetWeight == this.targetWeight &&
           other.notes == this.notes &&
           other.itemsJson == this.itemsJson &&
@@ -10284,6 +10324,7 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
   final Value<String> productionTypeId;
   final Value<String> productionTypeIdsJson;
   final Value<String> productionTypeRatiosJson;
+  final Value<String> allItemsJson;
   final Value<int> targetWeight;
   final Value<String?> notes;
   final Value<String> itemsJson;
@@ -10309,6 +10350,7 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
     this.productionTypeId = const Value.absent(),
     this.productionTypeIdsJson = const Value.absent(),
     this.productionTypeRatiosJson = const Value.absent(),
+    this.allItemsJson = const Value.absent(),
     this.targetWeight = const Value.absent(),
     this.notes = const Value.absent(),
     this.itemsJson = const Value.absent(),
@@ -10335,6 +10377,7 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
     required String productionTypeId,
     this.productionTypeIdsJson = const Value.absent(),
     this.productionTypeRatiosJson = const Value.absent(),
+    this.allItemsJson = const Value.absent(),
     required int targetWeight,
     this.notes = const Value.absent(),
     required String itemsJson,
@@ -10370,6 +10413,7 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
     Expression<String>? productionTypeId,
     Expression<String>? productionTypeIdsJson,
     Expression<String>? productionTypeRatiosJson,
+    Expression<String>? allItemsJson,
     Expression<int>? targetWeight,
     Expression<String>? notes,
     Expression<String>? itemsJson,
@@ -10398,6 +10442,7 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
         'production_type_ids_json': productionTypeIdsJson,
       if (productionTypeRatiosJson != null)
         'production_type_ratios_json': productionTypeRatiosJson,
+      if (allItemsJson != null) 'all_items_json': allItemsJson,
       if (targetWeight != null) 'target_weight': targetWeight,
       if (notes != null) 'notes': notes,
       if (itemsJson != null) 'items_json': itemsJson,
@@ -10427,6 +10472,7 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
     Value<String>? productionTypeId,
     Value<String>? productionTypeIdsJson,
     Value<String>? productionTypeRatiosJson,
+    Value<String>? allItemsJson,
     Value<int>? targetWeight,
     Value<String?>? notes,
     Value<String>? itemsJson,
@@ -10455,6 +10501,7 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
           productionTypeIdsJson ?? this.productionTypeIdsJson,
       productionTypeRatiosJson:
           productionTypeRatiosJson ?? this.productionTypeRatiosJson,
+      allItemsJson: allItemsJson ?? this.allItemsJson,
       targetWeight: targetWeight ?? this.targetWeight,
       notes: notes ?? this.notes,
       itemsJson: itemsJson ?? this.itemsJson,
@@ -10524,6 +10571,9 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
         productionTypeRatiosJson.value,
       );
     }
+    if (allItemsJson.present) {
+      map['all_items_json'] = Variable<String>(allItemsJson.value);
+    }
     if (targetWeight.present) {
       map['target_weight'] = Variable<int>(targetWeight.value);
     }
@@ -10570,6 +10620,7 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
           ..write('productionTypeId: $productionTypeId, ')
           ..write('productionTypeIdsJson: $productionTypeIdsJson, ')
           ..write('productionTypeRatiosJson: $productionTypeRatiosJson, ')
+          ..write('allItemsJson: $allItemsJson, ')
           ..write('targetWeight: $targetWeight, ')
           ..write('notes: $notes, ')
           ..write('itemsJson: $itemsJson, ')
@@ -26711,6 +26762,7 @@ typedef $$FormulaDraftsTableCreateCompanionBuilder =
       required String productionTypeId,
       Value<String> productionTypeIdsJson,
       Value<String> productionTypeRatiosJson,
+      Value<String> allItemsJson,
       required int targetWeight,
       Value<String?> notes,
       required String itemsJson,
@@ -26738,6 +26790,7 @@ typedef $$FormulaDraftsTableUpdateCompanionBuilder =
       Value<String> productionTypeId,
       Value<String> productionTypeIdsJson,
       Value<String> productionTypeRatiosJson,
+      Value<String> allItemsJson,
       Value<int> targetWeight,
       Value<String?> notes,
       Value<String> itemsJson,
@@ -26897,6 +26950,11 @@ class $$FormulaDraftsTableFilterComposer
 
   ColumnFilters<String> get productionTypeRatiosJson => $composableBuilder(
     column: $table.productionTypeRatiosJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get allItemsJson => $composableBuilder(
+    column: $table.allItemsJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -27097,6 +27155,11 @@ class $$FormulaDraftsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get allItemsJson => $composableBuilder(
+    column: $table.allItemsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get targetWeight => $composableBuilder(
     column: $table.targetWeight,
     builder: (column) => ColumnOrderings(column),
@@ -27286,6 +27349,11 @@ class $$FormulaDraftsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get allItemsJson => $composableBuilder(
+    column: $table.allItemsJson,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get targetWeight => $composableBuilder(
     column: $table.targetWeight,
     builder: (column) => column,
@@ -27455,6 +27523,7 @@ class $$FormulaDraftsTableTableManager
                 Value<String> productionTypeId = const Value.absent(),
                 Value<String> productionTypeIdsJson = const Value.absent(),
                 Value<String> productionTypeRatiosJson = const Value.absent(),
+                Value<String> allItemsJson = const Value.absent(),
                 Value<int> targetWeight = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<String> itemsJson = const Value.absent(),
@@ -27480,6 +27549,7 @@ class $$FormulaDraftsTableTableManager
                 productionTypeId: productionTypeId,
                 productionTypeIdsJson: productionTypeIdsJson,
                 productionTypeRatiosJson: productionTypeRatiosJson,
+                allItemsJson: allItemsJson,
                 targetWeight: targetWeight,
                 notes: notes,
                 itemsJson: itemsJson,
@@ -27507,6 +27577,7 @@ class $$FormulaDraftsTableTableManager
                 required String productionTypeId,
                 Value<String> productionTypeIdsJson = const Value.absent(),
                 Value<String> productionTypeRatiosJson = const Value.absent(),
+                Value<String> allItemsJson = const Value.absent(),
                 required int targetWeight,
                 Value<String?> notes = const Value.absent(),
                 required String itemsJson,
@@ -27532,6 +27603,7 @@ class $$FormulaDraftsTableTableManager
                 productionTypeId: productionTypeId,
                 productionTypeIdsJson: productionTypeIdsJson,
                 productionTypeRatiosJson: productionTypeRatiosJson,
+                allItemsJson: allItemsJson,
                 targetWeight: targetWeight,
                 notes: notes,
                 itemsJson: itemsJson,

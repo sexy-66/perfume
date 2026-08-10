@@ -90,6 +90,43 @@ Map<String, List<int>> formulaVersionProductionTypeRatios(
 Map<String, List<int>> formulaDraftProductionTypeRatios(FormulaDraft draft) =>
     _productionTypeRatios(draft.productionTypeRatiosJson);
 
+List<FormulaDraftItemInput> _draftItemsFromJson(String value) =>
+    (jsonDecode(value) as List<Object?>)
+        .map(
+          (item) => FormulaDraftItemInput.fromJson(
+            (item! as Map).cast<String, Object?>(),
+          ),
+        )
+        .toList();
+
+List<FormulaDraftItemInput> _allDraftItems(
+  FormulaDraft draft,
+  List<FormulaDraftItemInput> fallback,
+) {
+  try {
+    final items = _draftItemsFromJson(draft.allItemsJson);
+    return items.isEmpty ? fallback : items;
+  } on Object {
+    return fallback;
+  }
+}
+
+List<FormulaDraftItemInput> _itemsForRatios(
+  List<FormulaDraftItemInput> items,
+  List<int> ratios, {
+  bool includeZero = false,
+}) => [
+  for (var i = 0, sortOrder = 0; i < items.length; i++)
+    if (ratios[i] > 0 || includeZero)
+      FormulaDraftItemInput(
+        ingredientId: items[i].ingredientId,
+        categoryName: items[i].categoryName,
+        ingredientName: items[i].ingredientName,
+        ratio: ratios[i],
+        sortOrder: sortOrder++,
+      ),
+];
+
 Map<String, List<int>> _productionTypeRatios(String json) {
   try {
     return (jsonDecode(json) as Map<String, Object?>).map(
@@ -242,6 +279,9 @@ extension M3Database on AppDatabase {
           productionTypeId: productionTypeId,
           productionTypeIdsJson: Value(jsonEncode(typeIds)),
           productionTypeRatiosJson: Value(jsonEncode(ratiosByType)),
+          allItemsJson: Value(
+            jsonEncode([for (final item in items) item.toJson()]),
+          ),
           targetWeight: placeholderWeight,
           notes: Value(_optionalText(notes)),
           itemsJson: payload,
@@ -277,6 +317,9 @@ extension M3Database on AppDatabase {
         productionTypeId: Value(productionTypeId),
         productionTypeIdsJson: Value(jsonEncode(typeIds)),
         productionTypeRatiosJson: Value(jsonEncode(ratiosByType)),
+        allItemsJson: Value(
+          jsonEncode([for (final item in items) item.toJson()]),
+        ),
         targetWeight: Value(placeholderWeight),
         notes: Value(_optionalText(notes)),
         itemsJson: Value(payload),
@@ -317,19 +360,24 @@ extension M3Database on AppDatabase {
     final state = await getComposerDraft(id);
     final weight = parseWeight(state.targetWeightText);
     if (weight <= 0) throw ArgumentError('目标总重必须大于 0');
-    _validateDraftItems(state.items);
+    final allItems = _allDraftItems(state.draft, state.items);
+    _validateDraftItems(allItems);
     final typeIds = formulaDraftProductionTypeIds(state.draft);
     if (!state.configuredProductionTypeIds.toSet().containsAll(typeIds)) {
       throw StateError('请先完成全部制作类型的比例配置');
     }
-    _validateProductionTypeRatios(
-      typeIds,
-      state.items.length,
-      formulaDraftProductionTypeRatios(state.draft),
+    final ratiosByType = formulaDraftProductionTypeRatios(state.draft);
+    ratiosByType.putIfAbsent(
+      state.draft.productionTypeId,
+      () => [for (final item in allItems) item.ratio],
     );
-    for (final item in state.items) {
+    _validateProductionTypeRatios(typeIds, allItems.length, ratiosByType);
+    for (final item in allItems) {
       await _validateDraftIngredient(item.ingredientId);
     }
+    final selectedRatios = ratiosByType[state.draft.productionTypeId]!;
+    final mixingItems = _itemsForRatios(allItems, selectedRatios);
+    if (mixingItems.isEmpty) throw ArgumentError('当前制作类型至少需要一种香料');
     final change = await _recordOperation(
       entityType: 'formula_drafts',
       entityId: id,
@@ -345,10 +393,10 @@ extension M3Database on AppDatabase {
         kind: Value(state.draft.formulaId == null ? 'new' : 'adjust'),
         targetWeight: Value(weight),
         itemsJson: Value(
-          jsonEncode([for (final item in state.items) item.toJson()]),
+          jsonEncode([for (final item in mixingItems) item.toJson()]),
         ),
         actualWeightsJson: Value(
-          jsonEncode(List<Object?>.filled(state.items.length, null)),
+          jsonEncode(List<Object?>.filled(mixingItems.length, null)),
         ),
       ),
     );
@@ -362,14 +410,16 @@ extension M3Database on AppDatabase {
       final state = await getComposerDraft(id);
       if (!state.draft.isRecommended) throw StateError('该草稿不是推荐香方');
       final name = _requiredName(state.draft.formulaName, '香方名称不能为空');
-      _validateDraftItems(state.items);
+      final allItems = _allDraftItems(state.draft, state.items);
+      _validateDraftItems(allItems);
       final typeIds = formulaDraftProductionTypeIds(state.draft);
-      _validateProductionTypeRatios(
-        typeIds,
-        state.items.length,
-        formulaDraftProductionTypeRatios(state.draft),
+      final ratiosByType = formulaDraftProductionTypeRatios(state.draft);
+      ratiosByType.putIfAbsent(
+        state.draft.productionTypeId,
+        () => [for (final item in allItems) item.ratio],
       );
-      for (final item in state.items) {
+      _validateProductionTypeRatios(typeIds, allItems.length, ratiosByType);
+      for (final item in allItems) {
         await _validateDraftIngredient(item.ingredientId);
       }
       final formulaId = _newId();
@@ -408,11 +458,11 @@ extension M3Database on AppDatabase {
           versionNumber: 1,
           productionTypeId: state.draft.productionTypeId,
           productionTypeIdsJson: Value(state.draft.productionTypeIdsJson),
-          productionTypeRatiosJson: Value(state.draft.productionTypeRatiosJson),
+          productionTypeRatiosJson: Value(jsonEncode(ratiosByType)),
           createdAtUtc: versionChange.now,
         ),
       );
-      for (final item in state.items) {
+      for (final item in allItems) {
         await _insertFormulaItem(versionId, item, item.ratio);
       }
       final formula = await (select(
@@ -658,6 +708,7 @@ extension M3Database on AppDatabase {
     Map<String, List<int>>? productionTypeRatios,
     required int targetWeight,
     required List<FormulaDraftItemInput> items,
+    List<FormulaDraftItemInput>? allItems,
     String formulaName = '',
     String? customerId,
     String? plaqueTypeId,
@@ -666,20 +717,21 @@ extension M3Database on AppDatabase {
     String? formulaId,
     String? sourceVersionId,
   }) async => transaction(() async {
+    final completeItems = allItems ?? items;
     final typeIds = productionTypeIds ?? [productionTypeId];
     final ratiosByType = {
       ...?productionTypeRatios,
       for (final id in typeIds)
         if (productionTypeRatios?[id] == null)
-          id: [for (final item in items) item.ratio],
+          id: [for (final item in completeItems) item.ratio],
     };
     await _validateProductionTypes(productionTypeId, typeIds);
     if (targetWeight <= 0) {
       throw ArgumentError.value(targetWeight, 'targetWeight', '目标总重必须大于 0');
     }
-    _validateDraftItems(items);
-    _validateProductionTypeRatios(typeIds, items.length, ratiosByType);
-    for (final item in items) {
+    _validateDraftItems(completeItems);
+    _validateProductionTypeRatios(typeIds, completeItems.length, ratiosByType);
+    for (final item in completeItems) {
       await _validateDraftIngredient(item.ingredientId);
     }
     if (customerId != null) await _activeCustomer(customerId);
@@ -706,6 +758,9 @@ extension M3Database on AppDatabase {
         productionTypeId: productionTypeId,
         productionTypeIdsJson: Value(jsonEncode(typeIds)),
         productionTypeRatiosJson: Value(jsonEncode(ratiosByType)),
+        allItemsJson: Value(
+          jsonEncode([for (final item in completeItems) item.toJson()]),
+        ),
         targetWeight: targetWeight,
         notes: Value(_optionalText(notes)),
         itemsJson: jsonEncode([for (final item in items) item.toJson()]),
@@ -737,13 +792,23 @@ extension M3Database on AppDatabase {
     if (!productionTypeIds.contains(selectedTypeId)) {
       throw StateError('该制作类型不适用于此香方');
     }
-    final items = await _versionDraftItems(versionId, selectedTypeId);
+    final allItems = await _versionDraftItems(
+      versionId,
+      selectedTypeId,
+      includeZero: true,
+    );
+    final items = await _versionDraftItems(
+      versionId,
+      selectedTypeId,
+      includeZero: false,
+    );
     return createFormulaDraft(
       productionTypeId: selectedTypeId,
       productionTypeIds: productionTypeIds,
       productionTypeRatios: formulaVersionProductionTypeRatios(version),
       targetWeight: targetWeight,
       items: items,
+      allItems: allItems,
       formulaName: formula.name,
       customerId: customerId,
       plaqueTypeId: plaqueTypeId,
@@ -985,6 +1050,16 @@ extension M3Database on AppDatabase {
     final now = DateTime.now().toUtc();
     final finalWeights = state.projectedWeights;
     final finalRatios = state.projectedRatios;
+    final allItems = _allDraftItems(state.draft, state.items);
+    final fullFinalRatios = [
+      for (final item in allItems)
+        () {
+          final index = state.items.indexWhere(
+            (visible) => visible.ingredientId == item.ingredientId,
+          );
+          return index < 0 ? 0 : finalRatios[index];
+        }(),
+    ];
     var formulaId = state.draft.formulaId;
     String? versionId = state.draft.sourceVersionId;
     var formulaName = state.draft.formulaName.trim();
@@ -1031,7 +1106,7 @@ extension M3Database on AppDatabase {
         },
       );
       final productionTypeRatios = formulaDraftProductionTypeRatios(state.draft)
-        ..[state.draft.productionTypeId] = finalRatios;
+        ..[state.draft.productionTypeId] = fullFinalRatios;
       await into(formulaVersions).insert(
         FormulaVersionsCompanion.insert(
           id: versionId,
@@ -1047,8 +1122,8 @@ extension M3Database on AppDatabase {
           createdAtUtc: now,
         ),
       );
-      for (var i = 0; i < state.items.length; i++) {
-        await _insertFormulaItem(versionId, state.items[i], finalRatios[i]);
+      for (var i = 0; i < allItems.length; i++) {
+        await _insertFormulaItem(versionId, allItems[i], fullFinalRatios[i]);
       }
       final formula = await (select(
         formulas,
@@ -1237,6 +1312,7 @@ extension M3Database on AppDatabase {
             formula: formula,
             productionTypes: types,
             topIngredients: items
+                .where((item) => item.ratio > 0)
                 .map((item) => item.ingredientName)
                 .toSet()
                 .take(2)
@@ -1283,7 +1359,9 @@ extension M3Database on AppDatabase {
   Future<List<FormulaDraftItemInput>> getVersionDraftItems(
     String versionId, {
     String? productionTypeId,
-  }) => _versionDraftItems(versionId, productionTypeId);
+    bool includeZero = true,
+  }) =>
+      _versionDraftItems(versionId, productionTypeId, includeZero: includeZero);
 
   Future<List<FormulaIngredientSummary>> getFormulaIngredientDetails(
     String versionId, {
@@ -1306,18 +1384,19 @@ extension M3Database on AppDatabase {
     )[productionTypeId ?? version.productionTypeId];
     return [
       for (var i = 0; i < items.length; i++)
-        FormulaIngredientSummary(
-          item: ratios?.elementAtOrNull(i) == null
-              ? items[i]
-              : items[i].copyWith(ratio: ratios![i]),
-          imageHash: items[i].ingredientId == null
-              ? null
-              : (await (select(ingredients)..where(
-                          (row) => row.id.equals(items[i].ingredientId!),
-                        ))
-                        .getSingleOrNull())
-                    ?.imageHash,
-        ),
+        if ((ratios?.elementAtOrNull(i) ?? items[i].ratio) > 0)
+          FormulaIngredientSummary(
+            item: ratios?.elementAtOrNull(i) == null
+                ? items[i]
+                : items[i].copyWith(ratio: ratios![i]),
+            imageHash: items[i].ingredientId == null
+                ? null
+                : (await (select(ingredients)..where(
+                            (row) => row.id.equals(items[i].ingredientId!),
+                          ))
+                          .getSingleOrNull())
+                      ?.imageHash,
+          ),
     ];
   }
 
@@ -1611,7 +1690,8 @@ extension M3Database on AppDatabase {
     if (items.map((item) => item.ingredientId).toSet().length != items.length) {
       throw ArgumentError('不能重复选择同一香料');
     }
-    if (items.any((item) => item.ratio <= 0 || item.ratio > 10000) ||
+    if (items.any((item) => item.ratio < 0 || item.ratio > 10000) ||
+        items.every((item) => item.ratio == 0) ||
         items.fold<int>(0, (sum, item) => sum + item.ratio) != 10000) {
       throw ArgumentError('香料比例合计必须为 100.00%');
     }
@@ -1631,8 +1711,9 @@ extension M3Database on AppDatabase {
 
   Future<List<FormulaDraftItemInput>> _versionDraftItems(
     String versionId,
-    String? productionTypeId,
-  ) async {
+    String? productionTypeId, {
+    bool includeZero = true,
+  }) async {
     final version = await (select(
       formulaVersions,
     )..where((row) => row.id.equals(versionId))).getSingle();
@@ -1648,16 +1729,23 @@ extension M3Database on AppDatabase {
     final ratios = formulaVersionProductionTypeRatios(
       version,
     )[productionTypeId ?? version.productionTypeId];
-    return [
-      for (var i = 0; i < rows.length; i++)
-        FormulaDraftItemInput(
-          ingredientId: rows[i].ingredientId ?? '',
-          categoryName: rows[i].categoryName,
-          ingredientName: rows[i].ingredientName,
-          ratio: ratios?.elementAtOrNull(i) ?? rows[i].ratio,
-          sortOrder: rows[i].sortOrder,
-        ),
-    ];
+    final effectiveRatios = ratios == null || ratios.length != rows.length
+        ? [for (final row in rows) row.ratio]
+        : ratios;
+    return _itemsForRatios(
+      [
+        for (final row in rows)
+          FormulaDraftItemInput(
+            ingredientId: row.ingredientId ?? '',
+            categoryName: row.categoryName,
+            ingredientName: row.ingredientName,
+            ratio: row.ratio,
+            sortOrder: row.sortOrder,
+          ),
+      ],
+      effectiveRatios,
+      includeZero: includeZero,
+    );
   }
 
   Future<Customer> _activeCustomer(String id) async {
@@ -1692,7 +1780,8 @@ extension M3Database on AppDatabase {
       final ratios = ratiosByType[id];
       if (ratios == null ||
           ratios.length != itemCount ||
-          ratios.any((ratio) => ratio <= 0 || ratio > 10000) ||
+          ratios.any((ratio) => ratio < 0 || ratio > 10000) ||
+          ratios.every((ratio) => ratio == 0) ||
           ratios.fold<int>(0, (sum, ratio) => sum + ratio) != 10000) {
         throw ArgumentError('每种制作类型的香料比例合计都必须为 100.00%');
       }

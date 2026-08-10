@@ -1978,6 +1978,7 @@ class _FormulaComposerPageState extends State<FormulaComposerPage> {
                   ),
                 ],
                 if (_allProductionTypesConfigured) ...[
+                  const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     key: ValueKey(_typeIds.join(',')),
                     initialValue: _typeId,
@@ -2593,7 +2594,8 @@ class _FormulaComposerPageState extends State<FormulaComposerPage> {
   void _nextProductionType() {
     try {
       if (_items.isEmpty ||
-          _items.any((item) => item.ratio <= 0) ||
+          _items.every((item) => item.ratio == 0) ||
+          _items.any((item) => item.ratio < 0) ||
           _configuredRatio != 10000) {
         throw const FormatException('当前制作类型的香料比例合计必须为 100.00%');
       }

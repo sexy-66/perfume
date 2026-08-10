@@ -188,6 +188,7 @@ class FormulaDrafts extends Table with SyncColumns {
       text().withDefault(const Constant('[]'))();
   TextColumn get productionTypeRatiosJson =>
       text().withDefault(const Constant('{}'))();
+  TextColumn get allItemsJson => text().withDefault(const Constant('[]'))();
   IntColumn get targetWeight => integer()();
   TextColumn get notes => text().nullable()();
   TextColumn get itemsJson => text()();
@@ -529,15 +530,39 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) => m.createAll(),
     onUpgrade: (m, from, to) async {
-      if (from < 1 || from > 9 || to != 10) {
+      if (from < 1 || from > 10 || to != 11) {
         throw StateError('缺少数据库迁移：$from → $to');
       }
+      Future<void> addAllItemsSnapshot() async {
+        await m.addColumn(formulaDrafts, formulaDrafts.allItemsJson);
+        await customStatement('''
+          UPDATE formula_drafts
+             SET all_items_json = CASE
+               WHEN json_type(items_json) = 'array' THEN items_json
+               WHEN json_type(items_json, '\$.items') = 'array'
+                 THEN json_extract(items_json, '\$.items')
+               ELSE '[]'
+             END
+        ''');
+        await customStatement('''
+          UPDATE formula_drafts
+             SET production_type_ratios_json = json_object(
+               production_type_id,
+               (SELECT json_group_array(json_extract(value, '\$.ratio'))
+                  FROM json_each(all_items_json))
+             )
+           WHERE production_type_ratios_json = '{}'
+             AND json_type(all_items_json) = 'array'
+             AND json_array_length(all_items_json) > 0
+        ''');
+      }
+
       Future<void> addProductionTypeCollections() async {
         await m.addColumn(formulaDrafts, formulaDrafts.productionTypeIdsJson);
         await m.addColumn(
@@ -564,6 +589,11 @@ class AppDatabase extends _$AppDatabase {
 
       if (from == 9) {
         await addProductionTypeCollections();
+        await addAllItemsSnapshot();
+        return;
+      }
+      if (from == 10) {
+        await addAllItemsSnapshot();
         return;
       }
       if (from == 8) {
@@ -571,6 +601,7 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(formulaDrafts, formulaDrafts.imageHash);
         await m.addColumn(formulaDrafts, formulaDrafts.isRecommended);
         await addProductionTypeCollections();
+        await addAllItemsSnapshot();
         return;
       }
       if (from == 7) {
@@ -579,6 +610,7 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(formulaDrafts, formulaDrafts.imageHash);
         await m.addColumn(formulaDrafts, formulaDrafts.isRecommended);
         await addProductionTypeCollections();
+        await addAllItemsSnapshot();
         return;
       }
       await customStatement('PRAGMA foreign_keys = OFF');

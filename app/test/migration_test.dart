@@ -4,7 +4,7 @@ import 'package:xiangfangbu/data/app_database.dart';
 
 void main() {
   test(
-    'v8 to v10 preserves formulas and adds per-type ratio metadata',
+    'v8 to v11 preserves formulas and adds per-type ratio metadata',
     () async {
       final executor = NativeDatabase.memory(
         setup: (raw) {
@@ -112,6 +112,7 @@ void main() {
         (draft.productionTypeIdsJson, draft.productionTypeRatiosJson),
         ('["type-zhuanxiang"]', '{}'),
       );
+      expect(draft.allItemsJson, '[]');
       expect(version.productionTypeIdsJson, '["type-zhuanxiang"]');
     },
   );
