@@ -57,13 +57,15 @@ class FormulaIngredientChoice {
 class FormulaSummary {
   const FormulaSummary({
     required this.formula,
-    required this.productionTypeName,
+    required this.productionTypes,
     required this.topIngredients,
     this.customers = const [],
   });
 
   final Formula formula;
-  final String productionTypeName;
+  final List<ProductionType> productionTypes;
+  String get productionTypeName =>
+      productionTypes.map((type) => type.name).join('、');
   final String topIngredients;
   final List<Customer> customers;
 }
@@ -73,6 +75,41 @@ class FormulaIngredientSummary {
 
   final FormulaItem item;
   final String? imageHash;
+}
+
+List<String> formulaVersionProductionTypeIds(FormulaVersion version) =>
+    _productionTypeIds(version.productionTypeIdsJson, version.productionTypeId);
+
+List<String> formulaDraftProductionTypeIds(FormulaDraft draft) =>
+    _productionTypeIds(draft.productionTypeIdsJson, draft.productionTypeId);
+
+Map<String, List<int>> formulaVersionProductionTypeRatios(
+  FormulaVersion version,
+) => _productionTypeRatios(version.productionTypeRatiosJson);
+
+Map<String, List<int>> formulaDraftProductionTypeRatios(FormulaDraft draft) =>
+    _productionTypeRatios(draft.productionTypeRatiosJson);
+
+Map<String, List<int>> _productionTypeRatios(String json) {
+  try {
+    return (jsonDecode(json) as Map<String, Object?>).map(
+      (id, ratios) => MapEntry(id, (ratios as List<Object?>).cast<int>()),
+    );
+  } on Object {
+    return {};
+  }
+}
+
+List<String> _productionTypeIds(String json, String fallbackId) {
+  try {
+    final ids = (jsonDecode(json) as List<Object?>)
+        .whereType<String>()
+        .toList();
+    if (ids.isNotEmpty) return ids;
+  } on FormatException {
+    // Older or remotely supplied data falls back to the legacy single type.
+  }
+  return [fallbackId];
 }
 
 class FormulaVersionSummary {
@@ -105,11 +142,13 @@ class ComposerDraftState {
     required this.draft,
     required this.targetWeightText,
     required this.items,
+    required this.configuredProductionTypeIds,
   });
 
   final FormulaDraft draft;
   final String targetWeightText;
   final List<FormulaDraftItemInput> items;
+  final List<String> configuredProductionTypeIds;
 }
 
 class CustomerFormulaHistory {
@@ -142,6 +181,9 @@ extension M3Database on AppDatabase {
   Future<FormulaDraft> saveComposerDraft({
     String? draftId,
     required String productionTypeId,
+    List<String>? productionTypeIds,
+    Map<String, List<int>>? productionTypeRatios,
+    List<String>? configuredProductionTypeIds,
     required String targetWeightText,
     required List<FormulaDraftItemInput> items,
     required String formulaName,
@@ -153,12 +195,20 @@ extension M3Database on AppDatabase {
     String? formulaId,
     String? sourceVersionId,
   }) => transaction(() async {
-    await _activeProductionType(productionTypeId);
+    final typeIds = productionTypeIds ?? [productionTypeId];
+    final ratiosByType =
+        productionTypeRatios ??
+        {
+          productionTypeId: [for (final item in items) item.ratio],
+        };
+    final configuredTypeIds = configuredProductionTypeIds ?? [productionTypeId];
+    await _validateProductionTypes(productionTypeId, typeIds);
     if (customerId != null) await _activeCustomer(customerId);
     if (plaqueTypeId != null) await _activePlaque(plaqueTypeId);
     final payload = jsonEncode({
       'targetWeightText': targetWeightText,
       'items': [for (final item in items) item.toJson()],
+      'configuredProductionTypeIds': configuredTypeIds,
     });
     var placeholderWeight = 1;
     try {
@@ -190,6 +240,8 @@ extension M3Database on AppDatabase {
           imageHash: Value(_optionalImageHash(imageHash)),
           isRecommended: Value(isRecommended),
           productionTypeId: productionTypeId,
+          productionTypeIdsJson: Value(jsonEncode(typeIds)),
+          productionTypeRatiosJson: Value(jsonEncode(ratiosByType)),
           targetWeight: placeholderWeight,
           notes: Value(_optionalText(notes)),
           itemsJson: payload,
@@ -223,6 +275,8 @@ extension M3Database on AppDatabase {
         imageHash: Value(_optionalImageHash(imageHash)),
         isRecommended: Value(isRecommended),
         productionTypeId: Value(productionTypeId),
+        productionTypeIdsJson: Value(jsonEncode(typeIds)),
+        productionTypeRatiosJson: Value(jsonEncode(ratiosByType)),
         targetWeight: Value(placeholderWeight),
         notes: Value(_optionalText(notes)),
         itemsJson: Value(payload),
@@ -251,6 +305,11 @@ extension M3Database on AppDatabase {
             ),
           )
           .toList(),
+      configuredProductionTypeIds:
+          (value['configuredProductionTypeIds'] as List<Object?>?)
+              ?.whereType<String>()
+              .toList() ??
+          [draft.productionTypeId],
     );
   }
 
@@ -259,6 +318,15 @@ extension M3Database on AppDatabase {
     final weight = parseWeight(state.targetWeightText);
     if (weight <= 0) throw ArgumentError('目标总重必须大于 0');
     _validateDraftItems(state.items);
+    final typeIds = formulaDraftProductionTypeIds(state.draft);
+    if (!state.configuredProductionTypeIds.toSet().containsAll(typeIds)) {
+      throw StateError('请先完成全部制作类型的比例配置');
+    }
+    _validateProductionTypeRatios(
+      typeIds,
+      state.items.length,
+      formulaDraftProductionTypeRatios(state.draft),
+    );
     for (final item in state.items) {
       await _validateDraftIngredient(item.ingredientId);
     }
@@ -295,6 +363,12 @@ extension M3Database on AppDatabase {
       if (!state.draft.isRecommended) throw StateError('该草稿不是推荐香方');
       final name = _requiredName(state.draft.formulaName, '香方名称不能为空');
       _validateDraftItems(state.items);
+      final typeIds = formulaDraftProductionTypeIds(state.draft);
+      _validateProductionTypeRatios(
+        typeIds,
+        state.items.length,
+        formulaDraftProductionTypeRatios(state.draft),
+      );
       for (final item in state.items) {
         await _validateDraftIngredient(item.ingredientId);
       }
@@ -333,6 +407,8 @@ extension M3Database on AppDatabase {
           formulaId: formulaId,
           versionNumber: 1,
           productionTypeId: state.draft.productionTypeId,
+          productionTypeIdsJson: Value(state.draft.productionTypeIdsJson),
+          productionTypeRatiosJson: Value(state.draft.productionTypeRatiosJson),
           createdAtUtc: versionChange.now,
         ),
       );
@@ -578,6 +654,8 @@ extension M3Database on AppDatabase {
 
   Future<FormulaDraft> createFormulaDraft({
     required String productionTypeId,
+    List<String>? productionTypeIds,
+    Map<String, List<int>>? productionTypeRatios,
     required int targetWeight,
     required List<FormulaDraftItemInput> items,
     String formulaName = '',
@@ -588,11 +666,19 @@ extension M3Database on AppDatabase {
     String? formulaId,
     String? sourceVersionId,
   }) async => transaction(() async {
-    await _activeProductionType(productionTypeId);
+    final typeIds = productionTypeIds ?? [productionTypeId];
+    final ratiosByType = {
+      ...?productionTypeRatios,
+      for (final id in typeIds)
+        if (productionTypeRatios?[id] == null)
+          id: [for (final item in items) item.ratio],
+    };
+    await _validateProductionTypes(productionTypeId, typeIds);
     if (targetWeight <= 0) {
       throw ArgumentError.value(targetWeight, 'targetWeight', '目标总重必须大于 0');
     }
     _validateDraftItems(items);
+    _validateProductionTypeRatios(typeIds, items.length, ratiosByType);
     for (final item in items) {
       await _validateDraftIngredient(item.ingredientId);
     }
@@ -618,6 +704,8 @@ extension M3Database on AppDatabase {
         plaqueTypeId: Value(plaqueTypeId),
         formulaName: Value(formulaName.trim()),
         productionTypeId: productionTypeId,
+        productionTypeIdsJson: Value(jsonEncode(typeIds)),
+        productionTypeRatiosJson: Value(jsonEncode(ratiosByType)),
         targetWeight: targetWeight,
         notes: Value(_optionalText(notes)),
         itemsJson: jsonEncode([for (final item in items) item.toJson()]),
@@ -632,6 +720,7 @@ extension M3Database on AppDatabase {
 
   Future<FormulaDraft> createDraftFromVersion({
     required String versionId,
+    String? productionTypeId,
     required int targetWeight,
     String? customerId,
     String? plaqueTypeId,
@@ -643,9 +732,16 @@ extension M3Database on AppDatabase {
     final formula = await (select(
       formulas,
     )..where((row) => row.id.equals(version.formulaId))).getSingle();
-    final items = await _versionDraftItems(versionId);
+    final productionTypeIds = formulaVersionProductionTypeIds(version);
+    final selectedTypeId = productionTypeId ?? version.productionTypeId;
+    if (!productionTypeIds.contains(selectedTypeId)) {
+      throw StateError('该制作类型不适用于此香方');
+    }
+    final items = await _versionDraftItems(versionId, selectedTypeId);
     return createFormulaDraft(
-      productionTypeId: version.productionTypeId,
+      productionTypeId: selectedTypeId,
+      productionTypeIds: productionTypeIds,
+      productionTypeRatios: formulaVersionProductionTypeRatios(version),
       targetWeight: targetWeight,
       items: items,
       formulaName: formula.name,
@@ -934,6 +1030,8 @@ extension M3Database on AppDatabase {
           'sourceVersionId': state.draft.sourceVersionId,
         },
       );
+      final productionTypeRatios = formulaDraftProductionTypeRatios(state.draft)
+        ..[state.draft.productionTypeId] = finalRatios;
       await into(formulaVersions).insert(
         FormulaVersionsCompanion.insert(
           id: versionId,
@@ -944,6 +1042,8 @@ extension M3Database on AppDatabase {
           versionNumber: previousVersions.length + 1,
           sourceVersionId: Value(state.draft.sourceVersionId),
           productionTypeId: state.draft.productionTypeId,
+          productionTypeIdsJson: Value(state.draft.productionTypeIdsJson),
+          productionTypeRatiosJson: Value(jsonEncode(productionTypeRatios)),
           createdAtUtc: now,
         ),
       );
@@ -1104,13 +1204,15 @@ extension M3Database on AppDatabase {
             await (select(formulaVersions)
                   ..where((row) => row.id.equals(formula.currentVersionId!)))
                 .getSingle();
-        if (productionTypeId != null &&
-            version.productionTypeId != productionTypeId) {
+        final typeIds = formulaVersionProductionTypeIds(version);
+        if (productionTypeId != null && !typeIds.contains(productionTypeId)) {
           continue;
         }
-        final type = await (select(
-          productionTypes,
-        )..where((row) => row.id.equals(version.productionTypeId))).getSingle();
+        final types =
+            await (select(productionTypes)
+                  ..where((row) => row.id.isIn(typeIds))
+                  ..orderBy([(row) => OrderingTerm.asc(row.sortOrder)]))
+                .get();
         final items =
             await (select(formulaItems)
                   ..where(
@@ -1133,7 +1235,7 @@ extension M3Database on AppDatabase {
         result.add(
           FormulaSummary(
             formula: formula,
-            productionTypeName: type.name,
+            productionTypes: types,
             topIngredients: items
                 .map((item) => item.ingredientName)
                 .toSet()
@@ -1178,12 +1280,18 @@ extension M3Database on AppDatabase {
             ],
           );
 
-  Future<List<FormulaDraftItemInput>> getVersionDraftItems(String versionId) =>
-      _versionDraftItems(versionId);
+  Future<List<FormulaDraftItemInput>> getVersionDraftItems(
+    String versionId, {
+    String? productionTypeId,
+  }) => _versionDraftItems(versionId, productionTypeId);
 
   Future<List<FormulaIngredientSummary>> getFormulaIngredientDetails(
-    String versionId,
-  ) async {
+    String versionId, {
+    String? productionTypeId,
+  }) async {
+    final version = await (select(
+      formulaVersions,
+    )..where((row) => row.id.equals(versionId))).getSingle();
     final items =
         await (select(formulaItems)
               ..where(
@@ -1193,14 +1301,20 @@ extension M3Database on AppDatabase {
               )
               ..orderBy([(row) => OrderingTerm.asc(row.sortOrder)]))
             .get();
+    final ratios = formulaVersionProductionTypeRatios(
+      version,
+    )[productionTypeId ?? version.productionTypeId];
     return [
-      for (final item in items)
+      for (var i = 0; i < items.length; i++)
         FormulaIngredientSummary(
-          item: item,
-          imageHash: item.ingredientId == null
+          item: ratios?.elementAtOrNull(i) == null
+              ? items[i]
+              : items[i].copyWith(ratio: ratios![i]),
+          imageHash: items[i].ingredientId == null
               ? null
-              : (await (select(ingredients)
-                          ..where((row) => row.id.equals(item.ingredientId!)))
+              : (await (select(ingredients)..where(
+                          (row) => row.id.equals(items[i].ingredientId!),
+                        ))
                         .getSingleOrNull())
                     ?.imageHash,
         ),
@@ -1517,24 +1631,34 @@ extension M3Database on AppDatabase {
 
   Future<List<FormulaDraftItemInput>> _versionDraftItems(
     String versionId,
-  ) async => [
-    for (final item
-        in await (select(formulaItems)
+    String? productionTypeId,
+  ) async {
+    final version = await (select(
+      formulaVersions,
+    )..where((row) => row.id.equals(versionId))).getSingle();
+    final rows =
+        await (select(formulaItems)
               ..where(
                 (row) =>
                     row.versionId.equals(versionId) &
                     row.isDeleted.equals(false),
               )
               ..orderBy([(row) => OrderingTerm.asc(row.sortOrder)]))
-            .get())
-      FormulaDraftItemInput(
-        ingredientId: item.ingredientId ?? '',
-        categoryName: item.categoryName,
-        ingredientName: item.ingredientName,
-        ratio: item.ratio,
-        sortOrder: item.sortOrder,
-      ),
-  ];
+            .get();
+    final ratios = formulaVersionProductionTypeRatios(
+      version,
+    )[productionTypeId ?? version.productionTypeId];
+    return [
+      for (var i = 0; i < rows.length; i++)
+        FormulaDraftItemInput(
+          ingredientId: rows[i].ingredientId ?? '',
+          categoryName: rows[i].categoryName,
+          ingredientName: rows[i].ingredientName,
+          ratio: ratios?.elementAtOrNull(i) ?? rows[i].ratio,
+          sortOrder: rows[i].sortOrder,
+        ),
+    ];
+  }
 
   Future<Customer> _activeCustomer(String id) async {
     final customer = await (select(
@@ -1542,6 +1666,37 @@ extension M3Database on AppDatabase {
     )..where((row) => row.id.equals(id))).getSingle();
     if (customer.isDeleted) throw StateError('请选择未删除的顾客');
     return customer;
+  }
+
+  Future<void> _validateProductionTypes(
+    String productionTypeId,
+    List<String> productionTypeIds,
+  ) async {
+    final uniqueIds = productionTypeIds.toSet();
+    if (uniqueIds.isEmpty ||
+        uniqueIds.length != productionTypeIds.length ||
+        !uniqueIds.contains(productionTypeId)) {
+      throw ArgumentError('请至少选择一种制作类型');
+    }
+    for (final id in productionTypeIds) {
+      await _activeProductionType(id);
+    }
+  }
+
+  void _validateProductionTypeRatios(
+    List<String> productionTypeIds,
+    int itemCount,
+    Map<String, List<int>> ratiosByType,
+  ) {
+    for (final id in productionTypeIds) {
+      final ratios = ratiosByType[id];
+      if (ratios == null ||
+          ratios.length != itemCount ||
+          ratios.any((ratio) => ratio <= 0 || ratio > 10000) ||
+          ratios.fold<int>(0, (sum, ratio) => sum + ratio) != 10000) {
+        throw ArgumentError('每种制作类型的香料比例合计都必须为 100.00%');
+      }
+    }
   }
 
   Future<PlaqueType> _activePlaque(String id) async {

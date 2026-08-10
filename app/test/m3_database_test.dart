@@ -13,6 +13,57 @@ void main() {
 
   tearDown(() => database.close());
 
+  test('one formula keeps separate ratios for each production type', () async {
+    final category = await database.createIngredientCategory('木类');
+    final agarwood = await database.createIngredient(
+      name: '沉香',
+      categoryId: category.id,
+    );
+    final sandalwood = await database.createIngredient(
+      name: '檀香',
+      categoryId: category.id,
+    );
+    final items = [
+      FormulaDraftItemInput(
+        ingredientId: agarwood.id,
+        categoryName: category.name,
+        ingredientName: agarwood.name,
+        ratio: 2000,
+        sortOrder: 0,
+      ),
+      FormulaDraftItemInput(
+        ingredientId: sandalwood.id,
+        categoryName: category.name,
+        ingredientName: sandalwood.name,
+        ratio: 8000,
+        sortOrder: 1,
+      ),
+    ];
+    final draft = await database.createFormulaDraft(
+      productionTypeId: 'type-zhuanxiang',
+      productionTypeIds: const ['type-zhuanxiang', 'type-xianxiang'],
+      productionTypeRatios: const {
+        'type-zhuanxiang': [2000, 8000],
+        'type-xianxiang': [6000, 4000],
+      },
+      targetWeight: 1000,
+      formulaName: '双用香方',
+      items: items,
+    );
+    final session = await database.completeDraft(draft.id);
+    final summary = (await database.watchFormulas().first).single;
+
+    expect(summary.productionTypeName, '篆香、线香');
+    final repeat = await database.createDraftFromVersion(
+      versionId: session.versionId!,
+      productionTypeId: 'type-xianxiang',
+      targetWeight: 1000,
+    );
+    final repeatState = await database.getMixingDraft(repeat.id);
+    expect(repeatState.items.map((item) => item.ratio), [6000, 4000]);
+    expect(repeatState.plannedWeights, [600, 400]);
+  });
+
   test(
     'all mixing records can be searched by formula, customer name, or phone',
     () async {

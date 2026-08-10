@@ -184,6 +184,10 @@ class FormulaDrafts extends Table with SyncColumns {
   BoolColumn get isRecommended =>
       boolean().withDefault(const Constant(false))();
   TextColumn get productionTypeId => text().references(ProductionTypes, #id)();
+  TextColumn get productionTypeIdsJson =>
+      text().withDefault(const Constant('[]'))();
+  TextColumn get productionTypeRatiosJson =>
+      text().withDefault(const Constant('{}'))();
   IntColumn get targetWeight => integer()();
   TextColumn get notes => text().nullable()();
   TextColumn get itemsJson => text()();
@@ -201,6 +205,10 @@ class FormulaVersions extends Table with SyncColumns {
   IntColumn get versionNumber => integer()();
   TextColumn get sourceVersionId => text().nullable()();
   TextColumn get productionTypeId => text().references(ProductionTypes, #id)();
+  TextColumn get productionTypeIdsJson =>
+      text().withDefault(const Constant('[]'))();
+  TextColumn get productionTypeRatiosJson =>
+      text().withDefault(const Constant('{}'))();
   DateTimeColumn get createdAtUtc => dateTime()();
 
   @override
@@ -521,19 +529,48 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) => m.createAll(),
     onUpgrade: (m, from, to) async {
-      if (from < 1 || from > 8 || to != 9) {
+      if (from < 1 || from > 9 || to != 10) {
         throw StateError('缺少数据库迁移：$from → $to');
+      }
+      Future<void> addProductionTypeCollections() async {
+        await m.addColumn(formulaDrafts, formulaDrafts.productionTypeIdsJson);
+        await m.addColumn(
+          formulaVersions,
+          formulaVersions.productionTypeIdsJson,
+        );
+        await m.addColumn(
+          formulaDrafts,
+          formulaDrafts.productionTypeRatiosJson,
+        );
+        await m.addColumn(
+          formulaVersions,
+          formulaVersions.productionTypeRatiosJson,
+        );
+        await customStatement('''
+          UPDATE formula_drafts
+             SET production_type_ids_json = json_array(production_type_id)
+        ''');
+        await customStatement('''
+          UPDATE formula_versions
+             SET production_type_ids_json = json_array(production_type_id)
+        ''');
+      }
+
+      if (from == 9) {
+        await addProductionTypeCollections();
+        return;
       }
       if (from == 8) {
         await m.addColumn(formulas, formulas.isRecommended);
         await m.addColumn(formulaDrafts, formulaDrafts.imageHash);
         await m.addColumn(formulaDrafts, formulaDrafts.isRecommended);
+        await addProductionTypeCollections();
         return;
       }
       if (from == 7) {
@@ -541,6 +578,7 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(formulas, formulas.isRecommended);
         await m.addColumn(formulaDrafts, formulaDrafts.imageHash);
         await m.addColumn(formulaDrafts, formulaDrafts.isRecommended);
+        await addProductionTypeCollections();
         return;
       }
       await customStatement('PRAGMA foreign_keys = OFF');
@@ -1661,8 +1699,14 @@ class AppDatabase extends _$AppDatabase {
         '''SELECT 1
              WHERE EXISTS (SELECT 1 FROM category_ratio_ranges WHERE production_type_id = ? AND is_deleted = 0)
                 OR EXISTS (SELECT 1 FROM ingredient_ratio_ranges WHERE production_type_id = ? AND is_deleted = 0)
-                OR EXISTS (SELECT 1 FROM recommendation_presets WHERE production_type_id = ? AND is_deleted = 0)''',
-        variables: List.generate(3, (_) => Variable(id)),
+                OR EXISTS (SELECT 1 FROM recommendation_presets WHERE production_type_id = ? AND is_deleted = 0)
+                OR EXISTS (SELECT 1 FROM formula_drafts
+                            WHERE is_deleted = 0 AND (production_type_id = ? OR EXISTS (
+                              SELECT 1 FROM json_each(production_type_ids_json) WHERE value = ?)))
+                OR EXISTS (SELECT 1 FROM formula_versions
+                            WHERE is_deleted = 0 AND (production_type_id = ? OR EXISTS (
+                              SELECT 1 FROM json_each(production_type_ids_json) WHERE value = ?)))''',
+        variables: List.generate(7, (_) => Variable(id)),
       ).getSingleOrNull();
       if (inUse != null) throw StateError('请先删除该制作类型下的推荐区间和推荐配置');
       final change = await _recordOperation(
@@ -3323,15 +3367,20 @@ class AppDatabase extends _$AppDatabase {
     RatioRangeTarget.ingredient => 'ingredient_ratio_ranges',
   };
 
-  Future<List<ProductionType>> getActiveProductionTypes({String? includeId}) {
+  Future<List<ProductionType>> getActiveProductionTypes({
+    String? includeId,
+    Iterable<String> includeIds = const [],
+  }) {
+    final included = includeIds.toSet();
+    if (includeId != null) included.add(includeId);
     final query = select(productionTypes)
       ..where(
         (row) =>
             row.isDeleted.equals(false) &
             (row.isInactive.equals(false) |
-                (includeId == null
+                (included.isEmpty
                     ? const Constant(false)
-                    : row.id.equals(includeId))),
+                    : row.id.isIn(included))),
       )
       ..orderBy([
         (row) => OrderingTerm.asc(row.sortOrder),

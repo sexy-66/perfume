@@ -9429,6 +9429,30 @@ class $FormulaDraftsTable extends FormulaDrafts
       'REFERENCES production_types (id)',
     ),
   );
+  static const VerificationMeta _productionTypeIdsJsonMeta =
+      const VerificationMeta('productionTypeIdsJson');
+  @override
+  late final GeneratedColumn<String> productionTypeIdsJson =
+      GeneratedColumn<String>(
+        'production_type_ids_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      );
+  static const VerificationMeta _productionTypeRatiosJsonMeta =
+      const VerificationMeta('productionTypeRatiosJson');
+  @override
+  late final GeneratedColumn<String> productionTypeRatiosJson =
+      GeneratedColumn<String>(
+        'production_type_ratios_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('{}'),
+      );
   static const VerificationMeta _targetWeightMeta = const VerificationMeta(
     'targetWeight',
   );
@@ -9512,6 +9536,8 @@ class $FormulaDraftsTable extends FormulaDrafts
     imageHash,
     isRecommended,
     productionTypeId,
+    productionTypeIdsJson,
+    productionTypeRatiosJson,
     targetWeight,
     notes,
     itemsJson,
@@ -9654,6 +9680,24 @@ class $FormulaDraftsTable extends FormulaDrafts
     } else if (isInserting) {
       context.missing(_productionTypeIdMeta);
     }
+    if (data.containsKey('production_type_ids_json')) {
+      context.handle(
+        _productionTypeIdsJsonMeta,
+        productionTypeIdsJson.isAcceptableOrUnknown(
+          data['production_type_ids_json']!,
+          _productionTypeIdsJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('production_type_ratios_json')) {
+      context.handle(
+        _productionTypeRatiosJsonMeta,
+        productionTypeRatiosJson.isAcceptableOrUnknown(
+          data['production_type_ratios_json']!,
+          _productionTypeRatiosJsonMeta,
+        ),
+      );
+    }
     if (data.containsKey('target_weight')) {
       context.handle(
         _targetWeightMeta,
@@ -9779,6 +9823,14 @@ class $FormulaDraftsTable extends FormulaDrafts
         DriftSqlType.string,
         data['${effectivePrefix}production_type_id'],
       )!,
+      productionTypeIdsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}production_type_ids_json'],
+      )!,
+      productionTypeRatiosJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}production_type_ratios_json'],
+      )!,
       targetWeight: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}target_weight'],
@@ -9828,6 +9880,8 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
   final String? imageHash;
   final bool isRecommended;
   final String productionTypeId;
+  final String productionTypeIdsJson;
+  final String productionTypeRatiosJson;
   final int targetWeight;
   final String? notes;
   final String itemsJson;
@@ -9850,6 +9904,8 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
     this.imageHash,
     required this.isRecommended,
     required this.productionTypeId,
+    required this.productionTypeIdsJson,
+    required this.productionTypeRatiosJson,
     required this.targetWeight,
     this.notes,
     required this.itemsJson,
@@ -9887,6 +9943,10 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
     }
     map['is_recommended'] = Variable<bool>(isRecommended);
     map['production_type_id'] = Variable<String>(productionTypeId);
+    map['production_type_ids_json'] = Variable<String>(productionTypeIdsJson);
+    map['production_type_ratios_json'] = Variable<String>(
+      productionTypeRatiosJson,
+    );
     map['target_weight'] = Variable<int>(targetWeight);
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
@@ -9927,6 +9987,8 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
           : Value(imageHash),
       isRecommended: Value(isRecommended),
       productionTypeId: Value(productionTypeId),
+      productionTypeIdsJson: Value(productionTypeIdsJson),
+      productionTypeRatiosJson: Value(productionTypeRatiosJson),
       targetWeight: Value(targetWeight),
       notes: notes == null && nullToAbsent
           ? const Value.absent()
@@ -9959,6 +10021,12 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
       imageHash: serializer.fromJson<String?>(json['imageHash']),
       isRecommended: serializer.fromJson<bool>(json['isRecommended']),
       productionTypeId: serializer.fromJson<String>(json['productionTypeId']),
+      productionTypeIdsJson: serializer.fromJson<String>(
+        json['productionTypeIdsJson'],
+      ),
+      productionTypeRatiosJson: serializer.fromJson<String>(
+        json['productionTypeRatiosJson'],
+      ),
       targetWeight: serializer.fromJson<int>(json['targetWeight']),
       notes: serializer.fromJson<String?>(json['notes']),
       itemsJson: serializer.fromJson<String>(json['itemsJson']),
@@ -9988,6 +10056,10 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
       'imageHash': serializer.toJson<String?>(imageHash),
       'isRecommended': serializer.toJson<bool>(isRecommended),
       'productionTypeId': serializer.toJson<String>(productionTypeId),
+      'productionTypeIdsJson': serializer.toJson<String>(productionTypeIdsJson),
+      'productionTypeRatiosJson': serializer.toJson<String>(
+        productionTypeRatiosJson,
+      ),
       'targetWeight': serializer.toJson<int>(targetWeight),
       'notes': serializer.toJson<String?>(notes),
       'itemsJson': serializer.toJson<String>(itemsJson),
@@ -10013,6 +10085,8 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
     Value<String?> imageHash = const Value.absent(),
     bool? isRecommended,
     String? productionTypeId,
+    String? productionTypeIdsJson,
+    String? productionTypeRatiosJson,
     int? targetWeight,
     Value<String?> notes = const Value.absent(),
     String? itemsJson,
@@ -10037,6 +10111,9 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
     imageHash: imageHash.present ? imageHash.value : this.imageHash,
     isRecommended: isRecommended ?? this.isRecommended,
     productionTypeId: productionTypeId ?? this.productionTypeId,
+    productionTypeIdsJson: productionTypeIdsJson ?? this.productionTypeIdsJson,
+    productionTypeRatiosJson:
+        productionTypeRatiosJson ?? this.productionTypeRatiosJson,
     targetWeight: targetWeight ?? this.targetWeight,
     notes: notes.present ? notes.value : this.notes,
     itemsJson: itemsJson ?? this.itemsJson,
@@ -10081,6 +10158,12 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
       productionTypeId: data.productionTypeId.present
           ? data.productionTypeId.value
           : this.productionTypeId,
+      productionTypeIdsJson: data.productionTypeIdsJson.present
+          ? data.productionTypeIdsJson.value
+          : this.productionTypeIdsJson,
+      productionTypeRatiosJson: data.productionTypeRatiosJson.present
+          ? data.productionTypeRatiosJson.value
+          : this.productionTypeRatiosJson,
       targetWeight: data.targetWeight.present
           ? data.targetWeight.value
           : this.targetWeight,
@@ -10116,6 +10199,8 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
           ..write('imageHash: $imageHash, ')
           ..write('isRecommended: $isRecommended, ')
           ..write('productionTypeId: $productionTypeId, ')
+          ..write('productionTypeIdsJson: $productionTypeIdsJson, ')
+          ..write('productionTypeRatiosJson: $productionTypeRatiosJson, ')
           ..write('targetWeight: $targetWeight, ')
           ..write('notes: $notes, ')
           ..write('itemsJson: $itemsJson, ')
@@ -10143,6 +10228,8 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
     imageHash,
     isRecommended,
     productionTypeId,
+    productionTypeIdsJson,
+    productionTypeRatiosJson,
     targetWeight,
     notes,
     itemsJson,
@@ -10169,6 +10256,8 @@ class FormulaDraft extends DataClass implements Insertable<FormulaDraft> {
           other.imageHash == this.imageHash &&
           other.isRecommended == this.isRecommended &&
           other.productionTypeId == this.productionTypeId &&
+          other.productionTypeIdsJson == this.productionTypeIdsJson &&
+          other.productionTypeRatiosJson == this.productionTypeRatiosJson &&
           other.targetWeight == this.targetWeight &&
           other.notes == this.notes &&
           other.itemsJson == this.itemsJson &&
@@ -10193,6 +10282,8 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
   final Value<String?> imageHash;
   final Value<bool> isRecommended;
   final Value<String> productionTypeId;
+  final Value<String> productionTypeIdsJson;
+  final Value<String> productionTypeRatiosJson;
   final Value<int> targetWeight;
   final Value<String?> notes;
   final Value<String> itemsJson;
@@ -10216,6 +10307,8 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
     this.imageHash = const Value.absent(),
     this.isRecommended = const Value.absent(),
     this.productionTypeId = const Value.absent(),
+    this.productionTypeIdsJson = const Value.absent(),
+    this.productionTypeRatiosJson = const Value.absent(),
     this.targetWeight = const Value.absent(),
     this.notes = const Value.absent(),
     this.itemsJson = const Value.absent(),
@@ -10240,6 +10333,8 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
     this.imageHash = const Value.absent(),
     this.isRecommended = const Value.absent(),
     required String productionTypeId,
+    this.productionTypeIdsJson = const Value.absent(),
+    this.productionTypeRatiosJson = const Value.absent(),
     required int targetWeight,
     this.notes = const Value.absent(),
     required String itemsJson,
@@ -10273,6 +10368,8 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
     Expression<String>? imageHash,
     Expression<bool>? isRecommended,
     Expression<String>? productionTypeId,
+    Expression<String>? productionTypeIdsJson,
+    Expression<String>? productionTypeRatiosJson,
     Expression<int>? targetWeight,
     Expression<String>? notes,
     Expression<String>? itemsJson,
@@ -10297,6 +10394,10 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
       if (imageHash != null) 'image_hash': imageHash,
       if (isRecommended != null) 'is_recommended': isRecommended,
       if (productionTypeId != null) 'production_type_id': productionTypeId,
+      if (productionTypeIdsJson != null)
+        'production_type_ids_json': productionTypeIdsJson,
+      if (productionTypeRatiosJson != null)
+        'production_type_ratios_json': productionTypeRatiosJson,
       if (targetWeight != null) 'target_weight': targetWeight,
       if (notes != null) 'notes': notes,
       if (itemsJson != null) 'items_json': itemsJson,
@@ -10324,6 +10425,8 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
     Value<String?>? imageHash,
     Value<bool>? isRecommended,
     Value<String>? productionTypeId,
+    Value<String>? productionTypeIdsJson,
+    Value<String>? productionTypeRatiosJson,
     Value<int>? targetWeight,
     Value<String?>? notes,
     Value<String>? itemsJson,
@@ -10348,6 +10451,10 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
       imageHash: imageHash ?? this.imageHash,
       isRecommended: isRecommended ?? this.isRecommended,
       productionTypeId: productionTypeId ?? this.productionTypeId,
+      productionTypeIdsJson:
+          productionTypeIdsJson ?? this.productionTypeIdsJson,
+      productionTypeRatiosJson:
+          productionTypeRatiosJson ?? this.productionTypeRatiosJson,
       targetWeight: targetWeight ?? this.targetWeight,
       notes: notes ?? this.notes,
       itemsJson: itemsJson ?? this.itemsJson,
@@ -10407,6 +10514,16 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
     if (productionTypeId.present) {
       map['production_type_id'] = Variable<String>(productionTypeId.value);
     }
+    if (productionTypeIdsJson.present) {
+      map['production_type_ids_json'] = Variable<String>(
+        productionTypeIdsJson.value,
+      );
+    }
+    if (productionTypeRatiosJson.present) {
+      map['production_type_ratios_json'] = Variable<String>(
+        productionTypeRatiosJson.value,
+      );
+    }
     if (targetWeight.present) {
       map['target_weight'] = Variable<int>(targetWeight.value);
     }
@@ -10451,6 +10568,8 @@ class FormulaDraftsCompanion extends UpdateCompanion<FormulaDraft> {
           ..write('imageHash: $imageHash, ')
           ..write('isRecommended: $isRecommended, ')
           ..write('productionTypeId: $productionTypeId, ')
+          ..write('productionTypeIdsJson: $productionTypeIdsJson, ')
+          ..write('productionTypeRatiosJson: $productionTypeRatiosJson, ')
           ..write('targetWeight: $targetWeight, ')
           ..write('notes: $notes, ')
           ..write('itemsJson: $itemsJson, ')
@@ -10587,6 +10706,30 @@ class $FormulaVersionsTable extends FormulaVersions
       'REFERENCES production_types (id)',
     ),
   );
+  static const VerificationMeta _productionTypeIdsJsonMeta =
+      const VerificationMeta('productionTypeIdsJson');
+  @override
+  late final GeneratedColumn<String> productionTypeIdsJson =
+      GeneratedColumn<String>(
+        'production_type_ids_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      );
+  static const VerificationMeta _productionTypeRatiosJsonMeta =
+      const VerificationMeta('productionTypeRatiosJson');
+  @override
+  late final GeneratedColumn<String> productionTypeRatiosJson =
+      GeneratedColumn<String>(
+        'production_type_ratios_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('{}'),
+      );
   static const VerificationMeta _createdAtUtcMeta = const VerificationMeta(
     'createdAtUtc',
   );
@@ -10610,6 +10753,8 @@ class $FormulaVersionsTable extends FormulaVersions
     versionNumber,
     sourceVersionId,
     productionTypeId,
+    productionTypeIdsJson,
+    productionTypeRatiosJson,
     createdAtUtc,
   ];
   @override
@@ -10713,6 +10858,24 @@ class $FormulaVersionsTable extends FormulaVersions
     } else if (isInserting) {
       context.missing(_productionTypeIdMeta);
     }
+    if (data.containsKey('production_type_ids_json')) {
+      context.handle(
+        _productionTypeIdsJsonMeta,
+        productionTypeIdsJson.isAcceptableOrUnknown(
+          data['production_type_ids_json']!,
+          _productionTypeIdsJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('production_type_ratios_json')) {
+      context.handle(
+        _productionTypeRatiosJsonMeta,
+        productionTypeRatiosJson.isAcceptableOrUnknown(
+          data['production_type_ratios_json']!,
+          _productionTypeRatiosJsonMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at_utc')) {
       context.handle(
         _createdAtUtcMeta,
@@ -10777,6 +10940,14 @@ class $FormulaVersionsTable extends FormulaVersions
         DriftSqlType.string,
         data['${effectivePrefix}production_type_id'],
       )!,
+      productionTypeIdsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}production_type_ids_json'],
+      )!,
+      productionTypeRatiosJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}production_type_ratios_json'],
+      )!,
       createdAtUtc: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at_utc'],
@@ -10801,6 +10972,8 @@ class FormulaVersion extends DataClass implements Insertable<FormulaVersion> {
   final int versionNumber;
   final String? sourceVersionId;
   final String productionTypeId;
+  final String productionTypeIdsJson;
+  final String productionTypeRatiosJson;
   final DateTime createdAtUtc;
   const FormulaVersion({
     required this.id,
@@ -10813,6 +10986,8 @@ class FormulaVersion extends DataClass implements Insertable<FormulaVersion> {
     required this.versionNumber,
     this.sourceVersionId,
     required this.productionTypeId,
+    required this.productionTypeIdsJson,
+    required this.productionTypeRatiosJson,
     required this.createdAtUtc,
   });
   @override
@@ -10832,6 +11007,10 @@ class FormulaVersion extends DataClass implements Insertable<FormulaVersion> {
       map['source_version_id'] = Variable<String>(sourceVersionId);
     }
     map['production_type_id'] = Variable<String>(productionTypeId);
+    map['production_type_ids_json'] = Variable<String>(productionTypeIdsJson);
+    map['production_type_ratios_json'] = Variable<String>(
+      productionTypeRatiosJson,
+    );
     map['created_at_utc'] = Variable<DateTime>(createdAtUtc);
     return map;
   }
@@ -10852,6 +11031,8 @@ class FormulaVersion extends DataClass implements Insertable<FormulaVersion> {
           ? const Value.absent()
           : Value(sourceVersionId),
       productionTypeId: Value(productionTypeId),
+      productionTypeIdsJson: Value(productionTypeIdsJson),
+      productionTypeRatiosJson: Value(productionTypeRatiosJson),
       createdAtUtc: Value(createdAtUtc),
     );
   }
@@ -10872,6 +11053,12 @@ class FormulaVersion extends DataClass implements Insertable<FormulaVersion> {
       versionNumber: serializer.fromJson<int>(json['versionNumber']),
       sourceVersionId: serializer.fromJson<String?>(json['sourceVersionId']),
       productionTypeId: serializer.fromJson<String>(json['productionTypeId']),
+      productionTypeIdsJson: serializer.fromJson<String>(
+        json['productionTypeIdsJson'],
+      ),
+      productionTypeRatiosJson: serializer.fromJson<String>(
+        json['productionTypeRatiosJson'],
+      ),
       createdAtUtc: serializer.fromJson<DateTime>(json['createdAtUtc']),
     );
   }
@@ -10889,6 +11076,10 @@ class FormulaVersion extends DataClass implements Insertable<FormulaVersion> {
       'versionNumber': serializer.toJson<int>(versionNumber),
       'sourceVersionId': serializer.toJson<String?>(sourceVersionId),
       'productionTypeId': serializer.toJson<String>(productionTypeId),
+      'productionTypeIdsJson': serializer.toJson<String>(productionTypeIdsJson),
+      'productionTypeRatiosJson': serializer.toJson<String>(
+        productionTypeRatiosJson,
+      ),
       'createdAtUtc': serializer.toJson<DateTime>(createdAtUtc),
     };
   }
@@ -10904,6 +11095,8 @@ class FormulaVersion extends DataClass implements Insertable<FormulaVersion> {
     int? versionNumber,
     Value<String?> sourceVersionId = const Value.absent(),
     String? productionTypeId,
+    String? productionTypeIdsJson,
+    String? productionTypeRatiosJson,
     DateTime? createdAtUtc,
   }) => FormulaVersion(
     id: id ?? this.id,
@@ -10918,6 +11111,9 @@ class FormulaVersion extends DataClass implements Insertable<FormulaVersion> {
         ? sourceVersionId.value
         : this.sourceVersionId,
     productionTypeId: productionTypeId ?? this.productionTypeId,
+    productionTypeIdsJson: productionTypeIdsJson ?? this.productionTypeIdsJson,
+    productionTypeRatiosJson:
+        productionTypeRatiosJson ?? this.productionTypeRatiosJson,
     createdAtUtc: createdAtUtc ?? this.createdAtUtc,
   );
   FormulaVersion copyWithCompanion(FormulaVersionsCompanion data) {
@@ -10946,6 +11142,12 @@ class FormulaVersion extends DataClass implements Insertable<FormulaVersion> {
       productionTypeId: data.productionTypeId.present
           ? data.productionTypeId.value
           : this.productionTypeId,
+      productionTypeIdsJson: data.productionTypeIdsJson.present
+          ? data.productionTypeIdsJson.value
+          : this.productionTypeIdsJson,
+      productionTypeRatiosJson: data.productionTypeRatiosJson.present
+          ? data.productionTypeRatiosJson.value
+          : this.productionTypeRatiosJson,
       createdAtUtc: data.createdAtUtc.present
           ? data.createdAtUtc.value
           : this.createdAtUtc,
@@ -10965,6 +11167,8 @@ class FormulaVersion extends DataClass implements Insertable<FormulaVersion> {
           ..write('versionNumber: $versionNumber, ')
           ..write('sourceVersionId: $sourceVersionId, ')
           ..write('productionTypeId: $productionTypeId, ')
+          ..write('productionTypeIdsJson: $productionTypeIdsJson, ')
+          ..write('productionTypeRatiosJson: $productionTypeRatiosJson, ')
           ..write('createdAtUtc: $createdAtUtc')
           ..write(')'))
         .toString();
@@ -10982,6 +11186,8 @@ class FormulaVersion extends DataClass implements Insertable<FormulaVersion> {
     versionNumber,
     sourceVersionId,
     productionTypeId,
+    productionTypeIdsJson,
+    productionTypeRatiosJson,
     createdAtUtc,
   );
   @override
@@ -10998,6 +11204,8 @@ class FormulaVersion extends DataClass implements Insertable<FormulaVersion> {
           other.versionNumber == this.versionNumber &&
           other.sourceVersionId == this.sourceVersionId &&
           other.productionTypeId == this.productionTypeId &&
+          other.productionTypeIdsJson == this.productionTypeIdsJson &&
+          other.productionTypeRatiosJson == this.productionTypeRatiosJson &&
           other.createdAtUtc == this.createdAtUtc);
 }
 
@@ -11012,6 +11220,8 @@ class FormulaVersionsCompanion extends UpdateCompanion<FormulaVersion> {
   final Value<int> versionNumber;
   final Value<String?> sourceVersionId;
   final Value<String> productionTypeId;
+  final Value<String> productionTypeIdsJson;
+  final Value<String> productionTypeRatiosJson;
   final Value<DateTime> createdAtUtc;
   final Value<int> rowid;
   const FormulaVersionsCompanion({
@@ -11025,6 +11235,8 @@ class FormulaVersionsCompanion extends UpdateCompanion<FormulaVersion> {
     this.versionNumber = const Value.absent(),
     this.sourceVersionId = const Value.absent(),
     this.productionTypeId = const Value.absent(),
+    this.productionTypeIdsJson = const Value.absent(),
+    this.productionTypeRatiosJson = const Value.absent(),
     this.createdAtUtc = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -11039,6 +11251,8 @@ class FormulaVersionsCompanion extends UpdateCompanion<FormulaVersion> {
     required int versionNumber,
     this.sourceVersionId = const Value.absent(),
     required String productionTypeId,
+    this.productionTypeIdsJson = const Value.absent(),
+    this.productionTypeRatiosJson = const Value.absent(),
     required DateTime createdAtUtc,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -11060,6 +11274,8 @@ class FormulaVersionsCompanion extends UpdateCompanion<FormulaVersion> {
     Expression<int>? versionNumber,
     Expression<String>? sourceVersionId,
     Expression<String>? productionTypeId,
+    Expression<String>? productionTypeIdsJson,
+    Expression<String>? productionTypeRatiosJson,
     Expression<DateTime>? createdAtUtc,
     Expression<int>? rowid,
   }) {
@@ -11074,6 +11290,10 @@ class FormulaVersionsCompanion extends UpdateCompanion<FormulaVersion> {
       if (versionNumber != null) 'version_number': versionNumber,
       if (sourceVersionId != null) 'source_version_id': sourceVersionId,
       if (productionTypeId != null) 'production_type_id': productionTypeId,
+      if (productionTypeIdsJson != null)
+        'production_type_ids_json': productionTypeIdsJson,
+      if (productionTypeRatiosJson != null)
+        'production_type_ratios_json': productionTypeRatiosJson,
       if (createdAtUtc != null) 'created_at_utc': createdAtUtc,
       if (rowid != null) 'rowid': rowid,
     });
@@ -11090,6 +11310,8 @@ class FormulaVersionsCompanion extends UpdateCompanion<FormulaVersion> {
     Value<int>? versionNumber,
     Value<String?>? sourceVersionId,
     Value<String>? productionTypeId,
+    Value<String>? productionTypeIdsJson,
+    Value<String>? productionTypeRatiosJson,
     Value<DateTime>? createdAtUtc,
     Value<int>? rowid,
   }) {
@@ -11104,6 +11326,10 @@ class FormulaVersionsCompanion extends UpdateCompanion<FormulaVersion> {
       versionNumber: versionNumber ?? this.versionNumber,
       sourceVersionId: sourceVersionId ?? this.sourceVersionId,
       productionTypeId: productionTypeId ?? this.productionTypeId,
+      productionTypeIdsJson:
+          productionTypeIdsJson ?? this.productionTypeIdsJson,
+      productionTypeRatiosJson:
+          productionTypeRatiosJson ?? this.productionTypeRatiosJson,
       createdAtUtc: createdAtUtc ?? this.createdAtUtc,
       rowid: rowid ?? this.rowid,
     );
@@ -11142,6 +11368,16 @@ class FormulaVersionsCompanion extends UpdateCompanion<FormulaVersion> {
     if (productionTypeId.present) {
       map['production_type_id'] = Variable<String>(productionTypeId.value);
     }
+    if (productionTypeIdsJson.present) {
+      map['production_type_ids_json'] = Variable<String>(
+        productionTypeIdsJson.value,
+      );
+    }
+    if (productionTypeRatiosJson.present) {
+      map['production_type_ratios_json'] = Variable<String>(
+        productionTypeRatiosJson.value,
+      );
+    }
     if (createdAtUtc.present) {
       map['created_at_utc'] = Variable<DateTime>(createdAtUtc.value);
     }
@@ -11164,6 +11400,8 @@ class FormulaVersionsCompanion extends UpdateCompanion<FormulaVersion> {
           ..write('versionNumber: $versionNumber, ')
           ..write('sourceVersionId: $sourceVersionId, ')
           ..write('productionTypeId: $productionTypeId, ')
+          ..write('productionTypeIdsJson: $productionTypeIdsJson, ')
+          ..write('productionTypeRatiosJson: $productionTypeRatiosJson, ')
           ..write('createdAtUtc: $createdAtUtc, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -26471,6 +26709,8 @@ typedef $$FormulaDraftsTableCreateCompanionBuilder =
       Value<String?> imageHash,
       Value<bool> isRecommended,
       required String productionTypeId,
+      Value<String> productionTypeIdsJson,
+      Value<String> productionTypeRatiosJson,
       required int targetWeight,
       Value<String?> notes,
       required String itemsJson,
@@ -26496,6 +26736,8 @@ typedef $$FormulaDraftsTableUpdateCompanionBuilder =
       Value<String?> imageHash,
       Value<bool> isRecommended,
       Value<String> productionTypeId,
+      Value<String> productionTypeIdsJson,
+      Value<String> productionTypeRatiosJson,
       Value<int> targetWeight,
       Value<String?> notes,
       Value<String> itemsJson,
@@ -26645,6 +26887,16 @@ class $$FormulaDraftsTableFilterComposer
 
   ColumnFilters<bool> get isRecommended => $composableBuilder(
     column: $table.isRecommended,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get productionTypeIdsJson => $composableBuilder(
+    column: $table.productionTypeIdsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get productionTypeRatiosJson => $composableBuilder(
+    column: $table.productionTypeRatiosJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -26835,6 +27087,16 @@ class $$FormulaDraftsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get productionTypeIdsJson => $composableBuilder(
+    column: $table.productionTypeIdsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get productionTypeRatiosJson => $composableBuilder(
+    column: $table.productionTypeRatiosJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get targetWeight => $composableBuilder(
     column: $table.targetWeight,
     builder: (column) => ColumnOrderings(column),
@@ -27014,6 +27276,16 @@ class $$FormulaDraftsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get productionTypeIdsJson => $composableBuilder(
+    column: $table.productionTypeIdsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get productionTypeRatiosJson => $composableBuilder(
+    column: $table.productionTypeRatiosJson,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get targetWeight => $composableBuilder(
     column: $table.targetWeight,
     builder: (column) => column,
@@ -27181,6 +27453,8 @@ class $$FormulaDraftsTableTableManager
                 Value<String?> imageHash = const Value.absent(),
                 Value<bool> isRecommended = const Value.absent(),
                 Value<String> productionTypeId = const Value.absent(),
+                Value<String> productionTypeIdsJson = const Value.absent(),
+                Value<String> productionTypeRatiosJson = const Value.absent(),
                 Value<int> targetWeight = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<String> itemsJson = const Value.absent(),
@@ -27204,6 +27478,8 @@ class $$FormulaDraftsTableTableManager
                 imageHash: imageHash,
                 isRecommended: isRecommended,
                 productionTypeId: productionTypeId,
+                productionTypeIdsJson: productionTypeIdsJson,
+                productionTypeRatiosJson: productionTypeRatiosJson,
                 targetWeight: targetWeight,
                 notes: notes,
                 itemsJson: itemsJson,
@@ -27229,6 +27505,8 @@ class $$FormulaDraftsTableTableManager
                 Value<String?> imageHash = const Value.absent(),
                 Value<bool> isRecommended = const Value.absent(),
                 required String productionTypeId,
+                Value<String> productionTypeIdsJson = const Value.absent(),
+                Value<String> productionTypeRatiosJson = const Value.absent(),
                 required int targetWeight,
                 Value<String?> notes = const Value.absent(),
                 required String itemsJson,
@@ -27252,6 +27530,8 @@ class $$FormulaDraftsTableTableManager
                 imageHash: imageHash,
                 isRecommended: isRecommended,
                 productionTypeId: productionTypeId,
+                productionTypeIdsJson: productionTypeIdsJson,
+                productionTypeRatiosJson: productionTypeRatiosJson,
                 targetWeight: targetWeight,
                 notes: notes,
                 itemsJson: itemsJson,
@@ -27397,6 +27677,8 @@ typedef $$FormulaVersionsTableCreateCompanionBuilder =
       required int versionNumber,
       Value<String?> sourceVersionId,
       required String productionTypeId,
+      Value<String> productionTypeIdsJson,
+      Value<String> productionTypeRatiosJson,
       required DateTime createdAtUtc,
       Value<int> rowid,
     });
@@ -27412,6 +27694,8 @@ typedef $$FormulaVersionsTableUpdateCompanionBuilder =
       Value<int> versionNumber,
       Value<String?> sourceVersionId,
       Value<String> productionTypeId,
+      Value<String> productionTypeIdsJson,
+      Value<String> productionTypeRatiosJson,
       Value<DateTime> createdAtUtc,
       Value<int> rowid,
     });
@@ -27544,6 +27828,16 @@ class $$FormulaVersionsTableFilterComposer
 
   ColumnFilters<String> get sourceVersionId => $composableBuilder(
     column: $table.sourceVersionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get productionTypeIdsJson => $composableBuilder(
+    column: $table.productionTypeIdsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get productionTypeRatiosJson => $composableBuilder(
+    column: $table.productionTypeRatiosJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -27698,6 +27992,16 @@ class $$FormulaVersionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get productionTypeIdsJson => $composableBuilder(
+    column: $table.productionTypeIdsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get productionTypeRatiosJson => $composableBuilder(
+    column: $table.productionTypeRatiosJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAtUtc => $composableBuilder(
     column: $table.createdAtUtc,
     builder: (column) => ColumnOrderings(column),
@@ -27792,6 +28096,16 @@ class $$FormulaVersionsTableAnnotationComposer
 
   GeneratedColumn<String> get sourceVersionId => $composableBuilder(
     column: $table.sourceVersionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get productionTypeIdsJson => $composableBuilder(
+    column: $table.productionTypeIdsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get productionTypeRatiosJson => $composableBuilder(
+    column: $table.productionTypeRatiosJson,
     builder: (column) => column,
   );
 
@@ -27942,6 +28256,8 @@ class $$FormulaVersionsTableTableManager
                 Value<int> versionNumber = const Value.absent(),
                 Value<String?> sourceVersionId = const Value.absent(),
                 Value<String> productionTypeId = const Value.absent(),
+                Value<String> productionTypeIdsJson = const Value.absent(),
+                Value<String> productionTypeRatiosJson = const Value.absent(),
                 Value<DateTime> createdAtUtc = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FormulaVersionsCompanion(
@@ -27955,6 +28271,8 @@ class $$FormulaVersionsTableTableManager
                 versionNumber: versionNumber,
                 sourceVersionId: sourceVersionId,
                 productionTypeId: productionTypeId,
+                productionTypeIdsJson: productionTypeIdsJson,
+                productionTypeRatiosJson: productionTypeRatiosJson,
                 createdAtUtc: createdAtUtc,
                 rowid: rowid,
               ),
@@ -27970,6 +28288,8 @@ class $$FormulaVersionsTableTableManager
                 required int versionNumber,
                 Value<String?> sourceVersionId = const Value.absent(),
                 required String productionTypeId,
+                Value<String> productionTypeIdsJson = const Value.absent(),
+                Value<String> productionTypeRatiosJson = const Value.absent(),
                 required DateTime createdAtUtc,
                 Value<int> rowid = const Value.absent(),
               }) => FormulaVersionsCompanion.insert(
@@ -27983,6 +28303,8 @@ class $$FormulaVersionsTableTableManager
                 versionNumber: versionNumber,
                 sourceVersionId: sourceVersionId,
                 productionTypeId: productionTypeId,
+                productionTypeIdsJson: productionTypeIdsJson,
+                productionTypeRatiosJson: productionTypeRatiosJson,
                 createdAtUtc: createdAtUtc,
                 rowid: rowid,
               ),

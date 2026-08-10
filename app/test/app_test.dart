@@ -1583,6 +1583,7 @@ void main() {
       name: '沉香',
       categoryId: category.id,
     );
+    await database.createCustomer(name: '精准顾客', phone: '13900001111');
     final draft = await database.createFormulaDraft(
       productionTypeId: 'type-zhuanxiang',
       targetWeight: 100,
@@ -1625,8 +1626,14 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     await tester.enterText(find.byType(TextField).last, '1.00');
-    await tester.tap(find.text('开始调配').last);
+    await tester.tap(find.text('不关联顾客'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(SearchBar, '搜索姓名或电话'), findsOneWidget);
+    await tester.enterText(find.byType(SearchBar), '1111');
     await tester.pump();
+    expect(find.text('精准顾客 · 13900001111'), findsOneWidget);
+    await tester.tap(find.text('精准顾客 · 13900001111'));
+    await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     await tester.tap(find.widgetWithText(FilledButton, '进入调配'));
     await tester.pump();

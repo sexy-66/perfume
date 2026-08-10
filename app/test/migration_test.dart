@@ -4,7 +4,7 @@ import 'package:xiangfangbu/data/app_database.dart';
 
 void main() {
   test(
-    'v8 to v9 preserves formulas and adds recommendation metadata',
+    'v8 to v10 preserves formulas and adds per-type ratio metadata',
     () async {
       final executor = NativeDatabase.memory(
         setup: (raw) {
@@ -21,6 +21,21 @@ void main() {
             notes TEXT,
             current_version_id TEXT,
             last_used_at_utc INTEGER
+          )
+        ''');
+          raw.execute('''
+          CREATE TABLE formula_versions (
+            id TEXT NOT NULL PRIMARY KEY,
+            revision_id TEXT NOT NULL,
+            updated_by_device TEXT NOT NULL,
+            updated_at_utc INTEGER NOT NULL,
+            is_deleted INTEGER NOT NULL DEFAULT 0,
+            deleted_at_utc INTEGER,
+            formula_id TEXT NOT NULL,
+            version_number INTEGER NOT NULL,
+            source_version_id TEXT,
+            production_type_id TEXT NOT NULL,
+            created_at_utc INTEGER NOT NULL
           )
         ''');
           raw.execute('''
@@ -44,6 +59,15 @@ void main() {
             actual_weights_json TEXT NOT NULL,
             confirmed_warnings_json TEXT NOT NULL DEFAULT '[]',
             created_at_utc INTEGER NOT NULL
+          )
+        ''');
+          raw.execute('''
+          INSERT INTO formula_versions (
+            id, revision_id, updated_by_device, updated_at_utc, formula_id,
+            version_number, production_type_id, created_at_utc
+          ) VALUES (
+            'version-1', 'revision-3', 'device-1', 0, 'formula-1', 1,
+            'type-zhuanxiang', 0
           )
         ''');
           raw.execute('''
@@ -73,6 +97,9 @@ void main() {
       final draft = await (database.select(
         database.formulaDrafts,
       )..where((row) => row.id.equals('draft-1'))).getSingle();
+      final version = await database
+          .select(database.formulaVersions)
+          .getSingle();
       expect(
         (formula.name, formula.notes, formula.isRecommended),
         ('旧香方', '旧备注', false),
@@ -81,6 +108,11 @@ void main() {
         (draft.formulaName, draft.imageHash, draft.isRecommended),
         ('旧草稿', null, false),
       );
+      expect(
+        (draft.productionTypeIdsJson, draft.productionTypeRatiosJson),
+        ('["type-zhuanxiang"]', '{}'),
+      );
+      expect(version.productionTypeIdsJson, '["type-zhuanxiang"]');
     },
   );
 
