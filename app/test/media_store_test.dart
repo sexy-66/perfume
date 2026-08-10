@@ -68,9 +68,7 @@ void main() {
     const interrupted =
         'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc';
     await File(p.join(directory.path, '$stale.jpg')).writeAsBytes([2]);
-    await File(
-      p.join(directory.path, '.$interrupted.tmp'),
-    ).writeAsBytes([3]);
+    await File(p.join(directory.path, '.$interrupted.tmp')).writeAsBytes([3]);
     await File(p.join(directory.path, 'keep.txt')).writeAsString('unmanaged');
 
     final deleted = await store.deleteUnreferenced({retained});
