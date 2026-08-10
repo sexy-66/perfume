@@ -13,6 +13,7 @@ val releaseCredentials = File(
     releaseSigningDirectory,
     "sexy66-release.credentials.txt",
 )
+val hasReleaseSigning = releaseKeystore.isFile && releaseCredentials.isFile
 
 fun releaseCredential(label: String): String {
     val prefix = "$label:"
@@ -44,17 +45,25 @@ android {
     }
 
     signingConfigs {
-        create("sexy66") {
-            storeFile = releaseKeystore
-            storePassword = releaseCredential("Store password")
-            keyAlias = "sexy66"
-            keyPassword = releaseCredential("Key password")
+        if (hasReleaseSigning) {
+            create("sexy66") {
+                storeFile = releaseKeystore
+                storePassword = releaseCredential("Store password")
+                keyAlias = "sexy66"
+                keyPassword = releaseCredential("Key password")
+            }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("sexy66")
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("sexy66")
+            } else {
+                // Public checkouts do not contain the maintainer's private key.
+                // Fall back to the debug key for local testing only.
+                signingConfigs.getByName("debug")
+            }
         }
     }
 

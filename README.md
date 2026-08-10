@@ -1,46 +1,80 @@
-# 香方簿项目入口
+# 香方簿
 
-最后更新：2026-08-10；最新已提交代码基线：`ac2dd15`；M7性能与存储改动当前尚未提交。
+[![CI](https://github.com/sexy-66/perfume/actions/workflows/ci.yml/badge.svg)](https://github.com/sexy-66/perfume/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Platform: Android](https://img.shields.io/badge/platform-Android-green.svg)](https://www.android.com/)
 
-新任务先读本文件，再按任务范围读取其余文档。不要从旧聊天、旧计划或构建目录推断当前实现状态。
+香方簿是一款面向店内工作的离线优先 Android 应用，用于管理香料资料、香方、顾客、资产和调配记录。它不依赖云服务器，店内设备可以通过局域网进行配对和数据同步。
 
-## 文档优先级
+## 功能
 
-1. `README.md`：当前状态、已知限制和新任务入口；
-2. `M0_PRODUCT_SPEC.md`：冻结的1.2产品需求正文；
-3. `TECHNICAL_PLAN.md`：冻结后确认变更、当前实现、架构和验证证据；
-4. `app/README.md`：开发命令、代码入口和日常维护约束；
-5. `toolchain.lock`：项目内工具链精确版本。
+- 香料、香料分类、推荐比例区间和图片管理
+- 香方草稿、正式版本、比例计算和实际调配记录
+- 顾客档案、顾客历史和调配记录搜索
+- 合香珠 / 香牌目录与制作记录
+- 资产分类、状态和库存清点
+- 最近删除、撤销和冲突保留
+- 设备配对、加密会话、局域网对等同步和图片同步
+- 手机、平板、横屏和竖屏自适应布局
+- 图片裁切、压缩、去重和本地存储
 
-需求正文与后续确认变更冲突时，以`TECHNICAL_PLAN.md`第15节记录的后续确认变更为准；实现事实以当前代码、测试和该文档第14、17、18节为准。
+## 技术栈
 
-## 当前状态
+- Flutter + Dart
+- Drift + SQLite
+- `dart:io` UDP 发现与 HTTP 批次传输
+- Flutter 原生状态管理和导航
+- Android 10（API 29）及以上
 
-- Flutter Android应用位于`D:\Xiang\app`，最低Android API 29；Drift数据库当前为schema 9；
-- M1至M5已完成，M6备份恢复继续冻结；用户已于2026-08-09明确启动M7，当前处于性能、内存、存储和交付前回归阶段，正式交付尚未完成；
-- 首页当前包含香方、合香珠 / 香牌和调配记录入口；
-- 推荐香方使用与普通香方相同的数据和编辑流程，可在普通香方列表中查看，只能在“推荐香方”页删除；
-- 香方和草稿支持长按多选删除；调配记录支持按顾客姓名、电话或香方名搜索及长按多选删除；
-- 香方可在新建阶段选择图片；点击香方图片进入全屏查看，可缩放、保存到相册或更换图片；图片导入先由用户拖动、双指缩放裁切；
-- 首页合香珠 / 香牌图片和成品选择图片支持直接双指缩放；
-- 局域网同步已包含16条操作批次、最多64轮、2 MB消息上限、15秒请求超时、跨设备外键依赖排序，以及永久数据错误暂停自动重试；
-- M7已限制Flutter图片缓存为200张/64 MB，根页面改为首次访问再构建，列表图片按显示尺寸解码；三张首页图片由约6.95 MB PNG压缩为约0.95 MB JPEG；
-- 媒体清理会删除无引用JPEG和中断临时文件，保留业务、草稿、最近删除、未解决冲突和刚写入文件；SQLite WAL日志保留上限为8 MiB；
-- 最新全量验证为107项`flutter test -j 1`通过、`flutter analyze`和`git diff --check`通过；M7模拟器、Redmi Pad长列表及Mi 10真实数据根导航Profile测试均无Build或Raster超预算帧；
-- Mi 10与Redmi Pad均已保留数据覆盖安装Release build number 4707。5次冷启动中位数分别为833 ms和1063 ms；5轮前后台后Activity与View数量不增长，日志未见应用崩溃、ANR、SQLite或媒体清理错误；
-- Mi 10媒体目录已从28个文件清理为2个仍被实际引用的文件，约释放5 MB孤儿数据；楠木粘粉和柚子叶粉的两张图片在升级和清理前已缺失，完整升级前私有数据快照保留在`.qa/m7/mi10-pre4706/`；
-- 用户已确认正式应用ID保持`com.example.xiangfangbu`、版本名保持`1.0.0`，当前交付构建号为4707；`CN=sexy66, C=CN`正式证书已接入Gradle并生成签名APK，离线校验通过。Xiaomi 15 Pro完整数据已导出到U盘并逐文件SHA-256校验。现有真机仍是Android Debug证书版本，不能直接覆盖为新证书；剩余门禁为数据保留迁移方案、密钥异地备份策略和持续店内试用。
+## 快速开始
 
-## 新任务开始检查
+需要 Flutter stable、Android SDK 和 JDK 17 或更高版本。
 
-```powershell
-Set-Location D:\Xiang
-. .\dev.ps1
-Set-Location .\app
-git status --short
-git log -1 --oneline
-flutter analyze
-flutter test -j 1
+```bash
+git clone https://github.com/sexy-66/perfume.git
+cd perfume/app
+flutter pub get
+flutter run
 ```
 
-需要改动时保留用户工作区已有修改；所有Flutter、ADB和构建命令先加载`dev.ps1`。不要清库、卸载应用或重置配对状态，除非用户明确要求。`flutter drive`可能在安装冲突或收尾阶段卸载基础包名，只允许用于模拟器或无业务数据的专用测试设备；有数据真机必须使用受控构建、`adb install -r`和人工驱动流程。
+在 Android Studio 或 VS Code 中打开 `app` 目录也可以直接运行。应用首次启动使用空库，业务数据保存在设备本地。
+
+## 常用命令
+
+在 `app` 目录执行：
+
+```bash
+dart format --output=none --set-exit-if-changed .
+flutter analyze
+flutter test -j 1
+flutter build apk --release
+```
+
+公开检出不包含正式发布签名密钥，`flutter build apk --release` 会使用本机调试签名，仅用于本地测试。正式分发请使用自己的签名密钥，并妥善保管密钥和密码。
+
+## 项目结构
+
+```text
+app/
+├── lib/data/            # Drift 数据库、迁移和本地媒体
+├── lib/features/        # 首页、香料、香方、顾客、资产和设置页面
+├── lib/services/        # 计算、发现、配对和同步服务
+├── integration_test/    # 设备级流程测试
+└── test/                # 单元测试和 Widget 测试
+```
+
+## 数据与隐私
+
+应用默认完全离线运行，不上传业务数据，也不需要账号。局域网同步只在已配对设备之间进行；图片和数据库保存在应用私有目录中。请勿在 Issue、Pull Request 或日志中上传真实顾客资料、设备密钥、签名文件或业务图片。
+
+## 贡献
+
+欢迎修复问题、改进文档和提交小而清晰的功能改动。请先阅读 [贡献指南](CONTRIBUTING.md)，并在提交前运行格式检查、静态分析和测试。
+
+## 安全问题
+
+不要在公开 Issue 中提交安全漏洞或私密配对信息，请阅读 [安全政策](SECURITY.md) 获取报告方式。
+
+## 许可证
+
+本项目以 [MIT License](LICENSE) 发布。
