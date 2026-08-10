@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as image;
+import 'package:path/path.dart' as p;
 import 'package:xiangfangbu/data/media_store.dart';
 
 void main() {
@@ -66,16 +67,18 @@ void main() {
         'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
     const interrupted =
         'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc';
-    await File('${directory.path}\\$stale.jpg').writeAsBytes([2]);
-    await File('${directory.path}\\.$interrupted.tmp').writeAsBytes([3]);
-    await File('${directory.path}\\keep.txt').writeAsString('unmanaged');
+    await File(p.join(directory.path, '$stale.jpg')).writeAsBytes([2]);
+    await File(
+      p.join(directory.path, '.$interrupted.tmp'),
+    ).writeAsBytes([3]);
+    await File(p.join(directory.path, 'keep.txt')).writeAsString('unmanaged');
 
     final deleted = await store.deleteUnreferenced({retained});
 
     expect(deleted, 2);
     expect(await store.fileFor(retained).exists(), isTrue);
     expect(await store.fileFor(stale).exists(), isFalse);
-    expect(await File('${directory.path}\\keep.txt').exists(), isTrue);
+    expect(await File(p.join(directory.path, 'keep.txt')).exists(), isTrue);
   });
 
   test(
