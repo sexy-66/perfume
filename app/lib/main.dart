@@ -9,6 +9,9 @@ import 'services/peer_sync_runtime.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  PaintingBinding.instance.imageCache
+    ..maximumSize = 200
+    ..maximumSizeBytes = 64 << 20;
   final database = AppDatabase.defaults();
   final mediaStore = await MediaStore.defaults();
   await Future.wait([database.initialize(), mediaStore.initialize()]);

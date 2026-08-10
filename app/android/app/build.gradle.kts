@@ -1,7 +1,26 @@
+import java.io.File
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+val xiangRoot = rootProject.projectDir.parentFile.parentFile
+val releaseSigningDirectory = File(xiangRoot, ".secrets")
+val releaseKeystore = File(releaseSigningDirectory, "sexy66-release.jks")
+val releaseCredentials = File(
+    releaseSigningDirectory,
+    "sexy66-release.credentials.txt",
+)
+
+fun releaseCredential(label: String): String {
+    val prefix = "$label:"
+    return releaseCredentials.useLines { lines ->
+        lines.firstOrNull { it.startsWith(prefix) }
+            ?.substring(prefix.length)
+            ?.trim()
+    } ?: error("Missing release signing credential: $label")
 }
 
 android {
@@ -15,7 +34,6 @@ android {
     }
 
     defaultConfig {
-        // Placeholder until the release application ID is confirmed.
         applicationId = "com.example.xiangfangbu"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -25,11 +43,18 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("sexy66") {
+            storeFile = releaseKeystore
+            storePassword = releaseCredential("Store password")
+            keyAlias = "sexy66"
+            keyPassword = releaseCredential("Key password")
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("sexy66")
         }
     }
 

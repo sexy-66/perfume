@@ -56,4 +56,38 @@ void main() {
     expect(decoded, isNotNull);
     expect((decoded!.width, decoded.height), (1600, 1333));
   });
+
+  test('removes only stale media and interrupted temporary writes', () async {
+    final directory = await Directory.systemTemp.createTemp('xiang-media-');
+    addTearDown(() => directory.delete(recursive: true));
+    final store = MediaStore(directory);
+    final retained = await store.putJpeg(Uint8List.fromList([1]));
+    const stale =
+        'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+    const interrupted =
+        'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc';
+    await File('${directory.path}\\$stale.jpg').writeAsBytes([2]);
+    await File('${directory.path}\\.$interrupted.tmp').writeAsBytes([3]);
+    await File('${directory.path}\\keep.txt').writeAsString('unmanaged');
+
+    final deleted = await store.deleteUnreferenced({retained});
+
+    expect(deleted, 2);
+    expect(await store.fileFor(retained).exists(), isTrue);
+    expect(await store.fileFor(stale).exists(), isFalse);
+    expect(await File('${directory.path}\\keep.txt').exists(), isTrue);
+  });
+
+  test(
+    'protects a new file until its database reference is committed',
+    () async {
+      final directory = await Directory.systemTemp.createTemp('xiang-media-');
+      addTearDown(() => directory.delete(recursive: true));
+      final store = MediaStore(directory);
+      final hash = await store.putJpeg(Uint8List.fromList([1, 2, 3]));
+
+      expect(await store.deleteUnreferenced({}), 0);
+      expect(await store.fileFor(hash).exists(), isTrue);
+    },
+  );
 }

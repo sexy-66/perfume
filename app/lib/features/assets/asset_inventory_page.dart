@@ -155,6 +155,7 @@ class _AssetInventoryPageState extends State<AssetInventoryPage> {
                                 width: 56,
                                 height: 56,
                                 fit: BoxFit.cover,
+                                cacheWidth: 192,
                                 errorBuilder: (_, _, _) =>
                                     const SizedBox.square(
                                       dimension: 56,

@@ -63,9 +63,9 @@ dev_dependencies:
 flutter:
 
   assets:
-    - assets/home-entry-xiangfang.png
-    - assets/home-entry-hexiangzhu.png
-    - assets/home-entry-mixing-records.png
+    - assets/home-entry-xiangfang.jpg
+    - assets/home-entry-hexiangzhu.jpg
+    - assets/home-entry-mixing-records.jpg
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

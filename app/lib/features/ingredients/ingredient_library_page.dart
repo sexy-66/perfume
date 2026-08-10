@@ -273,6 +273,7 @@ class _IngredientLibraryPageState extends State<IngredientLibraryPage> {
                                                 '${ingredient.imageHash}-${widget.mediaStore.revision}',
                                               ),
                                               fit: BoxFit.cover,
+                                              cacheWidth: 480,
                                               errorBuilder: (_, _, _) =>
                                                   const ColoredBox(
                                                     color: Color(0xffe6e9e7),
@@ -523,6 +524,7 @@ class _IngredientLibraryPageState extends State<IngredientLibraryPage> {
                                               imageHash!,
                                             ),
                                             fit: BoxFit.cover,
+                                            cacheWidth: 256,
                                           ),
                                   ),
                                 ),

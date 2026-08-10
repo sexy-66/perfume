@@ -56,6 +56,38 @@ void main() {
     expect(await database.select(database.productionTypes).get(), hasLength(3));
   });
 
+  test('retains active, draft and recently deleted image hashes', () async {
+    const conflictHash =
+        'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+    final category = await database.createIngredientCategory('木类');
+    final ingredient = await database.createIngredient(
+      categoryId: category.id,
+      name: '沉香',
+      imageHash: _imageHash,
+    );
+    await database.deleteIngredient(ingredient.id);
+    await database
+        .into(database.syncConflicts)
+        .insert(
+          SyncConflictsCompanion.insert(
+            id: 'conflict',
+            entityType: 'ingredients',
+            entityId: ingredient.id,
+            firstRevisionId: 'a',
+            secondRevisionId: 'b',
+            firstSnapshotJson: jsonEncode({'imageHash': conflictHash}),
+            secondSnapshotJson: '{}',
+            createdAtUtc: DateTime.utc(2026),
+          ),
+        );
+
+    expect(
+      await database.retainedImageHashes(),
+      containsAll({_imageHash, conflictHash}),
+    );
+    expect(await database.referencedImageHashes(), isNot(contains(_imageHash)));
+  });
+
   test(
     'production types update, reorder, protect defaults and restore',
     () async {

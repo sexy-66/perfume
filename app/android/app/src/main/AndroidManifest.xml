@@ -3,7 +3,8 @@
     <application
         android:label="香方簿"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher_sexy66"
+        android:roundIcon="@mipmap/ic_launcher_sexy66">
         <activity
             android:name=".MainActivity"
             android:exported="true"

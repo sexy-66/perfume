@@ -1673,6 +1673,7 @@ void main() {
       expect(tester.takeException(), isNull, reason: '首页 $size');
 
       await tester.tap(find.text('香料').last);
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 250));
       expect(find.text('沉香'), findsOneWidget);
       expect(tester.takeException(), isNull, reason: '香料库 $size');

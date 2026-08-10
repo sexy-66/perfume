@@ -13,6 +13,7 @@ class MediaStore extends ChangeNotifier {
 
   final Directory directory;
   final Map<String, Future<String>> _writes = {};
+  final Map<String, DateTime> _recentWrites = {};
   int _revision = 0;
 
   int get revision => _revision;
@@ -57,7 +58,10 @@ class MediaStore extends ChangeNotifier {
 
   Future<String> _writeJpeg(String hash, Uint8List bytes) async {
     final file = File(p.join(directory.path, '$hash.jpg'));
-    if (await file.exists()) return hash;
+    if (await file.exists()) {
+      _protectWrite(hash);
+      return hash;
+    }
     final temporary = File(p.join(directory.path, '.$hash.tmp'));
     var created = false;
     try {
@@ -70,6 +74,7 @@ class MediaStore extends ChangeNotifier {
       if (await temporary.exists()) await temporary.delete();
     }
     if (created) {
+      _protectWrite(hash);
       try {
         PaintingBinding.instance.imageCache.evict(FileImage(file));
       } on FlutterError {
@@ -88,10 +93,56 @@ class MediaStore extends ChangeNotifier {
     return File(p.join(directory.path, '$hash.jpg'));
   }
 
-  Future<void> deleteHashes(Iterable<String> hashes) async {
-    for (final hash in hashes) {
-      final file = fileFor(hash);
-      if (await file.exists()) await file.delete();
+  Future<int> deleteUnreferenced(Set<String> retainedHashes) async {
+    await initialize();
+    final now = DateTime.now();
+    _recentWrites.removeWhere((_, until) => !until.isAfter(now));
+    var deleted = 0;
+    await for (final entity in directory.list()) {
+      if (entity is! File) continue;
+      final name = p.basename(entity.path);
+      final temporary = RegExp(r'^\.([0-9a-f]{64})\.tmp$').firstMatch(name);
+      if (temporary != null) {
+        if (_writes.containsKey(temporary.group(1))) continue;
+        await entity.delete();
+        deleted++;
+        continue;
+      }
+      final match = RegExp(r'^([0-9a-f]{64})\.jpg$').firstMatch(name);
+      final hash = match?.group(1);
+      if (hash == null ||
+          retainedHashes.contains(hash) ||
+          _writes.containsKey(hash) ||
+          _recentWrites.containsKey(hash)) {
+        continue;
+      }
+      if (await _deleteFile(entity)) deleted++;
+    }
+    if (deleted > 0) _markChanged();
+    return deleted;
+  }
+
+  Future<bool> _deleteFile(File file) async {
+    if (!await file.exists()) return false;
+    _evict(file);
+    await file.delete();
+    return true;
+  }
+
+  void _markChanged() {
+    _revision++;
+    notifyListeners();
+  }
+
+  void _protectWrite(String hash) {
+    _recentWrites[hash] = DateTime.now().add(const Duration(minutes: 5));
+  }
+
+  void _evict(File file) {
+    try {
+      PaintingBinding.instance.imageCache.evict(FileImage(file));
+    } on FlutterError {
+      // Plain unit tests do not initialize Flutter's painting binding.
     }
   }
 }

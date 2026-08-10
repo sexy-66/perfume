@@ -214,6 +214,7 @@ class PeerSyncRuntime extends ChangeNotifier {
   Future<void> _start() async {
     _error = null;
     _setStatus(PeerSyncStatus.starting);
+    if (database != null) await _cleanupAcknowledgedDeletions();
     final httpServer = PeerHttpServer(
       identity: identity,
       groupId: groupId,
@@ -278,7 +279,6 @@ class PeerSyncRuntime extends ChangeNotifier {
         unawaited(_autoConnect(peer));
       }
       if (database != null) {
-        await _cleanupAcknowledgedDeletions();
         var lastLocalSequence = (await database!.localDevice()).deviceSeq;
         _localChanges = database!
             .select(database!.localDevices)
@@ -1207,8 +1207,16 @@ class PeerSyncRuntime extends ChangeNotifier {
   Future<void> _cleanupAcknowledgedDeletions() async {
     final db = database;
     if (db == null) return;
-    final hashes = await db.purgeAcknowledgedDeletions();
-    await mediaStore?.deleteHashes(hashes);
+    try {
+      await db.purgeAcknowledgedDeletions();
+      final media = mediaStore;
+      if (media == null) return;
+      await media.deleteUnreferenced(await db.retainedImageHashes());
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('Media cleanup failed: $error\n$stackTrace');
+      }
+    }
   }
 
   void _publishSyncCompletion(int transferred, {required bool manual}) {

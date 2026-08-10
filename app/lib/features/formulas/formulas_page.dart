@@ -80,7 +80,7 @@ class _HomePageState extends State<HomePage> {
           builder: (context, constraints) {
             final cards = [
               _HomeEntryCard(
-                image: 'assets/home-entry-xiangfang.png',
+                image: 'assets/home-entry-xiangfang.jpg',
                 title: '香方',
                 subtitle: '配制、计算与记录',
                 onTap: () => Navigator.push(
@@ -94,7 +94,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               _HomeEntryCard(
-                image: 'assets/home-entry-hexiangzhu.png',
+                image: 'assets/home-entry-hexiangzhu.jpg',
                 title: '合香珠 / 香牌',
                 subtitle: '成品目录与制作记录',
                 pinchZoom: true,
@@ -277,7 +277,7 @@ class _HomeEntryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: pinchZoom
             ? _PinchZoomImage(
-                image: Image.asset(image, fit: BoxFit.cover),
+                image: Image.asset(image, fit: BoxFit.cover, cacheWidth: 1024),
                 semanticsLabel: '$title首页图片，支持双指缩放',
                 transformKey: const ValueKey('home-plaque-pinch-image'),
                 onTap: onTap,
@@ -287,7 +287,7 @@ class _HomeEntryCard extends StatelessWidget {
             : Material(
                 color: Colors.transparent,
                 child: Ink.image(
-                  image: AssetImage(image),
+                  image: ResizeImage(AssetImage(image), width: 1024),
                   fit: BoxFit.cover,
                   child: InkWell(onTap: onTap, child: label),
                 ),
@@ -536,8 +536,9 @@ class _HomeMixingEntryCard extends StatelessWidget {
               fit: StackFit.expand,
               children: [
                 Image.asset(
-                  'assets/home-entry-mixing-records.png',
+                  'assets/home-entry-mixing-records.jpg',
                   fit: BoxFit.cover,
+                  cacheWidth: 1024,
                 ),
                 const DecoratedBox(
                   decoration: BoxDecoration(
@@ -761,6 +762,7 @@ class _MixingRecordsPageState extends State<MixingRecordsPage> {
                                             record.formulaImageHash!,
                                           ),
                                           fit: BoxFit.cover,
+                                          cacheWidth: 256,
                                         ),
                                 ),
                               ),
@@ -2708,6 +2710,7 @@ class _FormulaIngredientPickerPageState
                                         choice.imageHash!,
                                       ),
                                       fit: BoxFit.cover,
+                                      cacheWidth: 480,
                                       errorBuilder: (_, _, _) => const Icon(
                                         Icons.broken_image_outlined,
                                       ),
@@ -2790,6 +2793,7 @@ class _FormulaRatioEditor extends StatelessWidget {
                       : Image.file(
                           mediaStore.fileFor(imageHash!),
                           fit: BoxFit.cover,
+                          cacheWidth: 192,
                         ),
                 ),
               ),
@@ -3831,6 +3835,7 @@ class _FormulaIngredientDetailTile extends StatelessWidget {
                 : Image.file(
                     mediaStore.fileFor(ingredient.imageHash!),
                     fit: BoxFit.cover,
+                    cacheWidth: 192,
                     errorBuilder: (_, _, _) => const ColoredBox(
                       color: Color(0xffe6e9e7),
                       child: Icon(Icons.broken_image_outlined),
@@ -4240,6 +4245,7 @@ class _MixingSessionBody extends StatelessWidget {
                         child: Image.file(
                           mediaStore.fileFor(plaque!.imageHash!),
                           fit: BoxFit.cover,
+                          cacheWidth: 320,
                         ),
                       ),
                       const SizedBox(width: 14),
@@ -4377,7 +4383,11 @@ class _MixingItemCard extends StatelessWidget {
                           color: Color(0xffe6e9e7),
                           child: Icon(Icons.spa_outlined),
                         )
-                      : Image.file(mediaStore.fileFor(hash), fit: BoxFit.cover);
+                      : Image.file(
+                          mediaStore.fileFor(hash),
+                          fit: BoxFit.cover,
+                          cacheWidth: 192,
+                        );
                 },
               ),
             ),

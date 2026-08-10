@@ -151,6 +151,7 @@ class _PlaqueCatalogPageState extends State<PlaqueCatalogPage> {
                                           item.imageHash!,
                                         ),
                                         fit: BoxFit.contain,
+                                        cacheWidth: 720,
                                         errorBuilder: (_, _, _) => const Icon(
                                           Icons.broken_image_outlined,
                                         ),

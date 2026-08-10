@@ -122,6 +122,9 @@ class _Shell extends StatefulWidget {
 class _ShellState extends State<_Shell> with WidgetsBindingObserver {
   var _index = 0;
   final _visitedPages = [true, false, false];
+  late final HomePage _homePage;
+  IngredientLibraryPage? _ingredientPage;
+  _MorePage? _morePage;
   PeerSyncRuntime? _runtime;
   Future<PeerSyncRuntime?>? _syncInitialization;
   Object? _syncInitializationError;
@@ -134,13 +137,16 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    _homePage = HomePage(
+      database: widget.database,
+      mediaStore: widget.mediaStore,
+    );
     _runtime = widget.syncRuntime;
     if (_runtime != null || widget.syncRuntimeLoader != null) {
       WidgetsBinding.instance.addObserver(this);
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      setState(() => _visitedPages.fillRange(0, _visitedPages.length, true));
       if (_runtime != null || widget.syncRuntimeLoader != null) {
         unawaited(_initializeSync());
       }
@@ -187,6 +193,7 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver {
       setState(() {
         _syncInitializing = true;
         _syncInitializationError = null;
+        _morePage = null;
       });
     }
     try {
@@ -195,15 +202,29 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver {
         await runtime.close();
         return null;
       }
-      setState(() => _runtime = runtime);
+      setState(() {
+        _runtime = runtime;
+        _ingredientPage = null;
+        _morePage = null;
+      });
       await _resumeSync(runtime);
       return runtime;
     } catch (error, stackTrace) {
       debugPrint('Failed to initialize sync runtime: $error\n$stackTrace');
-      if (mounted) setState(() => _syncInitializationError = error);
+      if (mounted) {
+        setState(() {
+          _syncInitializationError = error;
+          _morePage = null;
+        });
+      }
       return null;
     } finally {
-      if (mounted) setState(() => _syncInitializing = false);
+      if (mounted) {
+        setState(() {
+          _syncInitializing = false;
+          _morePage = null;
+        });
+      }
     }
   }
 
@@ -238,22 +259,6 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final pages = <Widget>[
-      HomePage(database: widget.database, mediaStore: widget.mediaStore),
-      IngredientLibraryPage(
-        database: widget.database,
-        mediaStore: widget.mediaStore,
-        syncRuntime: _runtime,
-      ),
-      _MorePage(
-        database: widget.database,
-        mediaStore: widget.mediaStore,
-        syncRuntime: _runtime,
-        syncInitializing: _syncInitializing,
-        syncInitializationFailed: _syncInitializationError != null,
-        onOpenSync: _openSyncDevices,
-      ),
-    ];
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -263,8 +268,8 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver {
         body: IndexedStack(
           index: _index,
           children: [
-            for (var i = 0; i < pages.length; i++)
-              _visitedPages[i] ? pages[i] : const SizedBox.shrink(),
+            for (var i = 0; i < _visitedPages.length; i++)
+              _visitedPages[i] ? _rootPage(i) : const SizedBox.shrink(),
           ],
         ),
         bottomNavigationBar: _GlassNavigationBar(
@@ -277,6 +282,24 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver {
       ),
     );
   }
+
+  Widget _rootPage(int index) => switch (index) {
+    0 => _homePage,
+    1 => _ingredientPage ??= IngredientLibraryPage(
+      database: widget.database,
+      mediaStore: widget.mediaStore,
+      syncRuntime: _runtime,
+    ),
+    2 => _morePage ??= _MorePage(
+      database: widget.database,
+      mediaStore: widget.mediaStore,
+      syncRuntime: _runtime,
+      syncInitializing: _syncInitializing,
+      syncInitializationFailed: _syncInitializationError != null,
+      onOpenSync: _openSyncDevices,
+    ),
+    _ => const SizedBox.shrink(),
+  };
 
   void _handleBack() {
     if (_exitArmed) {

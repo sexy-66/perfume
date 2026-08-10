@@ -514,6 +514,7 @@ class AppDatabase extends _$AppDatabase {
             setup: (db) {
               db.execute('PRAGMA foreign_keys = ON');
               db.execute('PRAGMA journal_mode = WAL');
+              db.execute('PRAGMA journal_size_limit = 8388608');
             },
           ),
         ),
@@ -628,7 +629,7 @@ class AppDatabase extends _$AppDatabase {
     return {for (final row in rows) row.originDeviceId: row.lastDeviceSeq};
   }
 
-  Future<Set<String>> purgeAcknowledgedDeletions({DateTime? now}) =>
+  Future<void> purgeAcknowledgedDeletions({DateTime? now}) =>
       transaction(() async {
         final cutoff = (now ?? DateTime.now()).toUtc().subtract(
           const Duration(days: 30),
@@ -642,10 +643,9 @@ class AppDatabase extends _$AppDatabase {
                       row.isPendingRejoin.equals(false),
                 ))
                 .get();
-        final imageCandidates = <String>{};
         for (final type in TrashEntityType.values) {
           final rows = await customSelect(
-            '''SELECT id, revision_id${_imageColumn(type) ? ', image_hash' : ''}
+            '''SELECT id, revision_id
                  FROM ${type.tableName}
                 WHERE is_deleted = 1
                   AND deleted_at_utc <= ?
@@ -690,10 +690,6 @@ class AppDatabase extends _$AppDatabase {
               }
             }
             if (!confirmed) continue;
-            if (_imageColumn(type)) {
-              final hash = row.readNullable<String>('image_hash');
-              if (hash != null) imageCandidates.add(hash);
-            }
             await _compactDeletedEntity(
               type,
               entityId,
@@ -701,25 +697,6 @@ class AppDatabase extends _$AppDatabase {
             );
           }
         }
-        final orphaned = <String>{};
-        for (final hash in imageCandidates) {
-          final referenced = await customSelect(
-            '''SELECT 1 WHERE
-                 EXISTS (SELECT 1 FROM ingredients WHERE image_hash = ?)
-              OR EXISTS (SELECT 1 FROM plaque_types WHERE image_hash = ?)
-              OR EXISTS (SELECT 1 FROM assets WHERE image_hash = ?)
-              OR EXISTS (SELECT 1 FROM formulas WHERE image_hash = ?)''',
-            variables: [
-              Variable(hash),
-              Variable(hash),
-              Variable(hash),
-              Variable(hash),
-            ],
-            readsFrom: {ingredients, plaqueTypes, assets, formulas},
-          ).getSingleOrNull();
-          if (referenced == null) orphaned.add(hash);
-        }
-        return orphaned;
       });
 
   Future<bool> _hasPendingConflict(String entityType, String entityId) async =>
@@ -731,12 +708,6 @@ class AppDatabase extends _$AppDatabase {
           ))
           .getSingleOrNull() !=
       null;
-
-  bool _imageColumn(TrashEntityType type) =>
-      type == TrashEntityType.ingredient ||
-      type == TrashEntityType.plaqueType ||
-      type == TrashEntityType.asset ||
-      type == TrashEntityType.formula;
 
   Future<void> _compactDeletedEntity(
     TrashEntityType type,
@@ -1240,6 +1211,43 @@ class AppDatabase extends _$AppDatabase {
       readsFrom: {ingredients, plaqueTypes, assets, formulas, formulaDrafts},
     ).get();
     return {for (final row in rows) row.read<String>('image_hash')};
+  }
+
+  Future<Set<String>> retainedImageHashes() async {
+    final rows = await customSelect(
+      '''SELECT image_hash FROM ingredients WHERE image_hash IS NOT NULL
+         UNION
+         SELECT image_hash FROM plaque_types WHERE image_hash IS NOT NULL
+         UNION
+         SELECT image_hash FROM assets WHERE image_hash IS NOT NULL
+         UNION
+         SELECT image_hash FROM formulas WHERE image_hash IS NOT NULL
+         UNION
+         SELECT image_hash FROM formula_drafts WHERE image_hash IS NOT NULL''',
+      readsFrom: {ingredients, plaqueTypes, assets, formulas, formulaDrafts},
+    ).get();
+    final hashes = {for (final row in rows) row.read<String>('image_hash')};
+    final conflicts = await (select(
+      syncConflicts,
+    )..where((row) => row.resolvedAtUtc.isNull())).get();
+    for (final conflict in conflicts) {
+      _addSnapshotImageHash(hashes, conflict.firstSnapshotJson);
+      _addSnapshotImageHash(hashes, conflict.secondSnapshotJson);
+    }
+    return hashes;
+  }
+
+  void _addSnapshotImageHash(Set<String> hashes, String snapshotJson) {
+    try {
+      final snapshot = jsonDecode(snapshotJson);
+      if (snapshot is! Map) return;
+      final hash = snapshot['imageHash'];
+      if (hash is String && RegExp(r'^[0-9a-f]{64}$').hasMatch(hash)) {
+        hashes.add(hash);
+      }
+    } on FormatException {
+      // A malformed conflict is handled by conflict UI; it must not block cleanup.
+    }
   }
 
   Future<int> applyRemoteSyncOperations(
