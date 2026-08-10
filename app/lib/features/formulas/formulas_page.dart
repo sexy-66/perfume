@@ -4770,15 +4770,21 @@ class _MixingOptionsSheetState extends State<_MixingOptionsSheet> {
         children: [
           Text('开始调配', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            initialValue: _productionTypeId,
-            isExpanded: true,
+          InputDecorator(
             decoration: const InputDecoration(labelText: '制作类型'),
-            items: [
-              for (final type in widget.productionTypes)
-                DropdownMenuItem(value: type.id, child: Text(type.name)),
-            ],
-            onChanged: (value) => setState(() => _productionTypeId = value!),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final type in widget.productionTypes)
+                  ChoiceChip(
+                    label: Text(type.name),
+                    selected: type.id == _productionTypeId,
+                    onSelected: (_) =>
+                        setState(() => _productionTypeId = type.id),
+                  ),
+              ],
+            ),
           ),
           const SizedBox(height: 12),
           TextField(

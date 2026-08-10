@@ -1586,6 +1586,7 @@ void main() {
     await database.createCustomer(name: '精准顾客', phone: '13900001111');
     final draft = await database.createFormulaDraft(
       productionTypeId: 'type-zhuanxiang',
+      productionTypeIds: const ['type-zhuanxiang', 'type-xianxiang'],
       targetWeight: 100,
       formulaName: '稳定香方',
       items: [
@@ -1626,6 +1627,9 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     await tester.enterText(find.byType(TextField).last, '1.00');
+    expect(find.widgetWithText(ChoiceChip, '线香'), findsOneWidget);
+    await tester.tap(find.widgetWithText(ChoiceChip, '线香'));
+    await tester.pump();
     await tester.tap(find.text('不关联顾客'));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(SearchBar, '搜索姓名或电话'), findsOneWidget);
