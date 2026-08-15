@@ -2106,7 +2106,9 @@ class _FormulaComposerPageState extends State<FormulaComposerPage> {
                     children: [
                       for (var i = 0; i < _items.length; i++) ...[
                         _FormulaRatioEditor(
-                          key: ValueKey(_items[i].ingredientId),
+                          key: ValueKey(
+                            '$_editingTypeId-${_items[i].ingredientId}',
+                          ),
                           item: _items[i],
                           imageHash: _ingredients
                               .where(
@@ -3042,6 +3044,7 @@ class _FormulaRatioEditor extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           TextFormField(
+            key: ValueKey('ratio-${item.ingredientId}'),
             initialValue: item.ratio == 0 ? '' : formatFixed(item.ratio),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             textInputAction: isLast
@@ -3052,9 +3055,6 @@ class _FormulaRatioEditor extends StatelessWidget {
               suffixText: '%',
             ),
             onChanged: onChanged,
-            onFieldSubmitted: (_) {
-              if (!isLast) FocusScope.of(context).nextFocus();
-            },
           ),
         ],
       ),
@@ -3082,15 +3082,21 @@ class _MixingPageState extends State<MixingPage> {
   late final Future<MixingDraftState> _state = widget.database.getMixingDraft(
     widget.draftId,
   );
+  final _weightControllers = <int, TextEditingController>{};
   final _pendingWeights = <int, String>{};
   final _saveTimers = <int, Timer>{};
+  Future<void>? _savingWeight;
   var _warningOpen = false;
   var _completing = false;
+  var _leaving = false;
 
   @override
   void dispose() {
     for (final timer in _saveTimers.values) {
       timer.cancel();
+    }
+    for (final controller in _weightControllers.values) {
+      controller.dispose();
     }
     super.dispose();
   }
@@ -3316,9 +3322,14 @@ class _MixingPageState extends State<MixingPage> {
                       const SizedBox(height: 8),
                       TextFormField(
                         key: ValueKey('${state.draft.id}-$i'),
-                        initialValue: state.actualWeights[i] == null
-                            ? ''
-                            : formatFixed(state.actualWeights[i]!),
+                        controller: _weightControllers.putIfAbsent(
+                          i,
+                          () => TextEditingController(
+                            text: state.actualWeights[i] == null
+                                ? ''
+                                : formatFixed(state.actualWeights[i]!),
+                          ),
+                        ),
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
@@ -3330,11 +3341,6 @@ class _MixingPageState extends State<MixingPage> {
                           suffixText: 'g',
                         ),
                         onChanged: (text) => _queueWeight(i, text),
-                        onFieldSubmitted: (_) {
-                          if (i < state.items.length - 1) {
-                            FocusScope.of(context).nextFocus();
-                          }
-                        },
                       ),
                     ],
                   ),
@@ -3351,17 +3357,34 @@ class _MixingPageState extends State<MixingPage> {
         );
       },
     ),
-    bottomNavigationBar: SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-        child: FilledButton(
-          onPressed: _completing ? null : _complete,
-          child: const Text('完成调配'),
+    bottomNavigationBar: PopScope(
+      canPop: _leaving,
+      onPopInvokedWithResult: _handlePop,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          child: FilledButton(
+            onPressed: _completing ? null : _complete,
+            child: const Text('完成调配'),
+          ),
         ),
       ),
     ),
   );
+
+  Future<void> _handlePop(bool didPop, Object? result) async {
+    if (didPop || _leaving) return;
+    try {
+      await _flushWeights();
+    } catch (error) {
+      if (mounted) _message(context, _errorText(error));
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _leaving = true);
+    Navigator.pop(context);
+  }
 
   Future<void> _saveWeight(int index, String text) async {
     try {
@@ -3382,7 +3405,15 @@ class _MixingPageState extends State<MixingPage> {
     _saveTimers[index] = Timer(const Duration(milliseconds: 400), () async {
       final value = _pendingWeights.remove(index);
       _saveTimers.remove(index);
-      if (value != null) await _saveWeight(index, value);
+      if (value == null) return;
+      final previous = _savingWeight;
+      final saving = () async {
+        if (previous != null) await previous;
+        await _saveWeight(index, value);
+      }();
+      _savingWeight = saving;
+      await saving;
+      if (identical(_savingWeight, saving)) _savingWeight = null;
     });
   }
 
@@ -3393,6 +3424,7 @@ class _MixingPageState extends State<MixingPage> {
     _saveTimers.clear();
     final pending = Map<int, String>.from(_pendingWeights);
     _pendingWeights.clear();
+    await _savingWeight;
     for (final entry in pending.entries) {
       await widget.database.setDraftActualWeight(
         widget.draftId,
@@ -3411,6 +3443,7 @@ class _MixingPageState extends State<MixingPage> {
       if (!await _handleWarnings()) return;
       final session = await widget.database.completeDraft(widget.draftId);
       if (!mounted) return;
+      setState(() => _leaving = true);
       await Navigator.pushReplacement(
         context,
         MaterialPageRoute<void>(
@@ -3537,7 +3570,10 @@ class _MixingPageState extends State<MixingPage> {
     );
     if (confirmed != true) return;
     await widget.database.deleteFormulaDraft(widget.draftId);
-    if (mounted) Navigator.pop(context);
+    if (mounted) {
+      setState(() => _leaving = true);
+      Navigator.pop(context);
+    }
   }
 }
 
@@ -4798,7 +4834,6 @@ class _MixingOptionsSheetState extends State<_MixingOptionsSheet> {
               labelText: '目标总克重',
               suffixText: 'g',
             ),
-            onSubmitted: (_) => FocusScope.of(context).nextFocus(),
           ),
           const SizedBox(height: 12),
           Semantics(

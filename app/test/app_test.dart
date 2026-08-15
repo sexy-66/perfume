@@ -1501,6 +1501,316 @@ void main() {
     mediaDirectory.deleteSync(recursive: true);
   });
 
+  testWidgets('mixing weights survive scrolling fields off screen', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(400, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final database = AppDatabase(NativeDatabase.memory());
+    final mediaDirectory = Directory.systemTemp.createTempSync('xiang-ui-');
+    await database.initialize();
+    final category = await database.createIngredientCategory('木类');
+    final ingredients = <Ingredient>[];
+    for (var i = 0; i < 8; i++) {
+      ingredients.add(
+        await database.createIngredient(name: '香料$i', categoryId: category.id),
+      );
+    }
+    final draft = await database.createFormulaDraft(
+      productionTypeId: 'type-zhuanxiang',
+      targetWeight: 800,
+      formulaName: '滚动输入测试',
+      items: [
+        for (var i = 0; i < ingredients.length; i++)
+          FormulaDraftItemInput(
+            ingredientId: ingredients[i].id,
+            categoryName: category.name,
+            ingredientName: ingredients[i].name,
+            ratio: 1250,
+            sortOrder: i,
+          ),
+      ],
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MixingPage(
+          database: database,
+          mediaStore: MediaStore(mediaDirectory),
+          draftId: draft.id,
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+
+    final firstField = find.byKey(ValueKey('${draft.id}-0'));
+    await tester.enterText(firstField, '12.34');
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+    await tester.scrollUntilVisible(
+      find.byKey(ValueKey('${draft.id}-7')),
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.scrollUntilVisible(
+      firstField,
+      -500,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    expect(
+      tester
+          .widget<EditableText>(
+            find.descendant(
+              of: firstField,
+              matching: find.byType(EditableText),
+            ),
+          )
+          .controller
+          .text,
+      '12.34',
+    );
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+    await database.close();
+    mediaDirectory.deleteSync(recursive: true);
+  });
+
+  testWidgets('mixing keyboard next visits every weight field in order', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(600, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final database = AppDatabase(NativeDatabase.memory());
+    final mediaDirectory = Directory.systemTemp.createTempSync('xiang-ui-');
+    await database.initialize();
+    final category = await database.createIngredientCategory('木类');
+    final ingredients = <Ingredient>[];
+    for (var i = 0; i < 3; i++) {
+      ingredients.add(
+        await database.createIngredient(
+          name: '顺序香料$i',
+          categoryId: category.id,
+        ),
+      );
+    }
+    final draft = await database.createFormulaDraft(
+      productionTypeId: 'type-zhuanxiang',
+      targetWeight: 300,
+      formulaName: '键盘顺序测试',
+      items: [
+        for (var i = 0; i < ingredients.length; i++)
+          FormulaDraftItemInput(
+            ingredientId: ingredients[i].id,
+            categoryName: category.name,
+            ingredientName: ingredients[i].name,
+            ratio: i == 2 ? 3334 : 3333,
+            sortOrder: i,
+          ),
+      ],
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MixingPage(
+          database: database,
+          mediaStore: MediaStore(mediaDirectory),
+          draftId: draft.id,
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+
+    EditableText field(int index) => tester.widget<EditableText>(
+      find.descendant(
+        of: find.byKey(ValueKey('${draft.id}-$index')),
+        matching: find.byType(EditableText),
+      ),
+    );
+
+    await tester.tap(find.byKey(ValueKey('${draft.id}-0')));
+    await tester.pump();
+    expect(field(0).focusNode.hasFocus, isTrue);
+    await tester.testTextInput.receiveAction(TextInputAction.next);
+    await tester.pump();
+    expect(field(1).focusNode.hasFocus, isTrue);
+    await tester.testTextInput.receiveAction(TextInputAction.next);
+    await tester.pump();
+    expect(field(2).focusNode.hasFocus, isTrue);
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+    expect(field(2).focusNode.hasFocus, isFalse);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+    await database.close();
+    mediaDirectory.deleteSync(recursive: true);
+  });
+
+  testWidgets('mixing weights save when leaving before debounce', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    final mediaDirectory = Directory.systemTemp.createTempSync('xiang-ui-');
+    await database.initialize();
+    final category = await database.createIngredientCategory('木类');
+    final ingredient = await database.createIngredient(
+      name: '沉香',
+      categoryId: category.id,
+    );
+    final draft = await database.createFormulaDraft(
+      productionTypeId: 'type-zhuanxiang',
+      targetWeight: 100,
+      formulaName: '快速返回测试',
+      items: [
+        FormulaDraftItemInput(
+          ingredientId: ingredient.id,
+          categoryName: category.name,
+          ingredientName: ingredient.name,
+          ratio: 10000,
+          sortOrder: 0,
+        ),
+      ],
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => FilledButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => MixingPage(
+                    database: database,
+                    mediaStore: MediaStore(mediaDirectory),
+                    draftId: draft.id,
+                  ),
+                ),
+              ),
+              child: const Text('打开调配'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('打开调配'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(ValueKey('${draft.id}-0')), '9.87');
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect((await database.getMixingDraft(draft.id)).actualWeights, [987]);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+    await database.close();
+    mediaDirectory.deleteSync(recursive: true);
+  });
+
+  testWidgets('composer ratio fields refresh between production types', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final database = AppDatabase(NativeDatabase.memory());
+    final mediaDirectory = Directory.systemTemp.createTempSync('xiang-ui-');
+    await database.initialize();
+    final category = await database.createIngredientCategory('木类');
+    final first = await database.createIngredient(
+      name: '沉香',
+      categoryId: category.id,
+    );
+    final second = await database.createIngredient(
+      name: '檀香',
+      categoryId: category.id,
+    );
+    final draft = await database.saveComposerDraft(
+      productionTypeId: 'type-zhuanxiang',
+      productionTypeIds: const ['type-zhuanxiang', 'type-xianxiang'],
+      productionTypeRatios: const {
+        'type-zhuanxiang': [2000, 8000],
+        'type-xianxiang': [6000, 4000],
+      },
+      configuredProductionTypeIds: const ['type-zhuanxiang', 'type-xianxiang'],
+      targetWeightText: '10.00',
+      items: [
+        FormulaDraftItemInput(
+          ingredientId: first.id,
+          categoryName: category.name,
+          ingredientName: first.name,
+          ratio: 2000,
+          sortOrder: 0,
+        ),
+        FormulaDraftItemInput(
+          ingredientId: second.id,
+          categoryName: category.name,
+          ingredientName: second.name,
+          ratio: 8000,
+          sortOrder: 1,
+        ),
+      ],
+      formulaName: '双类型显示测试',
+      notes: '',
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FormulaComposerPage(
+          database: database,
+          mediaStore: MediaStore(mediaDirectory),
+          draftId: draft.id,
+        ),
+      ),
+    );
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+
+    String ratioText(String ingredientId) => tester
+        .widget<EditableText>(
+          find.descendant(
+            of: find.byKey(ValueKey('ratio-$ingredientId')),
+            matching: find.byType(EditableText),
+          ),
+        )
+        .controller
+        .text;
+
+    await tester.scrollUntilVisible(
+      find.byKey(ValueKey('ratio-${second.id}')),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(ratioText(first.id), '20.00');
+    expect(ratioText(second.id), '80.00');
+    final typeDropdown = find.byType(DropdownButtonFormField<String>);
+    await tester.scrollUntilVisible(
+      typeDropdown,
+      -300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(typeDropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('线香').last);
+    await tester.pump();
+
+    expect(ratioText(first.id), '60.00');
+    expect(ratioText(second.id), '40.00');
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+    await database.close();
+    mediaDirectory.deleteSync(recursive: true);
+  });
+
   testWidgets('mixing records support long-press multi-select delete', (
     tester,
   ) async {
