@@ -36,7 +36,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   crop_your_image: ^2.0.0
-  image: ^4.9.1
+  image: ^4.9.2
   image_picker: ^1.2.3
   lpinyin: ^2.0.3
   path: ^1.9.1
